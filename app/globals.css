@@ -1807,3 +1807,25 @@ body { line-height:1.75; letter-spacing:.008em; }
 .pendulum-page .stage-live-light{z-index:9!important;top:57%!important}.pendulum-page .image-start-hitbox{z-index:20!important}
 .pendulum-page .crystal-stage.motion-yes .crystal-chain,.pendulum-page .crystal-stage.motion-no .crystal-chain,.pendulum-page .crystal-stage.motion-unclear .crystal-chain,.pendulum-page .crystal-stage.is-calibrating .crystal-chain,.pendulum-page .crystal-stage.result-yes .crystal-chain,.pendulum-page .crystal-stage.result-no .crystal-chain,.pendulum-page .crystal-stage.result-unclear .crystal-chain{display:block!important;animation:none!important;transform:translateX(-50%) rotate(var(--manual-angle,0deg))!important}
 @media(max-width:620px){.pendulum-page .crystal-stage .crystal-chain{top:6.5%!important;width:34px!important;height:75%!important}.pendulum-page .crystal-stage .crystal-chain .crystal-cap{width:30px!important;height:25px!important}.pendulum-page .crystal-stage .crystal-chain .crystal-stone{width:58px!important;height:97px!important}.pendulum-page .crystal-stage .crystal-glow{bottom:15.5%!important;width:54px!important;height:9px!important}}
+
+/* Keep hero calls to action clear of wrapping copy. */
+.hero-copy>.intro,
+.pendulum-page .pendulum-hero-copy>p:last-of-type{
+  margin-bottom:0!important;
+}
+.hero-copy>.primary,
+.pendulum-page .pendulum-hero-copy>.primary{
+  display:inline-flex!important;
+  width:max-content!important;
+  max-width:100%!important;
+  margin-top:30px!important;
+  align-items:center!important;
+  justify-content:center!important;
+  position:relative!important;
+  clear:both!important;
+}
+.shell-mark{display:none!important}
+@media(max-width:620px){
+  .hero-copy>.primary,
+  .pendulum-page .pendulum-hero-copy>.primary{margin-top:24px!important}
+}
