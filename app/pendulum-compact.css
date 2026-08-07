@@ -1,0 +1,68 @@
+/* Final compact pendulum layout, loaded after the legacy site styles. */
+.pendulum-page .pendulum-hero{min-height:620px!important;padding-top:104px!important;padding-bottom:48px!important}
+.pendulum-page .pendulum-hero-image{height:470px!important}
+.pendulum-page .divination-centre{padding-top:68px!important;padding-bottom:76px!important}
+.pendulum-page .pendulum-ritual{padding-top:72px!important;padding-bottom:82px!important}
+.pendulum-page .pendulum-guide{padding-top:62px!important;padding-bottom:62px!important}
+.pendulum-page .premium-room{padding-top:68px!important;padding-bottom:68px!important}
+.pendulum-page .pendulum-history{padding-top:65px!important;padding-bottom:65px!important}
+.pendulum-page .tool-group-active .tool-library>button{min-height:116px!important}
+.pendulum-page .cabinet-card>div{grid-template-columns:repeat(3,minmax(0,1fr))!important;max-height:none!important}
+.pendulum-page .cabinet-card button,.pendulum-page .cabinet-card button.active{min-height:76px!important;padding:7px 3px!important}
+.pendulum-page .pendulum-console{min-height:0!important;padding:23px!important}
+/* Compact pendulum cover: preserve the full artwork while keeping the journey short. */
+.pendulum-page .pendulum-cover-hero{display:block!important;position:relative!important;width:100%!important;min-height:0!important;padding:0!important;overflow:hidden!important;background:#ead6bf!important}
+.pendulum-page .pendulum-cover-hero:before,.pendulum-page .pendulum-cover-hero:after{display:none!important}
+.pendulum-page .pendulum-cover-hero>img{display:block;width:100%;height:auto;aspect-ratio:2/1;object-fit:cover}
+/* The cover artwork is button-free. This is the only visible and clickable
+   control, so desktop and mobile can never render two offset button layers. */
+.pendulum-page .pendulum-cover-action{position:absolute;z-index:3;left:12.05%;top:61.7%;width:13.05%;height:7.05%;display:flex;align-items:center;justify-content:center;gap:clamp(6px,.65vw,12px);border:1px solid rgba(190,145,73,.72);border-radius:999px;color:#9a5f65;text-decoration:none;background:linear-gradient(145deg,rgba(255,244,244,.94),rgba(239,207,210,.9));box-shadow:inset 0 2px 1px rgba(255,255,255,.92),inset 0 -10px 22px rgba(152,86,100,.08),0 10px 24px rgba(100,61,65,.12);overflow:hidden;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.pendulum-page .pendulum-cover-action:before{content:"";position:absolute;left:8%;right:8%;top:8%;height:42%;border-radius:999px;background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,0));pointer-events:none}
+.pendulum-page .pendulum-cover-action:after{content:none}
+.pendulum-page .pendulum-cover-action span,.pendulum-page .pendulum-cover-action i{position:relative;z-index:1}
+.pendulum-page .pendulum-cover-action span{font-size:clamp(8px,.72vw,13px);font-weight:600;letter-spacing:.13em;white-space:nowrap}
+.pendulum-page .pendulum-cover-action i{font-style:normal;font-size:clamp(10px,.8vw,14px)}
+.pendulum-page .pendulum-cover-action:hover{transform:translateY(-2px);border-color:rgba(171,116,62,.88);box-shadow:inset 0 2px 1px rgba(255,255,255,.98),inset 0 -10px 22px rgba(152,86,100,.09),0 14px 28px rgba(100,61,65,.17)}
+.pendulum-page .pendulum-cover-action:focus-visible{outline:3px solid rgba(126,72,77,.74);outline-offset:4px;box-shadow:0 0 0 6px rgba(255,255,255,.72)}
+
+/* Opening sound choice: the first intentional action on the pendulum page. */
+.pendulum-page .ambient-entry{position:fixed;z-index:120;inset:0;display:grid;place-items:center;padding:24px}
+.pendulum-page .ambient-entry-backdrop{position:absolute;inset:0;border:0;background:rgba(38,25,31,.64);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);cursor:pointer}
+.pendulum-page .ambient-entry-card{position:relative;width:min(720px,100%);padding:36px 38px 28px;border:1px solid rgba(205,166,104,.72);border-radius:30px;text-align:center;background:radial-gradient(circle at 50% 0,rgba(255,255,255,.98),transparent 38%),linear-gradient(145deg,#fff9f2,#efd9d5 58%,#e7c6c7);box-shadow:inset 0 0 0 7px rgba(255,255,255,.28),0 35px 90px rgba(23,14,22,.38);overflow:hidden}
+.pendulum-page .ambient-entry-card:before,.pendulum-page .ambient-entry-card:after{content:"";position:absolute;width:130px;height:130px;border:1px solid rgba(180,131,75,.22);border-radius:50%;pointer-events:none}.pendulum-page .ambient-entry-card:before{left:-70px;top:-70px;box-shadow:0 0 0 16px rgba(255,255,255,.12)}.pendulum-page .ambient-entry-card:after{right:-75px;bottom:-75px;box-shadow:0 0 0 16px rgba(255,255,255,.12)}
+.pendulum-page .ambient-entry-close{position:absolute;z-index:2;right:16px;top:14px;width:38px;height:38px;border:1px solid rgba(176,131,84,.42);border-radius:50%;color:#785257;background:rgba(255,250,244,.7);cursor:pointer;font-size:24px;line-height:1}
+.pendulum-page .ambient-entry-ornament{display:flex;align-items:center;justify-content:center;gap:10px;margin:0 0 14px;color:#9b6a62}.pendulum-page .ambient-entry-ornament i{width:38px;height:1px;background:linear-gradient(90deg,transparent,#bc9361)}.pendulum-page .ambient-entry-ornament i:nth-of-type(2){background:linear-gradient(90deg,#bc9361,transparent)}
+.pendulum-page .ambient-entry-card h2{margin:8px auto 9px;color:#51373c;font-size:clamp(25px,3.3vw,38px);font-weight:500;line-height:1.35}.pendulum-page .ambient-entry-card>p:not(.eyebrow){margin:0 0 22px;color:#775d5c;font-size:13px}
+.pendulum-page .ambient-entry-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.pendulum-page .ambient-entry-options>button{position:relative;display:grid;grid-template-columns:40px 1fr;gap:10px;align-items:center;min-height:100px;padding:16px 13px;border:1px solid rgba(190,147,88,.48);border-radius:20px;text-align:left;color:#6c494c;background:linear-gradient(145deg,rgba(255,255,255,.9),rgba(238,205,207,.7));box-shadow:inset 0 2px 1px white,inset 0 -10px 20px rgba(126,68,81,.06),0 9px 22px rgba(72,42,47,.09);cursor:pointer;transition:.22s ease}.pendulum-page .ambient-entry-options>button:hover{transform:translateY(-3px);border-color:#bd8c54;box-shadow:inset 0 2px 1px white,0 14px 27px rgba(72,42,47,.15)}.pendulum-page .ambient-entry-options>button>i{display:grid;place-items:center;width:38px;height:38px;border:1px solid rgba(180,135,78,.46);border-radius:50%;background:rgba(255,250,241,.7);font:normal 19px/1 Georgia,serif}.pendulum-page .ambient-entry-options b,.pendulum-page .ambient-entry-options small{display:block}.pendulum-page .ambient-entry-options b{font-size:14px}.pendulum-page .ambient-entry-options small{margin-top:5px;color:#a27770;font:7px/1.3 Arial,sans-serif;letter-spacing:.08em}.pendulum-page .ambient-entry-options strong{grid-column:1/-1;color:#9b6865;font:600 9px/1 Arial,sans-serif;letter-spacing:.12em;text-align:center}
+.pendulum-page .ambient-entry-skip{margin-top:18px;padding:8px 15px;border:0;border-bottom:1px solid rgba(126,82,82,.38);color:#765355;background:transparent;cursor:pointer;font-size:12px}
+
+/* Keep the live pendulum clear of the stage copy and start button. */
+.pendulum-page .crystal-stage .crystal-chain{top:14%!important;width:72px!important;height:53%!important}
+.pendulum-page .crystal-stage .crystal-glow{bottom:32%!important;width:102px!important}
+.pendulum-page .stage-live-light{top:48%!important}
+
+@media(max-width:850px){
+  .pendulum-page .pendulum-cover-hero{padding:0!important}
+  .pendulum-page .divination-centre{padding:58px 16px 62px!important}
+  .pendulum-page .pendulum-ritual{padding:58px 14px 65px!important}
+  .pendulum-page .ritual-sidebar{grid-template-columns:1fr!important}
+  .pendulum-page .cabinet-card>div{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .pendulum-page .pendulum-guide,.pendulum-page .premium-room,.pendulum-page .pendulum-history{padding:56px 18px!important}
+}
+
+@media(max-width:620px){
+  .pendulum-page .pendulum-cover-hero{height:390px!important}
+  .pendulum-page .pendulum-cover-hero>img{width:auto;max-width:none;height:100%;aspect-ratio:auto;object-fit:cover;object-position:left center}
+  .pendulum-page .pendulum-cover-action{left:24.1%;top:61.7%;width:29.4%;height:7.1%}
+  .pendulum-page .pendulum-cover-action span{font-size:10px}
+  .pendulum-page .tool-group-active .tool-library{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .pendulum-page .tool-group-active .tool-library>button{min-height:102px!important;padding:13px 10px!important}
+  .pendulum-page .tool-group-active .tool-library em{display:none!important}
+  .pendulum-page .cabinet-card button,.pendulum-page .cabinet-card button.active{min-height:62px!important}
+  .pendulum-page .pendulum-console{padding:14px!important}
+  .pendulum-page .premium-features{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .pendulum-page .ambient-entry{padding:14px}.pendulum-page .ambient-entry-card{padding:30px 16px 22px;border-radius:25px}.pendulum-page .ambient-entry-card h2{font-size:25px;padding:0 18px}.pendulum-page .ambient-entry-options{grid-template-columns:1fr;gap:7px}.pendulum-page .ambient-entry-options>button{grid-template-columns:36px 1fr auto;min-height:0;padding:11px 12px;border-radius:16px}.pendulum-page .ambient-entry-options>button>i{width:34px;height:34px}.pendulum-page .ambient-entry-options strong{grid-column:3;text-align:right}
+  .pendulum-page .crystal-stage .crystal-chain{top:9%!important;width:23px!important;height:50%!important}
+  .pendulum-page .crystal-stage .crystal-glow{bottom:35%!important;width:38px!important}
+  .pendulum-page .stage-live-light{top:43%!important}
+}

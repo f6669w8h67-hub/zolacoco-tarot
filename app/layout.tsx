@@ -1,15 +1,42 @@
 import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./pendulum-compact.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: "Zolacoco Tarot｜在迷霧裡，陪你看見方向",
-  description: "塔羅占卜、內在探索與療癒練習。讓答案不只是預測，而是你重新理解自己的開始。",
+  title: "Zolacoco Tarot｜抽一張屬於你的牌",
+  description: "由 Zola 陪你透過塔羅看清此刻的感情、工作、人際與今日指引。",
+  other: {
+    "codex-preview": "development",
+  },
+  icons: {
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+  },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="zh-Hant">
-      <body>{children}</body>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        {children}
+      </body>
     </html>
   );
 }
