@@ -1,20 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { tarotCards, topicLens, type TarotCard } from "./tarot-data";
 
 const topics = ["感情", "工作", "人際", "金錢", "創業", "今日指引"];
 const spreads = [
   { id: "healing", name: "單張療癒牌", sub: "此刻的內在訊息", positions: ["此刻的療癒訊息"] },
   { id: "timeline", name: "三張時間流", sub: "過去・現在・下一步", positions: ["過去留下的影響", "現在需要看見的事", "接下來可以走的一步"] },
-  { id: "celtic", name: "凱爾特十字牌陣", sub: "現況・阻力・根源・走向", positions: ["目前的核心狀態", "眼前的阻力或助力", "內在真正的想法", "事件的深層根源", "正在離開的過去", "即將靠近的發展", "你目前的位置與態度", "環境與他人的影響", "內心的期待與擔憂", "依照現況延伸的結果"] },
+  { id: "relationship", name: "關係鏡像牌陣", sub: "我・對方・關係課題", positions: ["我的內在狀態", "對方目前的狀態", "這段關係的核心課題"] },
 ];
 
-type DrawnCard = TarotCard & { reversed: boolean };
-const VISIBLE_DECK_SIZE = 13;
-
 const exploreTools = [
-  { id: "archetype", number: "01", title: "此刻的內在原型", en: "INNER ARCHETYPE", desc: "像寫三頁心情日記，看看現在的你最需要什麼。" },
+  { id: "archetype", number: "01", title: "此刻的內在原型", en: "INNER ARCHETYPE", desc: "從幾個直覺選擇，看見此刻最靠近你的大牌能量。" },
   { id: "intuition", number: "02", title: "牌面直覺練習室", en: "INTUITIVE READING", desc: "先不看標準牌義，練習相信自己從畫面讀到的訊息。" },
   { id: "journal", number: "03", title: "七日塔羅內在筆記", en: "SEVEN-DAY JOURNAL", desc: "每天一個提問，慢慢整理情緒、關係與真正的需要。" },
   { id: "pendulum", number: "04", title: "靈擺直覺問答", en: "PENDULUM GUIDANCE", desc: "把問題整理成是非題，透過擺動停下來聽見此刻的直覺。" },
@@ -32,71 +29,44 @@ const archetypeQuestionSets = [
     { q: "最近的你，更接近哪一種狀態？", a: ["想安靜整理自己", "想突破停滯往前走", "想被理解與好好照顧"] },
     { q: "面對不確定時，你最常怎麼做？", a: ["先觀察，不急著表態", "逼自己趕快做決定", "反覆確認別人的心意"] },
     { q: "此刻你最需要找回的是？", a: ["內在的答案", "行動的力量", "接住自己的溫柔"] },
-    { q: "最近哪一件事最容易牽動你的心？", a: ["還沒有想清楚的選擇", "一直沒有開始的改變", "一段忽近忽遠的關係"] },
-    { q: "如果今晚只照顧一個需要，你會選擇？", a: ["留一段安靜給自己", "完成一個可以掌握的小行動", "允許自己被陪伴與理解"] },
   ],
   [
     { q: "當心裡有很多聲音時，你最想先做什麼？", a: ["暫時離開喧鬧，聽聽自己", "抓住一個方向開始行動", "找一個安心的人說說心情"] },
     { q: "最近哪一種感受最貼近你？", a: ["有些答案還在慢慢沉澱", "知道自己不能再停在原地", "總在照顧別人，卻忘了自己"] },
     { q: "如果今天能收到一份力量，你最想要的是？", a: ["清楚的內在直覺", "做出選擇的勇氣", "被溫柔接住的感覺"] },
-    { q: "當你想到接下來的生活，最先浮現的是？", a: ["想知道自己真正要什麼", "想重新掌握前進的節奏", "想先把疲憊的心安頓好"] },
-    { q: "哪一句話最像你此刻需要的提醒？", a: ["答案不需要今天全部出現", "先走一步，方向會更清楚", "我的感受也值得被放在心上"] },
   ],
   [
     { q: "面對一段反覆拉扯，你的第一個反應是？", a: ["退一步觀察真正發生的事", "想立刻打破僵局往前走", "想確認自己是不是被重視"] },
     { q: "最近你最常對自己說哪一句話？", a: ["我需要再聽聽自己的心", "我不能一直停在這裡", "我也值得被好好對待"] },
     { q: "哪一個畫面最像此刻的你？", a: ["獨自坐在安靜的月光下", "握緊方向盤準備出發", "在柔軟的花園裡慢慢休息"] },
-    { q: "你最想從反覆的狀態中帶走什麼？", a: ["更相信自己的觀察", "停止等待並做出選擇", "不再用委屈交換靠近"] },
-    { q: "如果內在的你能開口，現在會說？", a: ["再給我一點時間聽清楚", "我準備好做些不一樣的事", "請先好好抱住我的害怕"] },
   ],
   [
     { q: "當事情沒有照預期發展時，你通常會？", a: ["先整理線索，等待感受清楚", "調整策略，重新推進一次", "先照顧自己的失望與疲憊"] },
     { q: "最近最消耗你的是什麼？", a: ["太多外界意見蓋過自己的聲音", "想前進，卻還沒有明確方向", "一直付出，卻沒有得到回應"] },
     { q: "你希望接下來的自己更靠近哪種狀態？", a: ["相信自己的內在判斷", "有力量做出真正的選擇", "穩定地照顧自己的需要"] },
-    { q: "面對卡住的地方，你願意先嘗試？", a: ["把真正的擔心寫下來", "選一件最小的事開始做", "停止責怪已經很努力的自己"] },
-    { q: "現在的生活最需要增加的是？", a: ["獨處與思考的空間", "清楚可完成的節奏", "休息與被支持的感覺"] },
   ],
   [
     { q: "在關係裡，你現在最想釐清的是？", a: ["我心裡真正相信的是什麼", "我是否願意採取新的行動", "我的需要有沒有被好好看見"] },
     { q: "當對方的回應不如預期，你更容易？", a: ["沉默下來觀察彼此的變化", "想趕快做些什麼扭轉現況", "懷疑自己是不是不夠重要"] },
     { q: "此刻的關係最需要補回哪一種能量？", a: ["誠實與清楚", "方向與決心", "溫柔與安全感"] },
-    { q: "如果不再猜測對方，你最想先確認？", a: ["我真正能接受的界線", "我還願意投入多少行動", "這段關係有沒有照顧我的感受"] },
-    { q: "關係中的你最需要練習的是？", a: ["相信自己看到的事實", "在需要時做出選擇", "不因害怕失去而忽略自己"] },
   ],
   [
     { q: "如果今天可以替自己留一點空間，你會？", a: ["安靜獨處，讓答案浮現", "完成一件一直拖延的事", "好好吃飯休息，不再勉強"] },
     { q: "最近你最想鬆開哪一種壓力？", a: ["一定要立刻想清楚的壓力", "害怕做錯而不敢前進的壓力", "必須一直照顧別人的壓力"] },
     { q: "今天的你，最值得被提醒的是？", a: ["你其實知道自己在意什麼", "方向可以邊走邊調整", "你的感受也需要被放在心上"] },
-    { q: "最近身體最常用什麼方式提醒你？", a: ["腦中停不下來、需要安靜", "坐立不安、想開始改變", "疲累緊繃、需要被照顧"] },
-    { q: "明天醒來，你想替自己保留什麼？", a: ["不被打擾的片刻", "一件真正想完成的事", "更柔軟的生活節奏"] },
   ],
 ];
 
 const ARCHETYPE_LOGIN_SET_KEY = "zolacoco-archetype-login-set";
 const ARCHETYPE_LAST_SET_KEY = "zolacoco-archetype-last-set";
 
-const archetypeThemes = ["傾聽內在", "找回方向", "溫柔接住自己"];
-
-const archetypePageNotes = ["先記下最近的自己", "看看你如何面對不確定", "辨認此刻真正的需要", "聽見反覆牽動你的地方", "替今天留下一個溫柔選擇"];
+const archetypeResults = [
+  { name: "女祭司", en: "THE HIGH PRIESTESS", text: "你不是沒有答案，而是外界的聲音暫時蓋過了自己的感受。此刻適合慢一點，留意那些還說不清楚、但心裡其實已經知道的事。" },
+  { name: "戰車", en: "THE CHARIOT", text: "你正在找回前進的主導權。真正的力量不是催促自己，而是先確認方向，再把分散的心力帶回同一條路上。" },
+  { name: "皇后", en: "THE EMPRESS", text: "你現在需要的可能不是再努力一點，而是先承認自己的需求。當你願意照顧內在，選擇才不會只建立在害怕失去之上。" },
+];
 
 const journalPrompts = ["我現在真正的情緒是什麼？", "我正在逃避或延後面對什麼？", "我內在最需要哪一種支持？", "我在人際關係中反覆出現什麼習慣？", "金錢與安全感對我代表什麼？", "如果不必迎合任何人，我想成為怎樣的人？", "這一週，我最想帶走的核心提醒是什麼？"];
-
-type Soundscape = "forest" | "cafe" | "meditation";
-
-const soundscapes: Record<Soundscape, { icon: string; label: string; en: string; videoId: string }> = {
-  forest: { icon: "♧", label: "森林鋼琴", en: "PIANO · FOREST WHITE NOISE", videoId: "_u95mLIAxvg" },
-  cafe: { icon: "♫", label: "咖啡爵士", en: "SOFT JAZZ · BOSSA NOVA", videoId: "Uxz1ts_dRrQ" },
-  meditation: { icon: "◇", label: "冥想淨化", en: "HEALING FREQUENCY · MEDITATION", videoId: "kqo9Z5Br63c" },
-};
-const journalGuides = [
-  ["牌面中，第一個吸引你的是什麼？", "它讓你想到最近哪一個情緒或事件？", "今天你願意怎麼照顧這份感受？"],
-  ["畫面中有什麼像是停住或被困住？", "你遲遲沒有面對的真正原因是什麼？", "若只做一小步，今天可以從哪裡開始？"],
-  ["牌中的人物正在得到或缺少什麼？", "最近什麼時刻讓你特別需要被接住？", "你可以向自己或誰提出什麼具體需要？"],
-  ["你在牌面裡看見靠近、退讓或防衛嗎？", "這和你最近的一段關係有何相似？", "下一次重複發生時，你想換一種什麼回應？"],
-  ["牌面裡哪些元素讓你感到穩定或緊縮？", "你最害怕失去的究竟是金錢，還是安全感？", "今天能做哪件讓自己更踏實的小事？"],
-  ["如果牌中的人物不必證明自己，他會去哪裡？", "拿掉別人的期待後，你真正想保留什麼？", "你可以允許自己做出哪個更像你的選擇？"],
-  ["回看七張牌，哪個畫面仍留在心裡？", "這七天你對自己有了什麼新的理解？", "請留下一句想帶往下一週的提醒。"],
-];
 
 type IntuitionOption = { text: string; correct: boolean; note: string };
 
@@ -123,29 +93,13 @@ function intuitionOptionsFor(card: TarotCard, cardIndex: number): IntuitionOptio
   return [...options.slice(offset), ...options.slice(0, offset)];
 }
 
-const archetypeCardPools = [
-  ["major-02", "major-09", "major-11", "major-12", "major-14", "major-18", "major-20"],
-  ["major-00", "major-01", "major-04", "major-07", "major-10", "major-13", "major-19"],
-  ["major-03", "major-06", "major-08", "major-15", "major-16", "major-17", "major-21"],
-];
-const ARCHETYPE_LAST_CARD_KEY = "zolacoco-archetype-last-card";
+const archetypeCardIds = ["major-02", "major-07", "major-03"];
 const journalCardIds = ["cups-13", "swords-08", "major-08", "cups-06", "pentacles-04", "major-17", "major-21"];
 
 const positionLens: Record<string,string[]> = {
   healing:["這是你現在值得溫柔看見的訊息。"],
   timeline:["這個模式可能來自過去，也仍在輕輕影響你現在的判斷。","這是現況中值得先照顧的核心，看見它之後，事情才有機會慢慢鬆動。","這不是固定的預言，而是此刻可以陪你往前走的方向。"],
-  celtic:[
-    "這張牌是整個牌陣的中心，先描述你此刻真正身處的情境。",
-    "它橫在核心之上，可能是需要跨越的阻力，也可能是尚未善用的資源。",
-    "這是你已經意識到、正在努力理解或追求的方向。",
-    "這裡指向較深的情緒、信念與事件根源，往往比表面問題更值得處理。",
-    "這股影響正在淡去，但它留下的經驗仍會影響你現在的判斷。",
-    "這不是固定預言，而是照目前節奏最可能先出現的下一段發展。",
-    "這張牌映照你在局面中的姿態，以及你仍可主動調整的部分。",
-    "它描述現實環境與他人可觀察的影響，不替任何人斷言未說出口的心意。",
-    "期待與擔憂常是一體兩面；這裡提醒你分清直覺、渴望與恐懼。",
-    "這是依現況延伸出的結果傾向；若前面的行動與選擇改變，走向也會跟著改變。",
-  ],
+  relationship:["這張牌映照出你帶進關係裡的需要與反應。","牌面呈現的是對方目前可觀察到的狀態，我們不替對方斷言還沒說出口的心意。","這是雙方可以一起看見的關係課題，理解之後，才有機會走出原本的循環。"],
 };
 
 function shuffledDeck() {
@@ -157,22 +111,19 @@ function shuffledDeck() {
   return deck;
 }
 
-function synthesis(cards: DrawnCard[], spreadId: string) {
+function synthesis(cards: TarotCard[], spreadId: string) {
   if (cards.length < 3) return cards[0]?.truth ?? "";
   const [first, second, third] = cards;
   const firstKey = first.keywords.split("・")[0];
   const secondKey = second.keywords.split("・")[0];
   const thirdKey = third.keywords.split("・")[0];
-  if (spreadId === "celtic" && cards.length === 10) {
-    const key = (index:number) => cards[index].keywords.split("・")[0];
-    return `整個牌陣以「${key(0)}」為核心，眼前需要處理的是「${key(1)}」。深層根源落在「${key(3)}」，而過去的「${key(4)}」正逐漸轉向近期的「${key(5)}」。你目前以「${key(6)}」面對局面，環境則帶來「${key(7)}」的影響。最後的「${key(9)}」是依現況延伸的結果傾向；真正的轉折點，是你能否辨認「${key(8)}」背後的期待與擔憂，並做出更清楚的選擇。`;
-  }
+  if (spreadId === "relationship") return `你這邊帶著「${firstKey}」，對方目前呈現「${secondKey}」，而這段關係值得一起看見的課題是「${thirdKey}」。感情可以是起點，真正的靠近仍需要雙方都願意理解與調整。`;
   return `過去的「${firstKey}」可能仍在影響你，現況邀請你看見「${secondKey}」。接下來不必急著得到所有答案，可以先從 ${third.name} 的「${thirdKey}」踏出一小步。`;
 }
 
 export default function Home() {
   const [topic, setTopic] = useState("今日指引");
-  const [selected, setSelected] = useState<DrawnCard[]>([]);
+  const [selected, setSelected] = useState<TarotCard[]>([]);
   const [spreadId, setSpreadId] = useState("healing");
   const [revealed, setRevealed] = useState(false);
   const [shuffling, setShuffling] = useState(false);
@@ -183,7 +134,6 @@ export default function Home() {
   const [archetypeStep, setArchetypeStep] = useState(0);
   const [archetypeScores, setArchetypeScores] = useState([0, 0, 0]);
   const [archetypeResult, setArchetypeResult] = useState<number | null>(null);
-  const [archetypeCardId, setArchetypeCardId] = useState<string | null>(null);
   const [archetypeSetIndex, setArchetypeSetIndex] = useState(0);
   const [intuitionStage, setIntuitionStage] = useState(0);
   const [intuitionCardIndex, setIntuitionCardIndex] = useState(9);
@@ -191,7 +141,6 @@ export default function Home() {
   const [intuitionFeedback, setIntuitionFeedback] = useState<IntuitionOption | null>(null);
   const [journalDay, setJournalDay] = useState(0);
   const [journalNotes, setJournalNotes] = useState<Record<number, string>>({});
-  const [journalView, setJournalView] = useState<"overview" | "entry" | "complete">("overview");
   const [viewer, setViewer] = useState<{ displayName: string; email: string; isAdmin: boolean } | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -200,38 +149,14 @@ export default function Home() {
   const [pendulumMoving, setPendulumMoving] = useState(false);
   const [pendulumSaveState, setPendulumSaveState] = useState<"idle" | "saved" | "error">("idle");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [welcomeOpen, setWelcomeOpen] = useState(true);
-  const [welcomeStage, setWelcomeStage] = useState<"door" | "paths">("door");
-  const [guideOpen, setGuideOpen] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(false);
-  const [soundscape, setSoundscape] = useState<Soundscape>("forest");
-  const audioFrames = useRef<Partial<Record<Soundscape, HTMLIFrameElement | null>>>({});
 
   const positions = [-12, -6, 0, 6, 12];
   const activeSpread = spreads.find((item) => item.id === spreadId) ?? spreads[0];
   const intuitionCard = tarotCards[intuitionCardIndex] ?? tarotCards[0];
   const intuitionOptions = intuitionOptionsFor(intuitionCard, intuitionCardIndex);
   const archetypeQuestions = archetypeQuestionSets[archetypeSetIndex] ?? archetypeQuestionSets[0];
-  const archetypeCard = archetypeCardId === null ? null : tarotCards.find((card) => card.id === archetypeCardId);
+  const archetypeCard = archetypeResult === null ? null : tarotCards.find((card) => card.id === archetypeCardIds[archetypeResult]);
   const journalCard = tarotCards.find((card) => card.id === journalCardIds[journalDay]) ?? tarotCards[journalDay];
-  const completedJournalDays = Object.values(journalNotes).filter((note) => note.trim()).length;
-
-  function logActivity(type: string, title: string, summary: string, details: unknown) {
-    if (!viewer) return;
-    void fetch("/api/activity", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type, title, summary, details }) });
-  }
-
-  useEffect(() => {
-    if (!revealed || !selected.length || !viewer) return;
-    logActivity("tarot", "塔羅抽牌", `${topic}・${activeSpread.name}・${selected.map(card => card.name).join("、")}`, {
-      topic, spread: activeSpread.name, cards: selected.map((card, index) => ({ position: activeSpread.positions[index], name: card.name, orientation: card.reversed ? "逆位" : "正位", keywords: card.keywords, message: card.truth }))
-    });
-  }, [revealed]);
-
-  useEffect(() => {
-    if (!intuitionFeedback || !viewer) return;
-    logActivity("intuition", "牌面直覺練習", `${intuitionCard.name}・選擇：${intuitionChoice}`, { card: intuitionCard.name, choice: intuitionChoice, feedback: intuitionFeedback });
-  }, [intuitionFeedback]);
 
   useEffect(() => {
     fetch("/api/me").then((response) => response.json()).then((data) => {
@@ -265,53 +190,6 @@ export default function Home() {
     }).catch(() => setAuthChecked(true));
   }, []);
 
-  function closeWelcome() {
-    setWelcomeOpen(false);
-  }
-
-  function enterJourney(target: "draw" | "explore" | "pendulum") {
-    closeWelcome();
-    if (target === "pendulum") {
-      window.location.assign("/pendulum");
-      return;
-    }
-    window.setTimeout(() => document.getElementById(target)?.scrollIntoView({ behavior: "smooth" }), 120);
-  }
-
-  function sendPlayerCommand(target: Soundscape, func: string, args: unknown[] = []) {
-    audioFrames.current[target]?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), "*");
-  }
-
-  function stopAllSoundscapes() {
-    (Object.keys(soundscapes) as Soundscape[]).forEach((item) => {
-      sendPlayerCommand(item, "pauseVideo");
-      sendPlayerCommand(item, "mute");
-    });
-  }
-
-  function startSoundscape(nextSoundscape: Soundscape) {
-    stopAllSoundscapes();
-    setSoundscape(nextSoundscape);
-    setSoundEnabled(true);
-    const play = () => {
-      sendPlayerCommand(nextSoundscape, "unMute");
-      sendPlayerCommand(nextSoundscape, "setVolume", [65]);
-      sendPlayerCommand(nextSoundscape, "playVideo");
-    };
-    play();
-    window.setTimeout(play, 280);
-    window.setTimeout(play, 820);
-  }
-
-  function toggleSoundscape(nextSoundscape: Soundscape) {
-    if (soundEnabled && soundscape === nextSoundscape) {
-      stopAllSoundscapes();
-      setSoundEnabled(false);
-      return;
-    }
-    startSoundscape(nextSoundscape);
-  }
-
   async function saveJournal() {
     if (!viewer) {
       window.location.href = `/signin-with-chatgpt?return_to=${encodeURIComponent("/#explore")}`;
@@ -326,13 +204,6 @@ export default function Home() {
       body: JSON.stringify({ day: journalDay + 1, prompt: journalPrompts[journalDay], cardId: journalCard.id, cardName: journalCard.name, content }),
     });
     setSaveState(response.ok ? "saved" : "error");
-    if (response.ok) setJournalView("complete");
-  }
-
-  function openJournalDay(day: number) {
-    setJournalDay(day);
-    setSaveState("idle");
-    setJournalView("entry");
   }
 
   async function askPendulum() {
@@ -368,29 +239,18 @@ export default function Home() {
     setShuffling(true);
     setSeed((s) => s + 1);
     window.setTimeout(() => {
-      setSpreadCards(shuffledDeck().slice(0, VISIBLE_DECK_SIZE));
+      setSpreadCards(shuffledDeck().slice(0, 13));
       setShuffling(false);
     }, 900);
   }
 
   function chooseCard(card: TarotCard) {
     if (exitingCardId) return;
-    if (selected.some((item) => item.id === card.id)) return;
-    const next = [...selected, { ...card, reversed: Math.random() < 0.35 }];
+    const next = [...selected, card];
     setExitingCardId(card.id);
     window.setTimeout(() => {
       setSelected(next);
-      setSpreadCards((current) => {
-        const remaining = current.filter((item) => item.id !== card.id);
-        if (next.length >= activeSpread.positions.length || remaining.length >= VISIBLE_DECK_SIZE) return remaining;
-
-        const unavailableIds = new Set([
-          ...remaining.map((item) => item.id),
-          ...next.map((item) => item.id),
-        ]);
-        const replacement = shuffledDeck().find((item) => !unavailableIds.has(item.id));
-        return replacement ? [...remaining, replacement] : remaining;
-      });
+      setSpreadCards((current) => current.filter((item) => item.id !== card.id));
       setExitingCardId(null);
       if (next.length === activeSpread.positions.length) window.setTimeout(() => setRevealed(true), 460);
     }, 300);
@@ -414,28 +274,12 @@ export default function Home() {
   function answerArchetype(answer: number) {
     const scores = archetypeScores.map((score, index) => score + (index === answer ? 1 : 0));
     setArchetypeScores(scores);
-    if (archetypeStep === archetypeQuestions.length - 1) {
-      const highest = Math.max(...scores);
-      const matchingThemes = scores.map((score, index) => score === highest ? index : -1).filter((index) => index >= 0);
-      const themeIndex = matchingThemes[Math.floor(Math.random() * matchingThemes.length)] ?? 0;
-      const pool = archetypeCardPools[themeIndex];
-      let available = pool;
-      try {
-        const lastCard = localStorage.getItem(ARCHETYPE_LAST_CARD_KEY);
-        available = pool.filter((id) => id !== lastCard);
-      } catch { /* Browser storage may be unavailable. */ }
-      const nextCardId = available[Math.floor(Math.random() * available.length)] ?? pool[0];
-      try { localStorage.setItem(ARCHETYPE_LAST_CARD_KEY, nextCardId); } catch { /* Browser storage may be unavailable. */ }
-      setArchetypeCardId(nextCardId);
-      setArchetypeResult(themeIndex);
-      const resultCard = tarotCards.find((item) => item.id === nextCardId);
-      logActivity("archetype", "內在原型探索", `${archetypeThemes[themeIndex] ?? "內在原型"}・${resultCard?.name ?? ""}`, { theme: archetypeThemes[themeIndex], card: resultCard?.name, scores });
-    }
+    if (archetypeStep === archetypeQuestions.length - 1) setArchetypeResult(scores.indexOf(Math.max(...scores)));
     else setArchetypeStep((step) => step + 1);
   }
 
   function resetArchetype() {
-    setArchetypeStep(0); setArchetypeScores([0, 0, 0]); setArchetypeResult(null); setArchetypeCardId(null);
+    setArchetypeStep(0); setArchetypeScores([0, 0, 0]); setArchetypeResult(null);
   }
 
   function drawIntuitionCard(nextStage = 1) {
@@ -481,47 +325,10 @@ export default function Home() {
         <a className="brand" href="#top" aria-label="回到首頁" onClick={() => setMenuOpen(false)}>ZOLACOCO <span>TAROT</span></a>
         <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="primary-menu" aria-label={menuOpen ? "關閉選單" : "開啟選單"} onClick={() => setMenuOpen((open) => !open)}><i /><i /><i /></button>
         <nav className="primary-menu" id="primary-menu" aria-label="主要功能選單">
-          <a href="#draw" onClick={() => setMenuOpen(false)}>塔羅抽牌</a><a href="/pendulum">靈擺占卜</a><a href="/astro-dice">星骰指引</a><a href="/healing-room">療癒小房間</a><a href="/healing-room/yuanchen">元辰宮</a><a href="#explore" onClick={() => setMenuOpen(false)}>學習塔羅</a><button className="nav-guide" onClick={() => { setGuideOpen(true); setMenuOpen(false); }}>使用教學</button><a href="#about" onClick={() => setMenuOpen(false)}>關於 Zola</a>
+          <a href="#draw" onClick={() => setMenuOpen(false)}>塔羅抽牌</a><a href="/pendulum">靈擺占卜</a><a href="#explore" onClick={() => setMenuOpen(false)}>內在探索</a><a href="/pendulum#membership">會員方案</a><a href="#about" onClick={() => setMenuOpen(false)}>關於 Zola</a>
         </nav>
         <div className="account-nav">{authChecked && (viewer ? <><span className="account-name">{viewer.displayName}</span>{viewer.isAdmin && <a className="account-link" href="/admin">查看後台</a>}<a className="account-link" href="/signout-with-chatgpt?return_to=/" onClick={() => { try { localStorage.removeItem(ARCHETYPE_LOGIN_SET_KEY); } catch { /* Browser storage may be unavailable. */ } }}>登出</a></> : <a className="account-link login-link" href="/signin-with-chatgpt?return_to=/#explore">登入／註冊</a>)}</div>
       </header>
-
-      {welcomeOpen && <div className={`welcome-layer welcome-cover-layer welcome-${welcomeStage}`} role="dialog" aria-modal="true" aria-label="歡迎進入 Zolacoco Tarot">
-        <div className="welcome-backdrop" onClick={closeWelcome} />
-        <section className="welcome-cover">
-          <div className="welcome-cover-picture">
-            <img src="/zolacoco-astrolabe-home.png" alt="深藍古典星盤與十二星座圖，象徵進入 Zolacoco Tarot 的占星探索空間" />
-          </div>
-          <div className="welcome-cover-copy">
-            <small>WELCOME TO ZOLACOCO TAROT</small>
-            <h2>{welcomeStage === "door" ? <>今晚，替心裡的事<br className="welcome-title-break" />留個位置</> : "今晚，你想從哪裡開始？"}</h2>
-            <p>{welcomeStage === "door" ? "不急著找到答案，先陪你看見真正放不下的是什麼。" : "一次只選一條路，讓這段占卜慢慢展開。"}</p>
-            {welcomeStage === "door" && <div className="welcome-zola-signature"><b>Zola</b><em>陪你一起整理情緒，看見下一步</em></div>}
-            {welcomeStage === "door" ? <button className="welcome-door-button" onClick={() => setWelcomeStage("paths")}>推開門，開始今晚的占卜 <b>→</b></button> : <button className="welcome-path-back" onClick={() => setWelcomeStage("door")}>← 回到門前</button>}
-          </div>
-          <div className="welcome-cover-actions" aria-label="選擇今天需要的入口">
-            <button className="cover-action-tarot" onClick={() => enterJourney("draw")}><small>01 · TAROT</small><b>今晚想抽一張牌</b><span>整理此刻的感受與方向</span><strong aria-hidden="true">→</strong></button>
-            <button className="cover-action-pendulum" onClick={() => enterJourney("pendulum")}><small>02 · PENDULUM</small><b>讓靈擺陪我確認</b><span>進入安靜的直覺確認室</span><strong aria-hidden="true">→</strong></button>
-            <button className="cover-action-astro" onClick={() => window.location.assign("/astro-dice")}><small>03 · ASTRO DICE</small><b>擲出此刻的星骰</b><span>行星 × 星座 × 宮位的方向指引</span><strong aria-hidden="true">→</strong></button>
-            <button className="cover-action-learn" onClick={() => enterJourney("explore")}><small>04 · PRACTICE</small><b>進入塔羅練習室</b><span>從觀察畫面與直覺開始</span><strong aria-hidden="true">→</strong></button>
-            <button className="cover-action-healing" onClick={() => window.location.assign("/healing-room")}><small>05 · HEALING ROOM</small><b>今晚，先把心安放下來</b><span>進入療癒小房間</span><strong aria-hidden="true">→</strong></button>
-          </div>
-        </section>
-      </div>}
-
-      {guideOpen && <div className="guide-layer" role="dialog" aria-modal="true" aria-labelledby="guide-title">
-        <div className="welcome-backdrop" onClick={() => setGuideOpen(false)} />
-        <section className="guide-card">
-          <button className="welcome-close" onClick={() => setGuideOpen(false)} aria-label="關閉使用教學">×</button>
-          <p className="eyebrow">A GENTLE GUIDE</p><h2 id="guide-title">第一次使用，可以這樣開始</h2>
-          <div className="guide-steps">
-            <article><i>01</i><div><b>先整理問題</b><p>一次只放一件事，問「我現在需要留意什麼」會比追問確定結果更適合。</p></div></article>
-            <article><i>02</i><div><b>選擇適合的工具</b><p>想理解情緒與脈絡，用塔羅；想處理簡單的是非，用靈擺；想拆解能量、表現方式與生活領域，用星骰。</p></div></article>
-            <article><i>03</i><div><b>把訊息帶回現實</b><p>結果是自我整理的起點。最後問自己：我今天能做的最小一步是什麼？</p></div></article>
-          </div>
-          <div className="guide-actions"><button onClick={() => { setGuideOpen(false); document.getElementById("draw")?.scrollIntoView({ behavior: "smooth" }); }}>跟著教學抽牌</button><a href="/pendulum">查看靈擺教學</a></div>
-        </section>
-      </div>}
 
       <section className="hero" id="top">
         <div className="orb orb-one" /><div className="orb orb-two" />
@@ -531,14 +338,6 @@ export default function Home() {
           <p className="intro">答案不替你決定人生，而是陪你看清此刻真正需要留意的方向。</p>
           <a className="primary" href="#draw">開始抽牌 <span>↓</span></a>
           <p className="ritual">深呼吸三次，想著一個你最近最在意的問題</p>
-          <div className="hero-paths" aria-label="選擇體驗方式">
-            <a href="#draw"><i>01</i><span><b>抽牌指引</b><small>整理此刻的問題</small></span><em>→</em></a>
-            <a href="/pendulum"><i>02</i><span><b>靈擺問答</b><small>日常選擇與直覺</small></span><em>→</em></a>
-            <a href="#explore"><i>03</i><span><b>新手練習</b><small>學會怎麼讀牌</small></span><em>→</em></a>
-            <a href="/healing-room"><i>04</i><span><b>療癒小房間</b><small>今晚，先把心安放下來</small></span><em>→</em></a>
-            <a className="yuanchen-home-path" href="/healing-room/yuanchen"><i>05</i><span><b>元辰宮・內在心境探索</b><small>走進心中的房子，看見等待整理的地方</small></span><em>→</em></a>
-            <a className="astro-dice-home-path" href="/astro-dice"><i>06</i><span><b>星骰・此刻方向指引</b><small>行星 × 星座 × 宮位的三層訊息</small></span><em>→</em></a>
-          </div>
         </div>
         <div className="hero-portrait" aria-label="Zolacoco Tarot 主理人形象照">
           <img src="/zolacoco-hero-v2.png" alt="Zolacoco Tarot 主理人 Zola" />
@@ -556,30 +355,6 @@ export default function Home() {
           <span>01</span><p>CHOOSE YOUR FOCUS</p>
           <h2>今天，你想問什麼？</h2>
           <small className="deck-note">完整 78 張萊恩 × 蝦蝦貓咪塔羅 · 22 張大牌＋56 張小牌</small>
-        </div>
-        <div className="tarot-soundscape" aria-label="塔羅抽牌背景音樂">
-          <div className="tarot-soundscape-heading"><span aria-hidden="true">♫</span><div><small>CHOOSE YOUR SOUNDSCAPE</small><h3>先選一段音樂，讓心慢下來</h3><p>點選後會直接播放；再次點擊同一首即可停止。</p></div></div>
-          <div className="tarot-soundscape-options">
-            {(Object.keys(soundscapes) as Soundscape[]).map((item) => {
-              const content = soundscapes[item];
-              const active = soundEnabled && soundscape === item;
-              return <button type="button" key={item} className={active ? "active" : ""} onClick={() => toggleSoundscape(item)} aria-pressed={active}>
-                <i aria-hidden="true">{content.icon}</i><span><b>{active ? "停止播放" : content.label}</b><small>{content.en}</small></span><strong aria-hidden="true">{active ? "Ⅱ" : "▶"}</strong>
-              </button>;
-            })}
-          </div>
-          <p className="tarot-music-status" aria-live="polite">{soundEnabled ? `正在播放「${soundscapes[soundscape].label}」，抽牌時會持續播放。` : "也可以不播放音樂，直接開始抽牌。"}</p>
-          <div className="tarot-audio-only-player" aria-hidden="true">
-            {(Object.keys(soundscapes) as Soundscape[]).map((item) => <iframe key={item} ref={(node) => { audioFrames.current[item] = node; }} src={`https://www.youtube-nocookie.com/embed/${soundscapes[item].videoId}?enablejsapi=1&playsinline=1&loop=1&playlist=${soundscapes[item].videoId}&controls=0&rel=0`} title={`${soundscapes[item].label}背景音樂`} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" tabIndex={-1} />)}
-          </div>
-        </div>
-        <div className="draw-guide" aria-label="塔羅抽牌三步驟">
-          <div className="draw-guide-title"><span>NEW HERE?</span><b>第一次抽牌，跟著三步驟就可以</b><button onClick={() => setGuideOpen(true)}>閱讀完整教學</button></div>
-          <ol>
-            <li className="current"><i>1</i><span><b>選主題與牌陣</b><small>不知道怎麼選，就從「今日指引＋單張牌」開始</small></span></li>
-            <li><i>2</i><span><b>洗牌後憑直覺選牌</b><small>不需要猜哪張最好，選第一眼停留的牌</small></span></li>
-            <li><i>3</i><span><b>讀完訊息，留下一個行動</b><small>不要急著問結果，先帶走今天能做到的一步</small></span></li>
-          </ol>
         </div>
         <div className="topics" role="group" aria-label="選擇抽牌主題">
           {topics.map((item) => <button key={item} className={topic === item ? "active" : ""} onClick={() => changeTopic(item)}>{item}</button>)}
@@ -604,18 +379,13 @@ export default function Home() {
             </> : <>
               <div className="choose-heading"><span>02 · FOLLOW YOUR INTUITION</span><h3>牌已展開，請親手選牌</h3><p>{activeSpread.positions.length === 1 ? "不用分析哪張比較好，第一眼停留的地方，就是此刻的訊息。" : `請依直覺選出第 ${selected.length + 1} 張｜${activeSpread.positions[selected.length]}`}</p></div>
               {activeSpread.positions.length > 1 && <div className="selection-progress" aria-label="抽牌進度">
-                {activeSpread.positions.map((position, index) => {
-                  const isComplete = index < selected.length;
-                  const isCurrent = index === selected.length;
-                  return <div className={`choice-slot ${isComplete ? "filled" : ""} ${isCurrent ? "current" : ""}`} key={position} aria-current={isCurrent ? "step" : undefined}>
-                    <div>{isComplete ? <><span>✓</span><small>已選取</small></> : <b>{index + 1}</b>}</div><p>{position}</p>
-                  </div>;
-                })}
+                {activeSpread.positions.map((position, index) => <div className={`choice-slot ${selected[index] ? "filled" : ""}`} key={position}>
+                  <div>{selected[index] ? <><span>✓</span><small>已選取</small></> : <b>{index + 1}</b>}</div><p>{position}</p>
+                </div>)}
               </div>}
               <div className="spread-deck" role="group" aria-label="從展開的牌組中選擇一張牌">
                 {spreadCards.map((card, i) => <button key={card.id} className={`pick-card ${exitingCardId === card.id ? "is-selected" : ""}`} disabled={Boolean(exitingCardId)} onClick={() => chooseCard(card)} aria-label={`選擇第 ${i + 1} 張牌，選取後牌會移出牌組`} style={{ "--i": i, "--offset": i - (spreadCards.length - 1) / 2 } as React.CSSProperties}><div className="back-frame" /></button>)}
               </div>
-              {activeSpread.positions.length > 3 && <p className="deck-replenish-note" aria-live="polite">每抽走一張，牌桌會自動補上新牌 · 已選 {selected.length}／{activeSpread.positions.length}</p>}
               <button className="reshuffle" onClick={shuffleDeck}>重新洗牌</button>
             </>}
           </div>
@@ -624,33 +394,20 @@ export default function Home() {
             <article className="reading">
               <div className="result-intro">
                 <p className="reading-label">你的「{topic}」指引 · {activeSpread.name}</p>
-                <h2>{selected.length === 1 ? "這張牌想告訴你" : spreadId === "celtic" ? "你的凱爾特十字全貌" : "屬於你的三張牌"}</h2>
+                <h2>{selected.length === 1 ? "這張牌想告訴你" : "屬於你的三張牌"}</h2>
                 {selected.length > 1 && <div className="synthesis"><span>整體訊息</span><p>{synthesis(selected, spreadId)}</p></div>}
               </div>
-              <div className={`spread-result-layout spread-${spreadId}`} aria-label={`${activeSpread.name}牌面配置`}>
-                {selected.map((card, i) => <div className={`spread-position position-${i + 1}`} key={`${card.id}-position`}>
-                  <span className="spread-position-label" aria-label={`${i + 1}．${activeSpread.positions[i]}`}>{spreadId === "celtic" ? i + 1 : `${i + 1}．${activeSpread.positions[i]}`}</span>
-                  <div className={`tarot-card suit-${card.suit} ${card.reversed ? "is-reversed" : ""} ${revealed ? "revealed" : ""}`}><div className="tarot-inner"><div className="tarot-back"><div className="back-frame" /></div><div className="tarot-front"><div className="cat-art"><img src={card.art} alt={card.scene} onError={(event) => { event.currentTarget.src = "/cat-tarot-master.png"; }} /></div><p>{card.numeral} · {card.en}</p><h3>{card.name}</h3><small>ZOLACOCO CAT TAROT</small></div></div></div>
-                </div>)}
+              <div className={`reading-sequence count-${selected.length}`}>
+                {selected.map((card, i) => <section className="card-reading-unit" key={`${card.id}-reading`}>
+                  <div className="result-card-wrap">
+                    <span>{String(i + 1).padStart(2, "0")} · {activeSpread.positions[i]}</span>
+                    <div className={`tarot-card suit-${card.suit} ${revealed ? "revealed" : ""}`}><div className="tarot-inner"><div className="tarot-back"><div className="back-frame" /></div><div className="tarot-front"><div className="cat-art"><img src={card.art} alt={card.scene} onError={(event) => { event.currentTarget.src = "/cat-tarot-master.png"; }} /></div><p>{card.numeral} · {card.en}</p><h3>{card.name}</h3><small>ZOLACOCO CAT TAROT</small></div></div></div>
+                    <p className="result-card-name">{card.name}｜{card.keywords}</p>
+                  </div>
+                  <div className="position-reading"><p className="scene-note">牌面｜{card.scene}</p><div className="reading-point"><b>此刻的核心提醒</b><p>{topicLens[topic][card.suit]} {positionLens[spreadId][i]} {card.truth}</p></div><div className="reading-point blind"><b>你也可以留意</b><p>{card.blindSpot}</p></div><div className="reading-point next"><b>可以先這樣做</b><p>{card.action}</p></div></div>
+                </section>)}
               </div>
-              <section className="drawn-card-summary" aria-labelledby="drawn-card-summary-title">
-                <h3 id="drawn-card-summary-title">這次抽到的牌</h3>
-                <ol>{selected.map((card, i) => <li key={`${card.id}-summary`}><b>{i + 1}．{activeSpread.positions[i]}</b><span>{card.name}</span><em className={card.reversed ? "reversed" : "upright"}>{card.reversed ? "逆位" : "正位"}</em></li>)}</ol>
-              </section>
-              <section className="spread-interpretations" aria-label="牌陣解析">
-                <h3>牌陣解析</h3>
-                {selected.map((card, i) => <article className="position-reading" key={`${card.id}-reading`}>
-                  <header><span>{String(i + 1).padStart(2, "0")}</span><div><h4>{activeSpread.positions[i]}</h4><p>{card.name}・{card.reversed ? "逆位" : "正位"}</p></div></header>
-                  <p className="scene-note">牌面｜{card.scene}</p><div className="reading-point"><b>{card.reversed ? "逆位核心提醒" : "此刻的核心提醒"}</b><p>{topicLens[topic][card.suit]} {positionLens[spreadId][i]} {card.reversed ? `這張牌的能量目前較像卡住、延遲或轉向內在；${card.blindSpot}` : card.truth}</p></div><div className="reading-point blind"><b>你也可以留意</b><p>{card.reversed ? `逆位不是單純的壞結果，而是提醒你：${card.truth}` : card.blindSpot}</p></div><div className="reading-point next"><b>可以先這樣做</b><p>{card.action}</p></div>
-                </article>)}
-              </section>
-              <aside className="zola-line-bridge" aria-label="向 Zola 詢問這次的抽牌結果">
-                <small>想把牌面放回你的真實處境裡嗎？</small>
-                <h3>問問 Zola，陪你把這次的訊息聊清楚</h3>
-                <p>如果你還是不確定牌面在說什麼，或想知道下一步可以怎麼做，歡迎直接到官方 LINE 跟我聊聊。</p>
-                <a href="https://lin.ee/XIi2Nam" target="_blank" rel="noreferrer">到官方 LINE 跟 Zola 聊聊</a>
-              </aside>
-              <div className="reading-actions"><button className="flow-button secondary-flow" onClick={reset}>重新抽牌</button><a className="flow-button primary-flow" href="#explore" onClick={() => setExploreTool("journal")}>把此刻寫進日記 <b>→</b></a></div>
+              <div className="reading-actions"><button className="flow-button secondary-flow" onClick={reset}>重新抽牌</button><a className="flow-button primary-flow" href="#explore">下一步・認識自己的解牌直覺 <b>→</b></a></div>
             </article>
           </div>
         )}
@@ -692,29 +449,16 @@ export default function Home() {
           <div className="tool-stage">
             {exploreTool === "archetype" && <div className="archetype-tool">
               {archetypeResult === null ? <>
-                <div className="inner-diary-page">
-                  <div className="diary-topline"><span>此刻的心情日記</span><time suppressHydrationWarning>{new Intl.DateTimeFormat("zh-TW", { month: "long", day: "numeric" }).format(new Date())}</time></div>
-                  <div className="diary-progress" aria-label={`第 ${archetypeStep + 1} 頁，共 ${archetypeQuestions.length} 頁`}>
-                    {archetypeQuestions.map((_, index) => <i key={index} className={index <= archetypeStep ? "active" : ""} />)}
-                  </div>
-                  <small className="diary-page-label">PAGE {archetypeStep + 1} · {archetypePageNotes[archetypeStep]}</small>
-                  <h3>{archetypeQuestions[archetypeStep].q}</h3>
-                  <p className="tool-hint">沒有標準答案，選最像你最近狀態的那一句就好。</p>
-                  <div className="answer-list diary-answers">{archetypeQuestions[archetypeStep].a.map((answer, index) => <button key={answer} onClick={() => answerArchetype(index)}><span>{index + 1}</span>{answer}<b aria-hidden="true">→</b></button>)}</div>
-                  <p className="diary-whisper">慢慢選，誠實比正確更重要。</p>
-                </div>
+                <div className="tool-progress"><span>INNER ARCHETYPE</span><b>{archetypeStep + 1} / {archetypeQuestions.length}</b></div>
+                <h3>{archetypeQuestions[archetypeStep].q}</h3>
+                <p className="tool-hint">不用想哪一個比較正確，選擇第一個讓你有感覺的答案。</p>
+                <div className="answer-list">{archetypeQuestions[archetypeStep].a.map((answer, index) => <button key={answer} onClick={() => answerArchetype(index)}><span>{String.fromCharCode(65 + index)}</span>{answer}</button>)}</div>
               </> : <div className="archetype-result practice-reveal">
-                <div className="diary-result-heading"><span>今天的內在日記</span><time suppressHydrationWarning>{new Intl.DateTimeFormat("zh-TW", { month: "long", day: "numeric" }).format(new Date())}</time></div>
-                <small className="diary-page-label">寫給此刻的你</small>{archetypeCard && <PracticeCard card={archetypeCard} />}
-                {archetypeCard && <><p>{archetypeCard.en} · {archetypeThemes[archetypeResult]}</p><h3>{archetypeCard.name}</h3>
-                <blockquote>{archetypeCard.truth}</blockquote>
-                <div className="diary-reflection"><b>留給今天的一句話</b><p>{archetypeCard.action}</p></div></>}
-                <div className="archetype-consult-bridge">
-                  <small>想把這張牌放回你最近的真實狀態裡嗎？</small>
-                  <p>如果你想更深入理解這個結果，歡迎直接到官方 LINE 問問 Zola，我會陪你一起整理。</p>
-                  <a className="line-consult-button" href="https://lin.ee/XIi2Nam" target="_blank" rel="noreferrer">到官方 LINE 跟 Zola 聊聊</a>
-                </div>
-                <div className="archetype-next-actions"><button className="diary-restart" onClick={resetArchetype}>重新感受一次</button><button className="diary-next" onClick={() => setExploreTool("journal")}>下一步・寫下今天的內在筆記 <b>→</b></button></div>
+                <span>你此刻的內在原型</span>{archetypeCard && <PracticeCard card={archetypeCard} />}
+                <p>{archetypeResults[archetypeResult].en}</p><h3>{archetypeResults[archetypeResult].name}</h3>
+                <blockquote>{archetypeResults[archetypeResult].text}</blockquote>
+                <div className="practice-lesson"><b>這一題沒有標準答案</b><p>原型測驗練習的是辨認自己的感受；真正進入解牌時，才需要把直覺和牌面證據分開。</p></div>
+                <button onClick={resetArchetype}>重新感受一次</button>
               </div>}
             </div>}
 
@@ -737,33 +481,14 @@ export default function Home() {
             </div>}
 
             {exploreTool === "journal" && <div className="journal-tool">
-              <div className="tool-progress"><span>SEVEN-DAY JOURNAL</span><b>{completedJournalDays} / 7 已完成</b></div>
-              {journalView === "overview" ? <div className="journal-overview">
-                <span className="journal-kicker">給自己七天，慢慢聽見內在</span>
-                <h3>每天一張牌，一個真正值得停下來的問題</h3>
-                <p className="tool-hint">不需要會解牌，也不用一次寫得完整。每天留 5–10 分鐘，依序看見畫面、辨認感受，再把答案帶回生活。</p>
-                <div className="journal-route" aria-label="七日筆記進度">{journalPrompts.map((prompt, index) => {
-                  const done = Boolean(journalNotes[index]?.trim());
-                  return <button key={prompt} className={done ? "done" : ""} onClick={() => openJournalDay(index)}><i>{done ? "✓" : index + 1}</i><span><b>DAY {index + 1}</b><small>{prompt}</small></span><em>›</em></button>;
-                })}</div>
-                <button className="flow-button primary-flow journal-start" onClick={() => openJournalDay(Math.min(completedJournalDays, 6))}>{completedJournalDays ? "繼續我的七日筆記" : "開始第一天"} <b>→</b></button>
-              </div> : journalView === "complete" ? <div className="journal-complete" aria-live="polite">
-                <div className="complete-mark">✓</div><span>DAY {journalDay + 1} 已收好</span>
-                <h3>{completedJournalDays === 7 ? "你完成了這趟七日內在旅程" : "今天的答案，不需要立刻變成結論"}</h3>
-                <p>{completedJournalDays === 7 ? "回頭看看七天留下的文字，你已經替自己整理出一條更清楚的內在線索。" : "先讓這段文字陪你沉澱。下一次回來時，再從新的感受繼續。"}</p>
-                <div className="flow-actions"><button className="flow-button secondary-flow" onClick={() => setJournalView("overview")}>查看七日進度</button>{journalDay < 6 && <button className="flow-button primary-flow" onClick={() => openJournalDay(journalDay + 1)}>前往 DAY {journalDay + 2} <b>→</b></button>}</div>
-              </div> : <>
-                <button className="journal-back" onClick={() => setJournalView("overview")}>← 返回七日進度</button>
-                <div className="journal-card-row"><PracticeCard card={journalCard} /><div className="journal-date"><i>{journalDay + 1}</i><span>今天的內在提問</span></div></div>
-                <h3>{journalPrompts[journalDay]}</h3>
-                <div className="journal-lenses"><span>01 看見畫面</span><span>02 辨認感受</span><span>03 連回生活</span></div>
-                <div className="journal-guide">{journalGuides[journalDay].map((guide, index) => <p key={guide}><i>{index + 1}</i>{guide}</p>)}</div>
-                <label className="journal-write-label" htmlFor="journal-entry">寫下此刻浮現的答案 <small>{(journalNotes[journalDay] ?? "").length} 字</small></label>
-                <textarea id="journal-entry" maxLength={8000} value={journalNotes[journalDay] ?? ""} onChange={(event) => { setJournalNotes((notes) => ({ ...notes, [journalDay]: event.target.value })); setSaveState("idle"); }} aria-label="寫下今天的內在筆記" placeholder="不必追求完整，先從最有感覺的一句開始……" />
-                {saveState === "error" && <p className="journal-error">沒有儲存成功，請確認網路後再試一次。</p>}
-                <button className="tool-primary journal-save" disabled={saveState === "saving" || !(journalNotes[journalDay] ?? "").trim()} onClick={saveJournal}>{!viewer ? "登入並保存這篇筆記" : saveState === "saving" ? "正在保存…" : "完成今天的筆記"}</button>
-                <p className="privacy-note">你的筆記不會公開；登入後會安全保存在帳號中，方便下次接著寫。</p>
-              </>}
+              <div className="tool-progress"><span>SEVEN-DAY JOURNAL</span><b>DAY {journalDay + 1}</b></div>
+              <div className="journal-card-row"><PracticeCard card={journalCard} /><div className="journal-date"><i>{journalDay + 1}</i><span>今天的內在提問</span></div></div>
+              <h3>{journalPrompts[journalDay]}</h3>
+              <div className="journal-lenses"><span>先看見畫面</span><span>再辨認感受</span><span>最後連回生活</span></div>
+              <textarea value={journalNotes[journalDay] ?? ""} onChange={(event) => { setJournalNotes((notes) => ({ ...notes, [journalDay]: event.target.value })); setSaveState("idle"); }} aria-label="寫下今天的內在筆記" placeholder="不用急著寫得完整，先記下第一個浮現的念頭……" />
+              <div className="day-picker">{journalPrompts.map((_, index) => <button aria-label={`第 ${index + 1} 天`} className={journalDay === index ? "active" : ""} onClick={() => setJournalDay(index)} key={index}>{index + 1}</button>)}</div>
+              <button className="tool-primary journal-save" disabled={saveState === "saving" || !(journalNotes[journalDay] ?? "").trim()} onClick={saveJournal}>{!viewer ? "登入後儲存筆記" : saveState === "saving" ? "儲存中…" : saveState === "saved" ? "已儲存 ✓" : "儲存今天的筆記"}</button>
+              <p className="privacy-note">登入後，筆記會儲存在你的帳號中，並可由 Zola 於管理後台查看；內容不會公開顯示。</p>
             </div>}
 
             {exploreTool === "pendulum" && <div className="pendulum-tool">

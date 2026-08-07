@@ -156,7 +156,6 @@ export default function PendulumPage(){
   const [viewer,setViewer]=useState<Viewer|null>(null);
   const [checked,setChecked]=useState(false);
   const [tool,setTool]=useState<ToolKey>("yesno");
-  const [activeToolGroup,setActiveToolGroup]=useState(0);
   const [mode,setMode]=useState<ModeKey>("general");
   const [category,setCategory]=useState<CategoryKey>("love");
   const [picker,setPicker]=useState<Picker>(null);
@@ -174,14 +173,12 @@ export default function PendulumPage(){
   const [pendulumStyle,setPendulumStyle]=useState<PendulumStyle>("teal");
   const [soundEnabled,setSoundEnabled]=useState(false);
   const [soundscape,setSoundscape]=useState<Soundscape>("forest");
-  const [ambientChooserOpen,setAmbientChooserOpen]=useState(true);
   const [dragging,setDragging]=useState(false);
   const [manualAngle,setManualAngle]=useState(0);
   const stageRef=useRef<HTMLDivElement|null>(null);
   const manualAngleRef=useRef(0);
   const dragRef=useRef({angle:0,time:0,velocity:0,active:false});
   const animationRef=useRef<number|null>(null);
-  const audioFrames=useRef<Partial<Record<Soundscape,HTMLIFrameElement|null>>>({});
 
   const selectedMode=modes.find(item=>item.key===mode)??modes[0];
   const selectedCategory=categories.find(item=>item.key===category)??categories[0];
@@ -205,39 +202,10 @@ export default function PendulumPage(){
   const choiceList=useMemo(()=>choices.split("\n").map(item=>item.trim()).filter(Boolean).slice(0,6),[choices]);
   const monthCount=useMemo(()=>{const now=new Date();return history.filter(item=>{const date=new Date(item.created_at);return date.getFullYear()===now.getFullYear()&&date.getMonth()===now.getMonth()}).length},[history]);
 
-  function sendPlayerCommand(target:Soundscape,func:string,args:unknown[]=[]){
-    audioFrames.current[target]?.contentWindow?.postMessage(JSON.stringify({event:"command",func,args}),"*");
-  }
-
-  function stopAllSoundscapes(){
-    (Object.keys(soundscapes) as Soundscape[]).forEach(item=>{
-      sendPlayerCommand(item,"pauseVideo");
-      sendPlayerCommand(item,"mute");
-    });
-  }
-
-  function startSoundscape(nextSoundscape:Soundscape){
-    stopAllSoundscapes();
+  function toggleSoundscape(nextSoundscape:Soundscape){
+    if(soundEnabled&&soundscape===nextSoundscape){setSoundEnabled(false);return}
     setSoundscape(nextSoundscape);
     setSoundEnabled(true);
-    const play=()=>{
-      sendPlayerCommand(nextSoundscape,"unMute");
-      sendPlayerCommand(nextSoundscape,"setVolume",[65]);
-      sendPlayerCommand(nextSoundscape,"playVideo");
-    };
-    play();
-    window.setTimeout(play,280);
-    window.setTimeout(play,820);
-  }
-
-  function toggleSoundscape(nextSoundscape:Soundscape){
-    if(soundEnabled&&soundscape===nextSoundscape){stopAllSoundscapes();setSoundEnabled(false);return}
-    startSoundscape(nextSoundscape);
-  }
-
-  function chooseOpeningSoundscape(nextSoundscape:Soundscape){
-    startSoundscape(nextSoundscape);
-    setAmbientChooserOpen(false);
   }
 
   function createOutcome():Outcome|null{
@@ -382,30 +350,17 @@ export default function PendulumPage(){
 
   return <main className="pendulum-page">
     <nav className="pendulum-nav site-nav"><Link className="brand" href="/">ZOLACOCO <span>TAROT</span></Link><div className="pendulum-menu"><Link href="/#draw">塔羅抽牌</Link><Link href="/pendulum#centre">占卜玩法</Link><Link href="/pendulum#membership">會員方案</Link>{viewer?.isAdmin&&<Link href="/admin">查看後台</Link>}{checked&&!viewer?<a className="login-link" href="/signin-with-chatgpt?return_to=/pendulum">登入／註冊</a>:viewer?<a href="/signout-with-chatgpt?return_to=/pendulum">登出</a>:null}</div></nav>
-    {ambientChooserOpen&&<div className="ambient-entry" role="dialog" aria-modal="true" aria-labelledby="ambient-entry-title">
-      <button className="ambient-entry-backdrop" type="button" onClick={()=>setAmbientChooserOpen(false)} aria-label="暫不播放音樂" />
-      <section className="ambient-entry-card">
-        <button className="ambient-entry-close" type="button" onClick={()=>setAmbientChooserOpen(false)} aria-label="關閉音景選擇">×</button>
-        <div className="ambient-entry-ornament" aria-hidden="true"><span>✦</span><i/><span>☾</span><i/><span>✦</span></div>
-        <p className="eyebrow">CHOOSE YOUR SOUNDSCAPE</p>
-        <h2 id="ambient-entry-title">先選一段音樂，進入靈擺時刻</h2>
-        <p>點選後會直接播放，也可以先安靜進入。</p>
-        <div className="ambient-entry-options">{(["forest","cafe","meditation"] as Soundscape[]).map(item=>{const content=soundscapes[item];return <button type="button" key={item} onClick={()=>chooseOpeningSoundscape(item)}><i aria-hidden="true">{content.icon}</i><span><b>{content.label}</b><small>{content.en}</small></span><strong aria-hidden="true">播放 ›</strong></button>})}</div>
-        <button className="ambient-entry-skip" type="button" onClick={()=>setAmbientChooserOpen(false)}>暫不播放，直接進入</button>
-      </section>
-    </div>}
-    <header className="pendulum-hero pendulum-cover-hero">
-      <img src="/pendulum-cover-no-button.png" alt="暖光歐式花園中的古董黃銅靈擺與微光標語"/>
-      <a className="pendulum-cover-action" href="#centre"><span>選擇占卜玩法</span><i aria-hidden="true">↓</i></a>
+    <header className="pendulum-hero">
+      <div className="pendulum-hero-copy"><p className="eyebrow">THE PENDULUM DIVINATION CENTRE</p><h1>靈擺占卜<br/><em>中心</em></h1><p>從 Yes／No、多選一到每日指引，用一場有儀式感的擺動整理直覺。答案是自我反思的入口，不是替你決定人生的命令。</p><a href="#centre" className="primary">選擇占卜玩法 <span>↓</span></a></div>
+      <div className="pendulum-hero-image"><img src="/pendulum-hero.png" alt="暖光中的藍綠水晶與古董黃銅靈擺"/><span>CRYSTAL · BRASS · INTUITION</span></div>
     </header>
 
     <section className="divination-centre" id="centre">
-      <div className="centre-heading"><p className="eyebrow">23 WAYS TO ASK</p><h2>今天，想用哪種方式問？</h2><p>先選分類，再挑一種玩法。</p></div>
-      <div className="tool-group-tabs" role="tablist" aria-label="靈擺玩法分類">{toolGroups.map((group,index)=><button key={group.name} type="button" role="tab" aria-selected={activeToolGroup===index} className={activeToolGroup===index?"active":""} onClick={()=>setActiveToolGroup(index)}><small>{String(index+1).padStart(2,"0")}</small>{group.name}</button>)}</div>
-      {toolGroups.map((group,index)=>activeToolGroup===index&&<section className="tool-group tool-group-active" key={group.name} role="tabpanel">
+      <div className="centre-heading"><p className="eyebrow">23 WAYS TO ASK</p><h2>今天，想用哪種方式問？</h2><p>選擇一種玩法後，會直接帶你進入下方的靈擺儀式。</p></div>
+      <div className="tool-groups">{toolGroups.map((group,index)=><section className="tool-group" key={group.name}>
         <header><span>{String(index+1).padStart(2,"0")}</span><div><small>{group.en}</small><h3>{group.name}</h3><p>{group.description}</p></div></header>
         <div className="tool-library">{group.keys.map(key=>tools.find(item=>item.key===key)).filter((item):item is (typeof tools)[number]=>Boolean(item)).map(item=><button key={item.key} type="button" className={tool===item.key?"selected":""} onClick={()=>activateTool(item.key)}><i aria-hidden="true">{item.icon}</i><span><small>{item.en}</small><b>{item.label}</b><em>{item.description}</em></span><strong>{tool===item.key?"已選擇":"開始 ›"}</strong></button>)}</div>
-      </section>)}
+      </section>)}</div>
     </section>
 
     <section className="pendulum-ritual" id="ritual">
@@ -417,19 +372,20 @@ export default function PendulumPage(){
             <article className={calibrated?"active":""}><b>02</b><div><small>ASK</small><h3>選擇與提問</h3><p>一次整理一個方向，讓問題保持單純。</p></div></article>
             <article className={outcome?"active":""}><b>03</b><div><small>REFLECT</small><h3>記錄感受</h3><p>答案後的第一反應，往往比答案本身更重要。</p></div></article>
           </div>
-          <div className="cabinet-card"><small>HISTOIRE NATURELLE · CRYSTAL PLATE</small><h3>古董水晶圖鑑</h3><p aria-live="polite">目前套用：{selectedPendulum.label}｜{selectedPendulum.description}</p><div>{pendulumStyles.map(item=><button key={item.key} type="button" className={pendulumStyle===item.key?"active":""} aria-pressed={pendulumStyle===item.key} onClick={()=>setPendulumStyle(item.key)}><sup>{item.no}</sup><i className={`material-swatch ${item.key}`}><span/></i><span><b>{item.label}</b><small>{item.en}</small></span></button>)}</div></div>
+          <div className="cabinet-card"><small>HISTOIRE NATURELLE · CRYSTAL PLATE</small><h3>古董水晶圖鑑</h3><p>{selectedPendulum.description}</p><div>{pendulumStyles.map(item=><button key={item.key} type="button" className={pendulumStyle===item.key?"active":""} onClick={()=>setPendulumStyle(item.key)}><sup>{item.no}</sup><i className={`material-swatch ${item.key}`}><span/></i><span><b>{item.label}</b><small>{item.en}</small></span></button>)}</div></div>
         </aside>
         <div className="pendulum-console">
           <div className="pendulum-toolbar">
             <div className="piano-music-control"><span>沉浸療癒音景</span><div className="soundscape-options">{(["forest","cafe","meditation"] as Soundscape[]).map(item=>{const content=soundscapes[item];return <button type="button" key={item} className={soundEnabled&&soundscape===item?"piano-button active":"piano-button"} onClick={()=>toggleSoundscape(item)} aria-pressed={soundEnabled&&soundscape===item}><i aria-hidden="true">{content.icon}</i><b>{soundEnabled&&soundscape===item?"停止播放":content.label}</b><small>{content.en}</small></button>})}</div></div>
             <p className="music-status" aria-live="polite">{soundEnabled?`正在播放「${soundscapes[soundscape].label}」，再次點擊即可停止。`:"點選一種音景即可播放聲音。"}</p>
           </div>
-          <div className="audio-only-player" aria-hidden="true">{(Object.keys(soundscapes) as Soundscape[]).map(item=><iframe key={item} ref={node=>{audioFrames.current[item]=node}} src={`https://www.youtube-nocookie.com/embed/${soundscapes[item].videoId}?enablejsapi=1&playsinline=1&loop=1&playlist=${soundscapes[item].videoId}&controls=0&rel=0`} title={`${soundscapes[item].label}背景音樂`} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" tabIndex={-1}/>)}</div>
+          {soundEnabled&&<div className="audio-only-player" aria-hidden="true"><iframe key={soundscape} src={`https://www.youtube-nocookie.com/embed/${soundscapes[soundscape].videoId}?autoplay=1&loop=1&playlist=${soundscapes[soundscape].videoId}&controls=0&rel=0`} title={`${soundscapes[soundscape].label}背景音樂`} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" tabIndex={-1}/></div>}
           <div ref={stageRef} style={stageStyle} className={`crystal-stage material-${pendulumStyle} ${dragging?"is-dragging":""} ${moving&&motionTarget?`motion-${motionTarget}`:""} ${calibrating?"is-calibrating":""} ${outcome?`result-${outcome.resultKey}`:""}`} aria-live="polite">
             <div className="antique-frame" aria-hidden="true"><i/><i/><i/><i/><span>❦</span><span>❦</span></div>
             <div className="prism-specks" aria-hidden="true"><i/><i/><i/><i/><i/><i/><i/><i/></div>
+            <div className="direction direction-yes">是<br/><small>YES</small></div><div className="direction direction-no">否<br/><small>NO</small></div><div className="direction direction-unclear">停下感受</div>
             <div className="pendulum-anchor" aria-hidden="true"><i/><span/></div>
-            <div className="crystal-chain" onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={releaseDrag} onPointerCancel={releaseDrag} aria-label="可拖曳的靈擺"><img className="crystal-pendulum-image" src="/crystal-pendulum-web.png" alt="" draggable={false}/></div>
+            <div className="crystal-chain" onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={releaseDrag} onPointerCancel={releaseDrag} aria-label="可拖曳的靈擺"><i className="chain-ring"/><span className="chain-links"/><i className="crystal-cap"/><b className="crystal-stone"><i/><span/></b></div>
             <div className="crystal-glow" aria-hidden="true"/>
             <div className="pendulum-status">{dragging?"RELEASE TO SWING":calibrating?"CALIBRATING":moving?"LISTENING":outcome?outcome.en:"DRAG OR BEGIN"}</div>
             <div className="stage-live-light" aria-hidden="true"/>
@@ -456,7 +412,7 @@ export default function PendulumPage(){
       </div>
     </section>
 
-    {picker&&<div className="picker-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setPicker(null)}}><section className="picker-dialog" role="dialog" aria-modal="true" aria-labelledby="picker-title"><button className="picker-close" type="button" aria-label="關閉選擇視窗" onClick={()=>setPicker(null)}>×</button><p className="eyebrow">{picker==="mode"?"CHOOSE A MODE":"CHOOSE A CATEGORY"}</p><h2 id="picker-title">{picker==="mode"?"選擇回應模式":"這次想整理哪個方向？"}</h2><p>{picker==="mode"?"一般、高靈與潛意識模式只改變反思語氣，不改變隨機機制。":"選擇類別後，會帶入適合的提問方向與範例。"}</p><div className={`picker-grid ${picker==="category"?"category-grid":""}`}>{picker==="mode"?modes.map(item=><button type="button" key={item.key} className={item.key===mode?"selected":""} onClick={()=>{setMode(item.key);window.setTimeout(()=>setPicker(null),240)}}><i>{item.icon}</i><span><small>{item.en}</small><b>{item.label}</b><em>{item.description}</em></span><strong>{item.key===mode?"✓":"›"}</strong></button>):categories.map(item=><button type="button" key={item.key} className={item.key===category?"selected":""} onClick={()=>{setCategory(item.key);window.setTimeout(()=>setPicker(null),240)}}><i>{item.icon}</i><span><b>{item.label}</b><em>{item.description}</em><small>例：{item.example}</small></span><strong>{item.key===category?"✓":"›"}</strong></button>)}</div></section></div>}
+    {picker&&<div className="picker-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setPicker(null)}}><section className="picker-dialog" role="dialog" aria-modal="true" aria-labelledby="picker-title"><button className="picker-close" type="button" aria-label="關閉選擇視窗" onClick={()=>setPicker(null)}>×</button><p className="eyebrow">{picker==="mode"?"CHOOSE A MODE":"CHOOSE A CATEGORY"}</p><h2 id="picker-title">{picker==="mode"?"選擇回應模式":"這次想整理哪個方向？"}</h2><p>{picker==="mode"?"一般、高靈與潛意識模式只改變反思語氣，不改變隨機機制。":"選擇類別後，會帶入適合的提問方向與範例。"}</p><div className={`picker-grid ${picker==="category"?"category-grid":""}`}>{picker==="mode"?modes.map(item=><button type="button" key={item.key} className={item.key===mode?"selected":""} onClick={()=>{setMode(item.key);setPicker(null)}}><i>{item.icon}</i><span><small>{item.en}</small><b>{item.label}</b><em>{item.description}</em></span><strong>{item.key===mode?"✓":"›"}</strong></button>):categories.map(item=><button type="button" key={item.key} className={item.key===category?"selected":""} onClick={()=>{setCategory(item.key);setPicker(null)}}><i>{item.icon}</i><span><b>{item.label}</b><em>{item.description}</em><small>例：{item.example}</small></span><strong>{item.key===category?"✓":"›"}</strong></button>)}</div></section></div>}
 
     <section className="pendulum-guide"><div><p className="eyebrow">ASK WITH CLARITY</p><h2>怎麼問，答案會比較有幫助？</h2></div><div className="guide-grid"><article><b>適合提問</b><p>「我現在適合主動約對方談談嗎？」</p><p>「這週先完成作品集，對我比較有幫助嗎？」</p></article><article><b>先換個問法</b><p>「他到底在想什麼？」</p><p>「我什麼時候一定會成功？」</p></article><article><b>不要只交給靈擺</b><p>健康、法律、投資、安全或生死等高風險決策，請尋求專業資訊並自行評估。</p></article></div></section>
 
