@@ -205,6 +205,8 @@ export default function Home() {
   }
 
   useEffect(() => {
+    const requestedTool = new URLSearchParams(window.location.search).get("tool");
+    if (requestedTool === "archetype" || requestedTool === "intuition" || requestedTool === "journal") setExploreTool(requestedTool);
     fetch("/api/me").then((response) => response.json()).then((data) => {
       setViewer(data.user ?? null);
       setAuthChecked(true);
