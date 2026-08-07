@@ -383,9 +383,8 @@ export default function PendulumPage(){
           <div ref={stageRef} style={stageStyle} className={`crystal-stage material-${pendulumStyle} ${dragging?"is-dragging":""} ${moving&&motionTarget?`motion-${motionTarget}`:""} ${calibrating?"is-calibrating":""} ${outcome?`result-${outcome.resultKey}`:""}`} aria-live="polite">
             <div className="antique-frame" aria-hidden="true"><i/><i/><i/><i/><span>❦</span><span>❦</span></div>
             <div className="prism-specks" aria-hidden="true"><i/><i/><i/><i/><i/><i/><i/><i/></div>
-            <div className="direction direction-yes">是<br/><small>YES</small></div><div className="direction direction-no">否<br/><small>NO</small></div><div className="direction direction-unclear">停下感受</div>
             <div className="pendulum-anchor" aria-hidden="true"><i/><span/></div>
-            <div className="crystal-chain" onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={releaseDrag} onPointerCancel={releaseDrag} aria-label="可拖曳的靈擺"><i className="chain-ring"/><span className="chain-links"/><i className="crystal-cap"/><b className="crystal-stone"><i/><span/></b></div>
+            <div className="crystal-chain" onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={releaseDrag} onPointerCancel={releaseDrag} aria-label="可拖曳的靈擺"><img className="crystal-pendulum-image" src="/crystal-pendulum-web.png" alt="" draggable={false}/></div>
             <div className="crystal-glow" aria-hidden="true"/>
             <div className="pendulum-status">{dragging?"RELEASE TO SWING":calibrating?"CALIBRATING":moving?"LISTENING":outcome?outcome.en:"DRAG OR BEGIN"}</div>
             <div className="stage-live-light" aria-hidden="true"/>

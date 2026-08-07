@@ -173,6 +173,13 @@ footer { text-align:center;padding:60px 20px;background:#ead8c9; } footer .brand
 .pendulum-page .crystal-stage.motion-yes .crystal-chain,.pendulum-page .crystal-stage.motion-no .crystal-chain,.pendulum-page .crystal-stage.motion-unclear .crystal-chain,.pendulum-page .crystal-stage.is-calibrating .crystal-chain,.pendulum-page .crystal-stage.result-yes .crystal-chain,.pendulum-page .crystal-stage.result-no .crystal-chain,.pendulum-page .crystal-stage.result-unclear .crystal-chain{display:block!important;animation:none!important;transform:translateX(-50%) rotate(var(--manual-angle,0deg))!important}
 @media(max-width:620px){.pendulum-page .crystal-stage .crystal-chain{top:12.5%!important;width:72px!important;height:70%!important}.pendulum-page .crystal-stage .crystal-chain .crystal-cap{width:30px!important;height:25px!important}.pendulum-page .crystal-stage .crystal-chain .crystal-stone{width:58px!important;height:97px!important}.pendulum-page .crystal-stage .crystal-glow{bottom:20%!important;width:92px!important;height:15px!important}}
 
+/* Final answer-free pendulum stage. */
+.pendulum-page .crystal-stage{background:#f7ead3 url('/pendulum-stage-background-v2.webp') center/100% 100% no-repeat!important}
+.pendulum-page .crystal-stage .crystal-chain{top:8.7%!important;width:52px!important;height:73%!important;filter:drop-shadow(2px 8px 7px rgba(5,11,19,.18))!important}
+.pendulum-page .crystal-stage .crystal-pendulum-image{display:block!important;width:auto!important;height:100%!important;margin:0 auto!important}
+.pendulum-page .crystal-stage .crystal-glow{width:76px!important;height:12px!important;bottom:18.5%!important;opacity:.42!important}
+@media(max-width:620px){.pendulum-page .crystal-stage .crystal-chain{top:6.5%!important;width:34px!important;height:75%!important}.pendulum-page .crystal-stage .crystal-glow{width:54px!important;height:9px!important;bottom:15.5%!important;opacity:.34!important}}
+
 /* Real interactive pendulum — clean artwork below, physics-driven chain above */
 .pendulum-page .crystal-stage{
   isolation:isolate!important;
@@ -715,6 +722,42 @@ footer { text-align:center;padding:60px 20px;background:#ead8c9; } footer .brand
 @media(max-width:520px){.pendulum-page .soundscape-options{grid-template-columns:1fr}.pendulum-page .piano-button{min-width:0}}
 @media(max-width:390px){
   .pendulum-page .cabinet-card>div{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* Restored slender crystal pendulum artwork. The stage no longer shows answer labels. */
+.pendulum-page .crystal-stage{background-image:url('/pendulum-stage-background-v2.webp')!important}
+.pendulum-page .crystal-stage .direction{display:none!important}
+.pendulum-page .crystal-stage .crystal-chain{
+  top:8.7%!important;
+  width:52px!important;
+  height:73%!important;
+  filter:drop-shadow(2px 8px 7px rgba(5,11,19,.18))!important;
+}
+.pendulum-page .crystal-stage .crystal-pendulum-image{
+  display:block;
+  width:auto;
+  height:100%;
+  margin:0 auto;
+  opacity:.96;
+  object-fit:contain;
+  pointer-events:none;
+  user-select:none;
+  transform-origin:50% 0;
+  filter:brightness(1.12) contrast(.86) saturate(.72);
+  animation:restoredCrystalRefraction 3.6s ease-in-out infinite alternate;
+}
+.pendulum-page .crystal-stage.material-clear .crystal-pendulum-image{filter:brightness(1.2) contrast(.78) saturate(.32)}
+.pendulum-page .crystal-stage.material-rose .crystal-pendulum-image{filter:brightness(1.12) contrast(.86) saturate(.9) hue-rotate(116deg)}
+.pendulum-page .crystal-stage.material-amethyst .crystal-pendulum-image{filter:brightness(1.04) contrast(.9) saturate(1.1) hue-rotate(62deg)}
+.pendulum-page .crystal-stage.material-citrine .crystal-pendulum-image{filter:brightness(1.1) contrast(.88) saturate(1.05) hue-rotate(178deg)}
+.pendulum-page .crystal-stage.material-aquamarine .crystal-pendulum-image{filter:brightness(1.15) contrast(.84) saturate(.88) hue-rotate(-8deg)}
+.pendulum-page .crystal-stage.material-moonstone .crystal-pendulum-image{filter:brightness(1.18) contrast(.8) saturate(.42) hue-rotate(42deg)}
+.pendulum-page .crystal-stage .crystal-glow{width:76px!important;height:12px!important;bottom:18.5%!important;opacity:.42!important}
+@keyframes restoredCrystalRefraction{from{opacity:.88}to{opacity:1}}
+@media(max-width:620px){
+  .pendulum-page .crystal-stage .crystal-chain{top:6.5%!important;width:34px!important;height:75%!important}
+  .pendulum-page .crystal-stage .crystal-pendulum-image{height:100%;opacity:.96}
+  .pendulum-page .crystal-stage .crystal-glow{width:54px!important;height:9px!important;bottom:15.5%!important;opacity:.34!important}
 }
 @media(prefers-reduced-motion:reduce){
   .pendulum-page .crystal-chain .crystal-stone,
@@ -1754,8 +1797,8 @@ body { line-height:1.75; letter-spacing:.008em; }
 @media(max-width:620px){.pendulum-page .crystal-stage{border-radius:0!important}.pendulum-page .image-start-hitbox{left:36.5%;width:27%;top:78.5%;height:13%}}
 
 /* Live pendulum layer — intentionally last so the static artwork cannot hide it. */
-.pendulum-page .crystal-stage{isolation:isolate!important;aspect-ratio:1680/941!important;background:#f7ead3 url('/pendulum-stage-background-clean.png') center/100% 100% no-repeat!important}
-.pendulum-page .crystal-stage .crystal-chain{display:block!important;position:absolute!important;z-index:12!important;left:50%!important;top:12.8%!important;width:96px!important;height:70%!important;margin:0!important;transform-origin:50% 0!important;transform:translateX(-50%) rotate(var(--manual-angle,0deg))!important;transition:none!important;filter:drop-shadow(6px 13px 10px rgba(8,12,22,.28))!important;cursor:grab!important;pointer-events:auto!important;touch-action:none!important;will-change:transform!important}
+.pendulum-page .crystal-stage{isolation:isolate!important;aspect-ratio:1680/941!important;background:#f7ead3 url('/pendulum-stage-background-v2.webp') center/100% 100% no-repeat!important}
+.pendulum-page .crystal-stage .crystal-chain{display:block!important;position:absolute!important;z-index:12!important;left:50%!important;top:8.7%!important;width:52px!important;height:73%!important;margin:0!important;transform-origin:50% 0!important;transform:translateX(-50%) rotate(var(--manual-angle,0deg))!important;transition:none!important;filter:drop-shadow(2px 8px 7px rgba(5,11,19,.18))!important;cursor:grab!important;pointer-events:auto!important;touch-action:none!important;will-change:transform!important}
 .pendulum-page .crystal-stage .crystal-chain .chain-ring{display:block!important;top:-3px!important;width:13px!important;height:13px!important}
 .pendulum-page .crystal-stage .crystal-chain .chain-links{display:block!important;top:9px!important;width:7px!important;height:31%!important;background:repeating-radial-gradient(ellipse at center,var(--metal-light,#f3dca8) 0 1px,var(--metal-dark,#6b4725) 1.8px 3px,transparent 3.6px 5.9px)!important}
 .pendulum-page .crystal-stage .crystal-chain .crystal-cap{display:block!important;top:30%!important;width:43px!important;height:35px!important}
@@ -1763,4 +1806,4 @@ body { line-height:1.75; letter-spacing:.008em; }
 .pendulum-page .crystal-stage .crystal-glow{display:block!important;z-index:10!important;left:calc(50% + var(--shadow-offset,0px))!important;bottom:21%!important;width:132px!important;height:21px!important;opacity:var(--shadow-opacity,.72)!important;transform:translateX(-50%) scaleX(var(--shadow-scale,1))!important;background:var(--stone-glow,rgba(115,167,255,.34))!important;filter:blur(11px)!important;pointer-events:none!important}
 .pendulum-page .stage-live-light{z-index:9!important;top:57%!important}.pendulum-page .image-start-hitbox{z-index:20!important}
 .pendulum-page .crystal-stage.motion-yes .crystal-chain,.pendulum-page .crystal-stage.motion-no .crystal-chain,.pendulum-page .crystal-stage.motion-unclear .crystal-chain,.pendulum-page .crystal-stage.is-calibrating .crystal-chain,.pendulum-page .crystal-stage.result-yes .crystal-chain,.pendulum-page .crystal-stage.result-no .crystal-chain,.pendulum-page .crystal-stage.result-unclear .crystal-chain{display:block!important;animation:none!important;transform:translateX(-50%) rotate(var(--manual-angle,0deg))!important}
-@media(max-width:620px){.pendulum-page .crystal-stage .crystal-chain{top:12.5%!important;width:72px!important;height:70%!important}.pendulum-page .crystal-stage .crystal-chain .crystal-cap{width:30px!important;height:25px!important}.pendulum-page .crystal-stage .crystal-chain .crystal-stone{width:58px!important;height:97px!important}.pendulum-page .crystal-stage .crystal-glow{bottom:20%!important;width:92px!important;height:15px!important}}
+@media(max-width:620px){.pendulum-page .crystal-stage .crystal-chain{top:6.5%!important;width:34px!important;height:75%!important}.pendulum-page .crystal-stage .crystal-chain .crystal-cap{width:30px!important;height:25px!important}.pendulum-page .crystal-stage .crystal-chain .crystal-stone{width:58px!important;height:97px!important}.pendulum-page .crystal-stage .crystal-glow{bottom:15.5%!important;width:54px!important;height:9px!important}}
