@@ -1798,7 +1798,7 @@ body { line-height:1.75; letter-spacing:.008em; }
 
 /* Live pendulum layer — intentionally last so the static artwork cannot hide it. */
 .pendulum-page .crystal-stage{isolation:isolate!important;aspect-ratio:1680/941!important;background:#f7ead3 url('/pendulum-stage-background-v2.webp') center/100% 100% no-repeat!important}
-.pendulum-page .crystal-stage .crystal-chain{display:block!important;position:absolute!important;z-index:12!important;left:50%!important;top:8.7%!important;width:52px!important;height:73%!important;margin:0!important;transform-origin:50% 0!important;transform:translateX(-50%) rotate(var(--manual-angle,0deg))!important;transition:none!important;filter:drop-shadow(2px 8px 7px rgba(5,11,19,.18))!important;cursor:grab!important;pointer-events:auto!important;touch-action:none!important;will-change:transform!important}
+.pendulum-page .crystal-stage .crystal-chain{display:block!important;position:absolute!important;z-index:12!important;left:50%!important;top:9.5%!important;width:48px!important;height:64%!important;margin:0!important;transform-origin:50% 0!important;transform:translateX(-50%) rotate(var(--manual-angle,0deg))!important;transition:none!important;filter:drop-shadow(2px 8px 7px rgba(5,11,19,.18))!important;cursor:grab!important;pointer-events:auto!important;touch-action:none!important;will-change:transform!important}
 .pendulum-page .crystal-stage .crystal-chain .chain-ring{display:block!important;top:-3px!important;width:13px!important;height:13px!important}
 .pendulum-page .crystal-stage .crystal-chain .chain-links{display:block!important;top:9px!important;width:7px!important;height:31%!important;background:repeating-radial-gradient(ellipse at center,var(--metal-light,#f3dca8) 0 1px,var(--metal-dark,#6b4725) 1.8px 3px,transparent 3.6px 5.9px)!important}
 .pendulum-page .crystal-stage .crystal-chain .crystal-cap{display:block!important;top:30%!important;width:43px!important;height:35px!important}
@@ -1806,7 +1806,7 @@ body { line-height:1.75; letter-spacing:.008em; }
 .pendulum-page .crystal-stage .crystal-glow{display:block!important;z-index:10!important;left:calc(50% + var(--shadow-offset,0px))!important;bottom:21%!important;width:132px!important;height:21px!important;opacity:var(--shadow-opacity,.72)!important;transform:translateX(-50%) scaleX(var(--shadow-scale,1))!important;background:var(--stone-glow,rgba(115,167,255,.34))!important;filter:blur(11px)!important;pointer-events:none!important}
 .pendulum-page .stage-live-light{z-index:9!important;top:57%!important}.pendulum-page .image-start-hitbox{z-index:20!important}
 .pendulum-page .crystal-stage.motion-yes .crystal-chain,.pendulum-page .crystal-stage.motion-no .crystal-chain,.pendulum-page .crystal-stage.motion-unclear .crystal-chain,.pendulum-page .crystal-stage.is-calibrating .crystal-chain,.pendulum-page .crystal-stage.result-yes .crystal-chain,.pendulum-page .crystal-stage.result-no .crystal-chain,.pendulum-page .crystal-stage.result-unclear .crystal-chain{display:block!important;animation:none!important;transform:translateX(-50%) rotate(var(--manual-angle,0deg))!important}
-@media(max-width:620px){.pendulum-page .crystal-stage .crystal-chain{top:6.5%!important;width:34px!important;height:75%!important}.pendulum-page .crystal-stage .crystal-chain .crystal-cap{width:30px!important;height:25px!important}.pendulum-page .crystal-stage .crystal-chain .crystal-stone{width:58px!important;height:97px!important}.pendulum-page .crystal-stage .crystal-glow{bottom:15.5%!important;width:54px!important;height:9px!important}}
+@media(max-width:620px){.pendulum-page .crystal-stage .crystal-chain{top:8%!important;width:31px!important;height:62%!important}.pendulum-page .crystal-stage .crystal-chain .crystal-cap{width:27px!important;height:22px!important}.pendulum-page .crystal-stage .crystal-chain .crystal-stone{width:52px!important;height:87px!important}.pendulum-page .crystal-stage .crystal-glow{bottom:22%!important;width:50px!important;height:8px!important}}
 
 /* Keep hero calls to action clear of wrapping copy. */
 .hero-copy>.intro,
@@ -1829,3 +1829,21 @@ body { line-height:1.75; letter-spacing:.008em; }
   .hero-copy>.primary,
   .pendulum-page .pendulum-hero-copy>.primary{margin-top:24px!important}
 }
+
+/* Tarot draw soundscape — mirrors the pendulum room controls. */
+.tarot-soundscape{width:min(1060px,100%);margin:0 auto 28px;padding:20px 22px 17px;border:1px solid rgba(174,128,79,.38);border-radius:24px;background:linear-gradient(145deg,rgba(255,250,242,.9),rgba(238,214,211,.72));box-shadow:inset 0 1px rgba(255,255,255,.9),0 16px 35px rgba(82,51,55,.1)}
+.tarot-soundscape-heading{display:flex;gap:14px;align-items:center;margin-bottom:15px;text-align:left}
+.tarot-soundscape-heading>span{display:grid;place-items:center;flex:0 0 43px;height:43px;border:1px solid rgba(174,128,79,.48);border-radius:50%;background:rgba(255,252,246,.78);color:#996a47;font:20px/1 Georgia,serif}
+.tarot-soundscape-heading small{display:block;margin-bottom:4px;color:#9b704e;font:8px/1 Arial,sans-serif;letter-spacing:.2em}
+.tarot-soundscape-heading h3{margin:0;color:#573941;font:500 18px/1.35 Georgia,"Noto Serif TC",serif;letter-spacing:.04em}
+.tarot-soundscape-heading p{margin:4px 0 0;color:#876b68;font-size:11px;line-height:1.55}
+.tarot-soundscape-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.tarot-soundscape-options button{display:grid;grid-template-columns:31px 1fr auto;gap:9px;align-items:center;min-height:62px;padding:10px 12px;border:1px solid rgba(172,128,84,.35);border-radius:16px;background:rgba(255,255,255,.58);color:#6f4b50;text-align:left;cursor:pointer;box-shadow:inset 0 1px rgba(255,255,255,.88);transition:transform .2s ease,border-color .2s ease,background .2s ease,box-shadow .2s ease}
+.tarot-soundscape-options button:hover{transform:translateY(-2px);border-color:rgba(160,105,69,.62);box-shadow:0 9px 18px rgba(88,54,58,.11)}
+.tarot-soundscape-options button.active{border-color:rgba(145,91,72,.72);background:linear-gradient(145deg,rgba(250,231,228,.96),rgba(221,185,190,.84));box-shadow:inset 0 1px rgba(255,255,255,.94),0 9px 20px rgba(91,53,62,.13)}
+.tarot-soundscape-options i{display:grid;place-items:center;width:31px;height:31px;border:1px solid rgba(166,119,78,.35);border-radius:50%;background:rgba(255,250,241,.74);color:#9a6844;font:normal 15px/1 Georgia,serif}
+.tarot-soundscape-options span{display:grid;gap:3px;min-width:0}.tarot-soundscape-options b{font-size:12px;font-weight:600}.tarot-soundscape-options small{overflow:hidden;color:#947876;font:7px/1 Arial,sans-serif;letter-spacing:.1em;text-overflow:ellipsis;white-space:nowrap}.tarot-soundscape-options strong{color:#9a6844;font:10px/1 Arial,sans-serif}
+.tarot-music-status{margin:11px 0 0;color:#8a6b66;font-size:9px;letter-spacing:.04em;text-align:center}
+.tarot-audio-only-player{position:fixed!important;left:-320px!important;bottom:0!important;width:240px!important;height:135px!important;overflow:hidden!important;opacity:.001!important;pointer-events:none!important}
+.tarot-audio-only-player iframe{position:absolute!important;inset:0!important;width:240px!important;height:135px!important;border:0!important}
+@media(max-width:720px){.tarot-soundscape{margin-bottom:22px;padding:16px 14px 14px;border-radius:20px}.tarot-soundscape-heading{align-items:flex-start}.tarot-soundscape-heading>span{flex-basis:38px;height:38px;font-size:17px}.tarot-soundscape-heading h3{font-size:16px}.tarot-soundscape-options{grid-template-columns:1fr;gap:7px}.tarot-soundscape-options button{min-height:57px;padding:8px 11px}.tarot-music-status{text-align:left;line-height:1.55}}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { tarotCards, topicLens, type TarotCard } from "./tarot-data";
 
 const topics = ["感情", "工作", "人際", "金錢", "創業", "今日指引"];
@@ -15,7 +15,16 @@ const exploreTools = [
   { id: "intuition", number: "02", title: "牌面直覺練習室", en: "INTUITIVE READING", desc: "先不看標準牌義，練習相信自己從畫面讀到的訊息。" },
   { id: "journal", number: "03", title: "七日塔羅內在筆記", en: "SEVEN-DAY JOURNAL", desc: "每天一個提問，慢慢整理情緒、關係與真正的需要。" },
   { id: "pendulum", number: "04", title: "靈擺直覺問答", en: "PENDULUM GUIDANCE", desc: "把問題整理成是非題，透過擺動停下來聽見此刻的直覺。" },
+  { id: "astro-dice", number: "05", title: "星骰此刻指引", en: "ASTRO DICE", desc: "擲出行星、星座與宮位，拆解此刻的能量、表現方式與生活領域。" },
 ];
+
+type Soundscape = "forest" | "cafe" | "meditation";
+
+const soundscapes: Record<Soundscape, { icon: string; label: string; en: string; videoId: string }> = {
+  forest: { icon: "♧", label: "森林鋼琴", en: "PIANO · FOREST WHITE NOISE", videoId: "_u95mLIAxvg" },
+  cafe: { icon: "♫", label: "咖啡爵士", en: "SOFT JAZZ · BOSSA NOVA", videoId: "Uxz1ts_dRrQ" },
+  meditation: { icon: "◇", label: "冥想淨化", en: "HEALING FREQUENCY · MEDITATION", videoId: "kqo9Z5Br63c" },
+};
 
 const pendulumMeanings = {
   yes: { label: "是", en: "YES", message: "目前的能量比較靠近肯定。先別急著把它當成保證，想想看：如果答案真的是『是』，你願意踏出的第一小步是什麼？" },
@@ -149,6 +158,9 @@ export default function Home() {
   const [pendulumMoving, setPendulumMoving] = useState(false);
   const [pendulumSaveState, setPendulumSaveState] = useState<"idle" | "saved" | "error">("idle");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundscape, setSoundscape] = useState<Soundscape>("forest");
+  const audioFrames = useRef<Partial<Record<Soundscape, HTMLIFrameElement | null>>>({});
 
   const positions = [-12, -6, 0, 6, 12];
   const activeSpread = spreads.find((item) => item.id === spreadId) ?? spreads[0];
@@ -157,6 +169,40 @@ export default function Home() {
   const archetypeQuestions = archetypeQuestionSets[archetypeSetIndex] ?? archetypeQuestionSets[0];
   const archetypeCard = archetypeResult === null ? null : tarotCards.find((card) => card.id === archetypeCardIds[archetypeResult]);
   const journalCard = tarotCards.find((card) => card.id === journalCardIds[journalDay]) ?? tarotCards[journalDay];
+
+  function sendPlayerCommand(target: Soundscape, func: string, args: unknown[] = []) {
+    audioFrames.current[target]?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), "*");
+  }
+
+  function stopAllSoundscapes() {
+    (Object.keys(soundscapes) as Soundscape[]).forEach((item) => {
+      sendPlayerCommand(item, "pauseVideo");
+      sendPlayerCommand(item, "mute");
+    });
+  }
+
+  function startSoundscape(nextSoundscape: Soundscape) {
+    stopAllSoundscapes();
+    setSoundscape(nextSoundscape);
+    setSoundEnabled(true);
+    const play = () => {
+      sendPlayerCommand(nextSoundscape, "unMute");
+      sendPlayerCommand(nextSoundscape, "setVolume", [65]);
+      sendPlayerCommand(nextSoundscape, "playVideo");
+    };
+    play();
+    window.setTimeout(play, 280);
+    window.setTimeout(play, 820);
+  }
+
+  function toggleSoundscape(nextSoundscape: Soundscape) {
+    if (soundEnabled && soundscape === nextSoundscape) {
+      stopAllSoundscapes();
+      setSoundEnabled(false);
+      return;
+    }
+    startSoundscape(nextSoundscape);
+  }
 
   useEffect(() => {
     fetch("/api/me").then((response) => response.json()).then((data) => {
@@ -325,7 +371,7 @@ export default function Home() {
         <a className="brand" href="#top" aria-label="回到首頁" onClick={() => setMenuOpen(false)}>ZOLACOCO <span>TAROT</span></a>
         <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="primary-menu" aria-label={menuOpen ? "關閉選單" : "開啟選單"} onClick={() => setMenuOpen((open) => !open)}><i /><i /><i /></button>
         <nav className="primary-menu" id="primary-menu" aria-label="主要功能選單">
-          <a href="#draw" onClick={() => setMenuOpen(false)}>塔羅抽牌</a><a href="/pendulum">靈擺占卜</a><a href="#explore" onClick={() => setMenuOpen(false)}>內在探索</a><a href="/pendulum#membership">會員方案</a><a href="#about" onClick={() => setMenuOpen(false)}>關於 Zola</a>
+          <a href="#draw" onClick={() => setMenuOpen(false)}>塔羅抽牌</a><a href="/pendulum">靈擺占卜</a><a href="/astro-dice">星骰指引</a><a href="#explore" onClick={() => setMenuOpen(false)}>內在探索</a><a href="/pendulum#membership">會員方案</a><a href="#about" onClick={() => setMenuOpen(false)}>關於 Zola</a>
         </nav>
         <div className="account-nav">{authChecked && (viewer ? <><span className="account-name">{viewer.displayName}</span>{viewer.isAdmin && <a className="account-link" href="/admin">查看後台</a>}<a className="account-link" href="/signout-with-chatgpt?return_to=/" onClick={() => { try { localStorage.removeItem(ARCHETYPE_LOGIN_SET_KEY); } catch { /* Browser storage may be unavailable. */ } }}>登出</a></> : <a className="account-link login-link" href="/signin-with-chatgpt?return_to=/#explore">登入／註冊</a>)}</div>
       </header>
@@ -355,6 +401,22 @@ export default function Home() {
           <span>01</span><p>CHOOSE YOUR FOCUS</p>
           <h2>今天，你想問什麼？</h2>
           <small className="deck-note">完整 78 張萊恩 × 蝦蝦貓咪塔羅 · 22 張大牌＋56 張小牌</small>
+        </div>
+        <div className="tarot-soundscape" aria-label="塔羅抽牌背景音樂">
+          <div className="tarot-soundscape-heading"><span aria-hidden="true">♫</span><div><small>CHOOSE YOUR SOUNDSCAPE</small><h3>先選一段音樂，讓心慢下來</h3><p>點選後會直接播放；再次點擊同一首即可停止。</p></div></div>
+          <div className="tarot-soundscape-options">
+            {(Object.keys(soundscapes) as Soundscape[]).map((item) => {
+              const content = soundscapes[item];
+              const active = soundEnabled && soundscape === item;
+              return <button type="button" key={item} className={active ? "active" : ""} onClick={() => toggleSoundscape(item)} aria-pressed={active}>
+                <i aria-hidden="true">{content.icon}</i><span><b>{active ? "停止播放" : content.label}</b><small>{content.en}</small></span><strong aria-hidden="true">{active ? "Ⅱ" : "▶"}</strong>
+              </button>;
+            })}
+          </div>
+          <p className="tarot-music-status" aria-live="polite">{soundEnabled ? `正在播放「${soundscapes[soundscape].label}」，抽牌時會持續播放。` : "也可以不播放音樂，直接開始抽牌。"}</p>
+          <div className="tarot-audio-only-player" aria-hidden="true">
+            {(Object.keys(soundscapes) as Soundscape[]).map((item) => <iframe key={item} ref={(node) => { audioFrames.current[item] = node; }} src={`https://www.youtube-nocookie.com/embed/${soundscapes[item].videoId}?enablejsapi=1&playsinline=1&loop=1&playlist=${soundscapes[item].videoId}&controls=0&rel=0`} title={`${soundscapes[item].label}背景音樂`} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" tabIndex={-1} />)}
+          </div>
         </div>
         <div className="topics" role="group" aria-label="選擇抽牌主題">
           {topics.map((item) => <button key={item} className={topic === item ? "active" : ""} onClick={() => changeTopic(item)}>{item}</button>)}
@@ -441,7 +503,7 @@ export default function Home() {
 
         <div className="explore-layout">
           <nav className="tool-tabs" aria-label="選擇內在探索工具">
-            {exploreTools.map((tool) => <button key={tool.id} className={exploreTool === tool.id ? "active" : ""} onClick={() => tool.id === "pendulum" ? window.location.assign("/pendulum") : setExploreTool(tool.id)}>
+            {exploreTools.map((tool) => <button key={tool.id} className={exploreTool === tool.id ? "active" : ""} onClick={() => tool.id === "pendulum" ? window.location.assign("/pendulum") : tool.id === "astro-dice" ? window.location.assign("/astro-dice") : setExploreTool(tool.id)}>
               <i>{tool.number}</i><span><small>{tool.en}</small><b>{tool.title}</b><em>{tool.desc}</em></span>
             </button>)}
           </nav>
