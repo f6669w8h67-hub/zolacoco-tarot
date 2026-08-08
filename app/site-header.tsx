@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 
 type FontTier = "small" | "medium" | "large";
-type Viewer = { displayName: string; email: string; isAdmin: boolean } | null;
 
 const menuGroups = [
   {
@@ -35,8 +34,6 @@ const menuGroups = [
 export default function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [fontTier, setFontTier] = useState<FontTier>("medium");
-  const [viewer, setViewer] = useState<Viewer>(null);
-  const [authChecked, setAuthChecked] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -44,10 +41,6 @@ export default function SiteHeader() {
     const next = saved === "small" || saved === "large" ? saved : "medium";
     setFontTier(next);
     document.documentElement.dataset.fontTier = next;
-    fetch("/api/me").then((response) => response.json()).then((data) => {
-      setViewer(data.user ?? null);
-      setAuthChecked(true);
-    }).catch(() => setAuthChecked(true));
   }, []);
 
   useEffect(() => {
@@ -77,7 +70,7 @@ export default function SiteHeader() {
       <button className="global-menu-trigger" type="button" aria-expanded={open} aria-controls="global-function-menu" onClick={() => setOpen((value) => !value)}>
         <span>全部功能</span><i aria-hidden="true">⌄</i>
       </button>
-      {authChecked && (viewer ? <a className="global-account-link" href="/signout-with-chatgpt?return_to=/">{viewer.displayName}・登出</a> : <a className="global-account-link" href="/signin-with-chatgpt?return_to=/">登入</a>)}
+      <a className="global-account-link" href="/admin">我的存檔</a>
     </div>
     <div className="global-function-menu" id="global-function-menu" hidden={!open}>
       <div className="global-menu-heading"><div><small>ZOLACOCO GUIDE</small><h2>今天，想走進哪一個空間？</h2></div><button type="button" onClick={() => setOpen(false)} aria-label="關閉功能選單">×</button></div>
@@ -88,7 +81,7 @@ export default function SiteHeader() {
         <span><b>閱讀字級</b><small>會記住你的選擇</small></span>
         {(["small", "medium", "large"] as FontTier[]).map((tier, index) => <button type="button" key={tier} className={fontTier === tier ? "active" : ""} aria-pressed={fontTier === tier} onClick={() => chooseFont(tier)}>{["小", "中", "大"][index]}</button>)}
       </div>
-      {viewer?.isAdmin && <a className="global-admin-link" href="/admin" onClick={() => setOpen(false)}>進入 Zola 管理後台 →</a>}
+      <a className="global-admin-link" href="/admin" onClick={() => setOpen(false)}>查看此裝置的完整存檔 →</a>
     </div>
   </header>;
 }
