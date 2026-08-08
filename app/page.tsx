@@ -68,6 +68,9 @@ const archetypeQuestionSets = [
 
 const ARCHETYPE_LOGIN_SET_KEY = "zolacoco-archetype-login-set";
 const ARCHETYPE_LAST_SET_KEY = "zolacoco-archetype-last-set";
+const JOURNAL_STORAGE_KEY = "zolacoco-journal-notes-v1";
+const TAROT_STORAGE_KEY = "zolacoco-tarot-records-v1";
+const PENDULUM_STORAGE_KEY = "zolacoco-pendulum-records-v1";
 
 const archetypeResults = [
   { name: "女祭司", en: "THE HIGH PRIESTESS", text: "你不是沒有答案，而是外界的聲音暫時蓋過了自己的感受。此刻適合慢一點，留意那些還說不清楚、但心裡其實已經知道的事。" },
@@ -150,9 +153,8 @@ export default function Home() {
   const [intuitionFeedback, setIntuitionFeedback] = useState<IntuitionOption | null>(null);
   const [journalDay, setJournalDay] = useState(0);
   const [journalNotes, setJournalNotes] = useState<Record<number, string>>({});
-  const [viewer, setViewer] = useState<{ displayName: string; email: string; isAdmin: boolean } | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [tarotSaveState, setTarotSaveState] = useState<"idle" | "saved" | "error">("idle");
   const [pendulumQuestion, setPendulumQuestion] = useState("");
   const [pendulumResult, setPendulumResult] = useState<PendulumResult | null>(null);
   const [pendulumMoving, setPendulumMoving] = useState(false);
@@ -207,51 +209,30 @@ export default function Home() {
   useEffect(() => {
     const requestedTool = new URLSearchParams(window.location.search).get("tool");
     if (requestedTool === "archetype" || requestedTool === "intuition" || requestedTool === "journal") setExploreTool(requestedTool);
-    fetch("/api/me").then((response) => response.json()).then((data) => {
-      setViewer(data.user ?? null);
-      setAuthChecked(true);
-      if (data.user) {
-        try {
-          const savedLoginSet = JSON.parse(localStorage.getItem(ARCHETYPE_LOGIN_SET_KEY) ?? "null") as { email?: string; index?: number } | null;
-          let nextSet = savedLoginSet?.email === data.user.email && Number.isInteger(savedLoginSet?.index)
-            ? Number(savedLoginSet?.index)
-            : -1;
-          if (nextSet < 0 || nextSet >= archetypeQuestionSets.length) {
-            const previousSet = Number(localStorage.getItem(ARCHETYPE_LAST_SET_KEY));
-            const availableSets = archetypeQuestionSets.map((_, index) => index).filter((index) => index !== previousSet);
-            nextSet = availableSets[Math.floor(Math.random() * availableSets.length)] ?? 0;
-            localStorage.setItem(ARCHETYPE_LOGIN_SET_KEY, JSON.stringify({ email: data.user.email, index: nextSet }));
-            localStorage.setItem(ARCHETYPE_LAST_SET_KEY, String(nextSet));
-          }
-          setArchetypeSetIndex(nextSet);
-        } catch {
-          setArchetypeSetIndex(Math.floor(Math.random() * archetypeQuestionSets.length));
-        }
-        fetch("/api/journal").then((response) => response.ok ? response.json() : { entries: [] }).then((saved) => {
-          const notes: Record<number, string> = {};
-          for (const entry of saved.entries ?? []) notes[Number(entry.day) - 1] = entry.content;
-          setJournalNotes(notes);
-        });
-      } else {
-        try { localStorage.removeItem(ARCHETYPE_LOGIN_SET_KEY); } catch { /* Browser storage may be unavailable. */ }
-      }
-    }).catch(() => setAuthChecked(true));
+    try {
+      const savedNotes = JSON.parse(localStorage.getItem(JOURNAL_STORAGE_KEY) ?? "{}") as Record<number, string>;
+      setJournalNotes(savedNotes);
+      const previousSet = Number(localStorage.getItem(ARCHETYPE_LAST_SET_KEY));
+      const availableSets = archetypeQuestionSets.map((_, index) => index).filter((index) => index !== previousSet);
+      const nextSet = availableSets[Math.floor(Math.random() * availableSets.length)] ?? 0;
+      setArchetypeSetIndex(nextSet);
+      localStorage.setItem(ARCHETYPE_LAST_SET_KEY, String(nextSet));
+      localStorage.setItem(ARCHETYPE_LOGIN_SET_KEY, JSON.stringify({ index: nextSet }));
+    } catch {
+      setArchetypeSetIndex(Math.floor(Math.random() * archetypeQuestionSets.length));
+    }
   }, []);
 
-  async function saveJournal() {
-    if (!viewer) {
-      window.location.href = `/signin-with-chatgpt?return_to=${encodeURIComponent("/#explore")}`;
-      return;
-    }
+  function saveJournal() {
     const content = (journalNotes[journalDay] ?? "").trim();
     if (!content) return;
     setSaveState("saving");
-    const response = await fetch("/api/journal", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ day: journalDay + 1, prompt: journalPrompts[journalDay], cardId: journalCard.id, cardName: journalCard.name, content }),
-    });
-    setSaveState(response.ok ? "saved" : "error");
+    try {
+      const next = { ...journalNotes, [journalDay]: content };
+      localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(next));
+      setJournalNotes(next);
+      setSaveState("saved");
+    } catch { setSaveState("error"); }
   }
 
   async function askPendulum() {
@@ -265,14 +246,11 @@ export default function Home() {
     window.setTimeout(async () => {
       setPendulumResult(result);
       setPendulumMoving(false);
-      if (!viewer) return;
       try {
-        const response = await fetch("/api/pendulum", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ question, result, resultLabel: pendulumMeanings[result].label }),
-        });
-        setPendulumSaveState(response.ok ? "saved" : "error");
+        const history = JSON.parse(localStorage.getItem(PENDULUM_STORAGE_KEY) ?? "[]") as unknown[];
+        history.unshift({ id: Date.now(), question, result, result_label: pendulumMeanings[result].label, category: "首頁靈擺", note: "", created_at: new Date().toISOString() });
+        localStorage.setItem(PENDULUM_STORAGE_KEY, JSON.stringify(history.slice(0, 80)));
+        setPendulumSaveState("saved");
       } catch {
         setPendulumSaveState("error");
       }
@@ -308,7 +286,18 @@ export default function Home() {
     setSelected([]);
     setRevealed(false);
     setSpreadCards([]);
+    setTarotSaveState("idle");
     document.getElementById("draw")?.scrollIntoView({ behavior: "smooth" });
+  }
+
+  function saveTarotReading() {
+    if (!selected.length) return;
+    try {
+      const records = JSON.parse(localStorage.getItem(TAROT_STORAGE_KEY) ?? "[]") as unknown[];
+      records.unshift({ id: Date.now(), topic, spread: activeSpread.name, cards: selected.map((card, index) => ({ name: card.name, position: activeSpread.positions[index], keywords: card.keywords, truth: card.truth, action: card.action })), created_at: new Date().toISOString() });
+      localStorage.setItem(TAROT_STORAGE_KEY, JSON.stringify(records.slice(0, 60)));
+      setTarotSaveState("saved");
+    } catch { setTarotSaveState("error"); }
   }
 
   function changeTopic(item: string) {
@@ -375,7 +364,7 @@ export default function Home() {
         <nav className="primary-menu" id="primary-menu" aria-label="主要功能選單">
           <a href="#draw" onClick={() => setMenuOpen(false)}>塔羅抽牌</a><a href="/pendulum">靈擺占卜</a><a href="/astro-dice">星骰指引</a><a href="#explore" onClick={() => setMenuOpen(false)}>內在探索</a><a href="/pendulum#membership">會員方案</a><a href="#about" onClick={() => setMenuOpen(false)}>關於 Zola</a>
         </nav>
-        <div className="account-nav">{authChecked && (viewer ? <><span className="account-name">{viewer.displayName}</span>{viewer.isAdmin && <a className="account-link" href="/admin">查看後台</a>}<a className="account-link" href="/signout-with-chatgpt?return_to=/" onClick={() => { try { localStorage.removeItem(ARCHETYPE_LOGIN_SET_KEY); } catch { /* Browser storage may be unavailable. */ } }}>登出</a></> : <a className="account-link login-link" href="/signin-with-chatgpt?return_to=/#explore">登入／註冊</a>)}</div>
+        <div className="account-nav"><a className="account-link" href="/admin">我的存檔</a></div>
       </header>
 
       <section className="hero" id="top">
@@ -471,7 +460,7 @@ export default function Home() {
                   <div className="position-reading"><p className="scene-note">牌面｜{card.scene}</p><div className="reading-point"><b>此刻的核心提醒</b><p>{topicLens[topic][card.suit]} {positionLens[spreadId][i]} {card.truth}</p></div><div className="reading-point blind"><b>你也可以留意</b><p>{card.blindSpot}</p></div><div className="reading-point next"><b>可以先這樣做</b><p>{card.action}</p></div></div>
                 </section>)}
               </div>
-              <div className="reading-actions"><button className="flow-button secondary-flow" onClick={reset}>重新抽牌</button><a className="flow-button primary-flow" href="#explore">下一步・認識自己的解牌直覺 <b>→</b></a></div>
+              <div className="reading-actions"><button className="flow-button secondary-flow" onClick={reset}>重新抽牌</button><button className="flow-button secondary-flow" onClick={saveTarotReading}>{tarotSaveState === "saved" ? "已存到我的存檔 ✓" : tarotSaveState === "error" ? "存檔失敗，請再試一次" : "儲存這次抽牌"}</button><a className="flow-button primary-flow" href="#explore">下一步・認識自己的解牌直覺 <b>→</b></a></div>
             </article>
           </div>
         )}
@@ -551,8 +540,8 @@ export default function Home() {
               <div className="journal-lenses"><span>先看見畫面</span><span>再辨認感受</span><span>最後連回生活</span></div>
               <textarea value={journalNotes[journalDay] ?? ""} onChange={(event) => { setJournalNotes((notes) => ({ ...notes, [journalDay]: event.target.value })); setSaveState("idle"); }} aria-label="寫下今天的內在筆記" placeholder="不用急著寫得完整，先記下第一個浮現的念頭……" />
               <div className="day-picker">{journalPrompts.map((_, index) => <button aria-label={`第 ${index + 1} 天`} className={journalDay === index ? "active" : ""} onClick={() => setJournalDay(index)} key={index}>{index + 1}</button>)}</div>
-              <button className="tool-primary journal-save" disabled={saveState === "saving" || !(journalNotes[journalDay] ?? "").trim()} onClick={saveJournal}>{!viewer ? "登入後儲存筆記" : saveState === "saving" ? "儲存中…" : saveState === "saved" ? "已儲存 ✓" : "儲存今天的筆記"}</button>
-              <p className="privacy-note">登入後，筆記會儲存在你的帳號中，並可由 Zola 於管理後台查看；內容不會公開顯示。</p>
+              <button className="tool-primary journal-save" disabled={saveState === "saving" || !(journalNotes[journalDay] ?? "").trim()} onClick={saveJournal}>{saveState === "saving" ? "儲存中…" : saveState === "saved" ? "已儲存 ✓" : saveState === "error" ? "存檔失敗，請再試一次" : "儲存今天的筆記"}</button>
+              <p className="privacy-note">筆記會保存在目前使用的手機或電腦瀏覽器中，重新開啟網站仍可繼續查看，不會公開顯示。</p>
             </div>}
 
             {exploreTool === "pendulum" && <div className="pendulum-tool">
@@ -572,8 +561,8 @@ export default function Home() {
                 <span>{pendulumMeanings[pendulumResult].en}</span>
                 <blockquote>{pendulumMeanings[pendulumResult].message}</blockquote>
                 <p className="pendulum-asked">你的問題：{pendulumQuestion.trim()}</p>
-                {viewer ? <small>{pendulumSaveState === "saved" ? "這次問答已儲存，Zola 可於後台查看。" : pendulumSaveState === "error" ? "這次結果未能儲存，仍可重新詢問。" : "正在儲存這次問答…"}</small> : <small>目前為訪客體驗；登入後，提問與結果才會儲存並由 Zola 於後台查看。</small>}
-                <div className="flow-actions"><button className="flow-button secondary-flow" onClick={() => { setPendulumQuestion(""); setPendulumResult(null); setPendulumSaveState("idle"); }}>再問一題</button>{!viewer && <a className="flow-button primary-flow" href="/signin-with-chatgpt?return_to=/#explore">登入後保存紀錄 <b>→</b></a>}</div>
+                <small>{pendulumSaveState === "saved" ? "這次問答已存到目前裝置的「我的存檔」。" : pendulumSaveState === "error" ? "這次結果未能儲存，請確認瀏覽器允許網站儲存資料。" : "正在儲存這次問答…"}</small>
+                <div className="flow-actions"><button className="flow-button secondary-flow" onClick={() => { setPendulumQuestion(""); setPendulumResult(null); setPendulumSaveState("idle"); }}>再問一題</button><a className="flow-button primary-flow" href="/admin">查看我的存檔 <b>→</b></a></div>
               </div>}
               <p className="privacy-note">線上靈擺以隨機擺動提供直覺與自我探索提示，不是科學測量或絕對預言；健康、法律、投資與安全決策請以專業資訊為準。</p>
             </div>}
