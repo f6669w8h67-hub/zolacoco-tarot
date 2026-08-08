@@ -10,7 +10,6 @@ type Picker = "mode" | "category" | null;
 type ToolKey = "yesno" | "choices" | "number" | "letter" | "percentage" | "energy" | "chakra" | "crystal" | "action" | "avoid" | "direction" | "color" | "luckyNumber" | "element" | "oil" | "meditation" | "message" | "custom" | "food" | "drink" | "outfit" | "outing" | "home";
 type PendulumStyle = "teal" | "clear" | "rose" | "amethyst" | "citrine" | "aquamarine" | "moonstone" | "labradorite" | "obsidian" | "brass" | "silver" | "wood";
 type Soundscape = "forest" | "cafe" | "meditation";
-type Viewer = { displayName: string; email: string; isAdmin: boolean };
 type Entry = { id:number; question:string; result:string; result_label:string; category:string; note:string; created_at:string };
 type Outcome = { resultKey:Result; result:string; label:string; en:string; detail:string; reflection:string; accent?:string };
 
@@ -19,6 +18,7 @@ const modes = [
   { key:"higher" as const, icon:"☉", label:"高靈模式", en:"HIGHER SELF", description:"依個人信念，將答案視為一段儀式性訊息。" },
   { key:"subconscious" as const, icon:"☾", label:"潛意識模式", en:"SUBCONSCIOUS", description:"觀察答案出現時，你最先浮現的真實反應。" },
 ];
+const PENDULUM_STORAGE_KEY = "zolacoco-pendulum-records-v1";
 
 const categories = [
   { key:"love" as const, icon:"♀", label:"感情關係", description:"互動、靠近與關係節奏", example:"我現在適合主動約對方談談嗎？" },
@@ -153,8 +153,6 @@ function pick<T>(items:T[]){ return items[Math.floor(Math.random()*items.length)
 function clamp(value:number,min:number,max:number){ return Math.min(max,Math.max(min,value)); }
 
 export default function PendulumPage(){
-  const [viewer,setViewer]=useState<Viewer|null>(null);
-  const [checked,setChecked]=useState(false);
   const [tool,setTool]=useState<ToolKey>("yesno");
   const [mode,setMode]=useState<ModeKey>("general");
   const [category,setCategory]=useState<CategoryKey>("love");
@@ -186,7 +184,7 @@ export default function PendulumPage(){
   const selectedPendulum=pendulumStyles.find(item=>item.key===pendulumStyle)??pendulumStyles[0];
   const duration=4600;
 
-  useEffect(()=>{ fetch("/api/me").then(r=>r.json()).then(async data=>{ setViewer(data.user??null); setChecked(true); if(data.user){ const h=await fetch("/api/pendulum"); if(h.ok) setHistory((await h.json()).entries??[]); } }).catch(()=>setChecked(true)); },[]);
+  useEffect(()=>{try{setHistory(JSON.parse(localStorage.getItem(PENDULUM_STORAGE_KEY)??"[]"))}catch{setHistory([])}},[]);
   useEffect(()=>{ if(!picker)return; const close=(event:KeyboardEvent)=>{if(event.key==="Escape")setPicker(null)}; document.addEventListener("keydown",close); const previous=document.body.style.overflow; document.body.style.overflow="hidden"; return()=>{document.removeEventListener("keydown",close);document.body.style.overflow=previous}; },[picker]);
   useEffect(()=>()=>{ if(animationRef.current)cancelAnimationFrame(animationRef.current); },[]);
 
@@ -315,13 +313,10 @@ export default function PendulumPage(){
     runNaturalMotion(next.resultKey,duration,()=>{setOutcome(next);setMotionTarget(null);setMoving(false);navigator.vibrate?.(18)});
   }
 
-  async function save(){
-    if(!viewer){window.location.href="/signin-with-chatgpt?return_to=/pendulum";return}
+  function save(){
     if(!outcome)return;
     const prompt=question.trim()||`${selectedTool.label}｜${new Date().toLocaleDateString("zh-TW")}`;
-    const response=await fetch("/api/pendulum",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({question:prompt,result:outcome.result,resultLabel:outcome.label,category:`${selectedTool.label}・${selectedCategory.label}`,note})});
-    if(!response.ok){setSaved("error");return}
-    setSaved("saved");const h=await fetch("/api/pendulum");if(h.ok)setHistory((await h.json()).entries??[]);
+    try{const item:Entry={id:Date.now(),question:prompt,result:outcome.result,result_label:outcome.label,category:`${selectedTool.label}・${selectedCategory.label}`,note,created_at:new Date().toISOString()};const next=[item,...history].slice(0,80);localStorage.setItem(PENDULUM_STORAGE_KEY,JSON.stringify(next));setHistory(next);setSaved("saved")}catch{setSaved("error")}
   }
 
   function updateManualAngle(value:number){manualAngleRef.current=value;setManualAngle(value)}
@@ -349,7 +344,7 @@ export default function PendulumPage(){
   const stageStyle={"--manual-angle":`${manualAngle}deg`,"--shadow-offset":`${manualAngle*1.12}px`,"--shadow-scale":String(1.08-swingEnergy*.28),"--shadow-opacity":String(.72-swingEnergy*.27),"--light-shift":`${manualAngle*.22}px`,"--swing-energy":String(swingEnergy),"--swing-duration":`${duration}ms`,"--result-accent":outcome?.accent??"#d9b675"} as CSSProperties;
 
   return <main className="pendulum-page">
-    <nav className="pendulum-nav site-nav"><Link className="brand" href="/">ZOLACOCO <span>TAROT</span></Link><div className="pendulum-menu"><Link href="/#draw">塔羅抽牌</Link><Link href="/pendulum#centre">占卜玩法</Link><Link href="/pendulum#membership">會員方案</Link>{viewer?.isAdmin&&<Link href="/admin">查看後台</Link>}{checked&&!viewer?<a className="login-link" href="/signin-with-chatgpt?return_to=/pendulum">登入／註冊</a>:viewer?<a href="/signout-with-chatgpt?return_to=/pendulum">登出</a>:null}</div></nav>
+    <nav className="pendulum-nav site-nav"><Link className="brand" href="/">ZOLACOCO <span>TAROT</span></Link><div className="pendulum-menu"><Link href="/#draw">塔羅抽牌</Link><Link href="/pendulum#centre">占卜玩法</Link><Link href="/pendulum#membership">會員方案</Link><Link className="login-link" href="/admin">我的存檔</Link></div></nav>
     <header className="pendulum-hero">
       <div className="pendulum-hero-copy"><p className="eyebrow">THE PENDULUM DIVINATION CENTRE</p><h1>靈擺占卜<br/><em>中心</em></h1><p>從 Yes／No、多選一到每日指引，用一場有儀式感的擺動整理直覺。答案是自我反思的入口，不是替你決定人生的命令。</p><a href="#centre" className="primary">選擇占卜玩法 <span>↓</span></a></div>
       <div className="pendulum-hero-image"><img src="/pendulum-hero.png" alt="暖光中的藍綠水晶與古董黃銅靈擺"/><span>CRYSTAL · BRASS · INTUITION</span></div>
@@ -405,7 +400,7 @@ export default function PendulumPage(){
               {tool==="number"&&<div className="range-picker">{([10,30,100] as const).map(value=><button key={value} onClick={()=>setNumberRange(value)} className={numberRange===value?"active":""}>1 ～ {value}</button>)}</div>}
               {!needsQuestion&&tool!=="choices"&&tool!=="number"&&<p className="ritual-ready-copy">這個模式不需要輸入問題。先在心裡停留幾秒，再讓靈擺為你抽出一個象徵結果。</p>}
               <button className="pendulum-cta" disabled={actionDisabled} onClick={ask}>{moving?"靈擺回應中…":"開始靈擺占卜"}</button>
-            </>:<div className="result-panel" style={{"--result-accent":outcome.accent??"#c29659"} as CSSProperties}><div className="result-crown" aria-hidden="true">❦</div><span>{outcome.en} · {selectedMode.en}</span><h2>{outcome.label}</h2><blockquote><small>靈擺訊息</small><p>{outcome.detail}</p></blockquote><div className="reflection-card"><small>給自己的覺察題</small><p>{outcome.reflection}</p></div><label className="result-note-label" htmlFor="pendulum-note">寫下此刻的感受</label><textarea id="pendulum-note" maxLength={500} value={note} onChange={e=>setNote(e.target.value)} placeholder="看到這個答案時，我第一個浮現的感受是……"/><div className="result-actions"><button onClick={()=>reset(false)}>清除並重問</button><button className="pendulum-cta" onClick={save}>{!viewer?"登入後儲存":"儲存結果與感受"}</button></div>{saved==="saved"&&<small>已儲存到你的個人紀錄，也會出現在 Zola 後台。</small>}{saved==="error"&&<small>目前未能儲存，請稍後再試。</small>}</div>}
+            </>:<div className="result-panel" style={{"--result-accent":outcome.accent??"#c29659"} as CSSProperties}><div className="result-crown" aria-hidden="true">❦</div><span>{outcome.en} · {selectedMode.en}</span><h2>{outcome.label}</h2><blockquote><small>靈擺訊息</small><p>{outcome.detail}</p></blockquote><div className="reflection-card"><small>給自己的覺察題</small><p>{outcome.reflection}</p></div><label className="result-note-label" htmlFor="pendulum-note">寫下此刻的感受</label><textarea id="pendulum-note" maxLength={500} value={note} onChange={e=>setNote(e.target.value)} placeholder="看到這個答案時，我第一個浮現的感受是……"/><div className="result-actions"><button onClick={()=>reset(false)}>清除並重問</button><button className="pendulum-cta" onClick={save}>儲存結果與感受</button></div>{saved==="saved"&&<small>已儲存到目前手機或電腦的個人紀錄。</small>}{saved==="error"&&<small>目前未能儲存，請確認瀏覽器允許網站儲存資料。</small>}</div>}
           </div>}
         </div>
       </div>
@@ -415,9 +410,9 @@ export default function PendulumPage(){
 
     <section className="pendulum-guide"><div><p className="eyebrow">ASK WITH CLARITY</p><h2>怎麼問，答案會比較有幫助？</h2></div><div className="guide-grid"><article><b>適合提問</b><p>「我現在適合主動約對方談談嗎？」</p><p>「這週先完成作品集，對我比較有幫助嗎？」</p></article><article><b>先換個問法</b><p>「他到底在想什麼？」</p><p>「我什麼時候一定會成功？」</p></article><article><b>不要只交給靈擺</b><p>健康、法律、投資、安全或生死等高風險決策，請尋求專業資訊並自行評估。</p></article></div></section>
 
-    <section className="premium-room" id="membership"><div className="premium-intro"><p className="eyebrow">ZOLACOCO PENDULUM MEMBERSHIP</p><h2>完整會員體驗</h2><p>占卜玩法、收藏櫃、聲光效果與個人紀錄已整合在同一頁；正式收費價格與付款入口確認後即可接上，不先替你設定費用。</p></div><div className="premium-dashboard"><article><small>本月紀錄</small><strong>{viewer?monthCount:"—"}</strong><p>{viewer?"已登入，可查看個人靈擺歷史":"登入後開始累積個人紀錄"}</p></article><article><small>目前靈擺</small><strong>{selectedPendulum.label}</strong><p>可隨時切換透明水晶、金屬與木質外觀</p></article><article><small>AI 式反思引導</small><strong>每次都有</strong><p>依結果提供覺察問題，不把內容包裝成絕對預言</p></article></div><div className="premium-features"><span>✓ 全部 23 種模式</span><span>✓ 12 款靈擺外觀</span><span>✓ 三種沉浸音景</span><span>✓ 自然擺動效果</span><span>✓ 個人歷史紀錄</span><span>✓ 每月使用統計</span><span>✓ 無廣告沉浸介面</span><span>✓ 塔羅抽牌流程串接</span></div><div className="premium-actions">{viewer?<a href="#ritual">繼續今天的靈擺儀式</a>:<a href="/signin-with-chatgpt?return_to=/pendulum">登入／註冊保存紀錄</a>}<Link href="/">搭配塔羅牌一起整理</Link></div></section>
+    <section className="premium-room" id="membership"><div className="premium-intro"><p className="eyebrow">ZOLACOCO PENDULUM MEMBERSHIP</p><h2>完整會員體驗</h2><p>占卜玩法、收藏櫃、聲光效果與個人紀錄已整合在同一頁；正式收費價格與付款入口確認後即可接上，不先替你設定費用。</p></div><div className="premium-dashboard"><article><small>本月紀錄</small><strong>{monthCount}</strong><p>目前裝置已可查看個人靈擺歷史</p></article><article><small>目前靈擺</small><strong>{selectedPendulum.label}</strong><p>可隨時切換透明水晶、金屬與木質外觀</p></article><article><small>AI 式反思引導</small><strong>每次都有</strong><p>依結果提供覺察問題，不把內容包裝成絕對預言</p></article></div><div className="premium-features"><span>✓ 全部 23 種模式</span><span>✓ 12 款靈擺外觀</span><span>✓ 三種沉浸音景</span><span>✓ 自然擺動效果</span><span>✓ 個人歷史紀錄</span><span>✓ 每月使用統計</span><span>✓ 無廣告沉浸介面</span><span>✓ 塔羅抽牌流程串接</span></div><div className="premium-actions"><a href="#ritual">繼續今天的靈擺儀式</a><Link href="/">搭配塔羅牌一起整理</Link></div></section>
 
-    {viewer&&<section className="pendulum-history"><p className="eyebrow">MY PENDULUM JOURNAL</p><h2>我的近期紀錄</h2>{history.length===0?<p>完成並儲存第一題後，紀錄會出現在這裡。</p>:<div className="history-list">{history.map(entry=><article key={entry.id}><div><span>{entry.category}</span><time>{new Date(entry.created_at).toLocaleString("zh-TW")}</time></div><h3>{entry.question}</h3><b>{entry.result_label}</b>{entry.note&&<p>{entry.note}</p>}</article>)}</div>}</section>}
+    <section className="pendulum-history"><p className="eyebrow">MY PENDULUM JOURNAL</p><h2>我的近期紀錄</h2>{history.length===0?<p>完成並儲存第一題後，紀錄會出現在這裡。</p>:<div className="history-list">{history.map(entry=><article key={entry.id}><div><span>{entry.category}</span><time>{new Date(entry.created_at).toLocaleString("zh-TW")}</time></div><h3>{entry.question}</h3><b>{entry.result_label}</b>{entry.note&&<p>{entry.note}</p>}</article>)}</div>}</section>
     <footer><div className="brand">ZOLACOCO <span>TAROT</span></div><p>答案不是命令，而是讓你更靠近自己的入口。</p><Link href="/">返回塔羅抽牌首頁</Link></footer>
   </main>;
 }
