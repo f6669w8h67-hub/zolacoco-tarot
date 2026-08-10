@@ -12,7 +12,7 @@ const sources = [
   { key: "zolacoco-pendulum-records-v1", title: "靈擺問答紀錄" },
   { key: "zolacoco-astro-dice-records-v1", title: "星骰探索紀錄" },
   { key: "zolacoco-healing-records-v1", title: "療癒小房間紀錄" },
-  { key: "zolacoco-yuanchen-records-v1", title: "元辰宮探索紀錄" },
+  { key: "zolacoco-astrology-exploration-records-v1", title: "星盤內在探索紀錄" },
 ] as const;
 
 function count(value: StoredValue | undefined) {
@@ -37,13 +37,16 @@ export default function ArchivePage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const next: Archive = {};
-    for (const source of sources) {
-      try { next[source.key] = JSON.parse(localStorage.getItem(source.key) ?? (source.key.includes("journal") ? "{}" : "[]")); }
-      catch { next[source.key] = source.key.includes("journal") ? {} : []; }
-    }
-    setArchive(next);
-    setReady(true);
+    const frame = requestAnimationFrame(() => {
+      const next: Archive = {};
+      for (const source of sources) {
+        try { next[source.key] = JSON.parse(localStorage.getItem(source.key) ?? (source.key.includes("journal") ? "{}" : "[]")); }
+        catch { next[source.key] = source.key.includes("journal") ? {} : []; }
+      }
+      setArchive(next);
+      setReady(true);
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   const total = useMemo(() => sources.reduce((sum, source) => sum + count(archive[source.key]), 0), [archive]);

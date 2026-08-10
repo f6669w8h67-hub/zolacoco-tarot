@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 type FontTier = "small" | "medium" | "large";
 
@@ -25,7 +26,7 @@ const menuGroups = [
     label: "療癒空間",
     items: [
       { href: "/healing-room", title: "療癒小房間", note: "情緒、關係與睡前練習" },
-      { href: "/healing-room/yuanchen", title: "元辰宮探索", note: "走進心中的房子" },
+      { href: "/astrology-exploration", title: "探索你的星盤", note: "理解內在需求與人生課題" },
       { href: "/#consult", title: "問問 Zola", note: "一對一整理完整脈絡" },
     ],
   },
@@ -37,11 +38,17 @@ export default function SiteHeader() {
   const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem("zolacoco-font-tier") as FontTier | null;
-    const next = saved === "small" || saved === "large" ? saved : "medium";
-    setFontTier(next);
-    document.documentElement.dataset.fontTier = next;
+    const frame = requestAnimationFrame(() => {
+      const saved = localStorage.getItem("zolacoco-font-tier") as FontTier | null;
+      setFontTier(saved === "small" || saved === "large" ? saved : "medium");
+    });
+    return () => cancelAnimationFrame(frame);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-font-tier", fontTier);
+    localStorage.setItem("zolacoco-font-tier", fontTier);
+  }, [fontTier]);
 
   useEffect(() => {
     function closeOnOutside(event: PointerEvent) {
@@ -60,28 +67,26 @@ export default function SiteHeader() {
 
   function chooseFont(next: FontTier) {
     setFontTier(next);
-    document.documentElement.dataset.fontTier = next;
-    localStorage.setItem("zolacoco-font-tier", next);
   }
 
   return <header className={`global-site-header ${open ? "menu-is-open" : ""}`} ref={headerRef}>
-    <a className="global-brand" href="/" aria-label="回到 Zolacoco Tarot 首頁">ZOLACOCO <span>TAROT</span></a>
+    <Link className="global-brand" href="/" aria-label="回到 Zolacoco Tarot 首頁">ZOLACOCO <span>TAROT</span></Link>
     <div className="global-header-actions">
       <button className="global-menu-trigger" type="button" aria-expanded={open} aria-controls="global-function-menu" onClick={() => setOpen((value) => !value)}>
         <span>全部功能</span><i aria-hidden="true">⌄</i>
       </button>
-      <a className="global-account-link" href="/admin">我的存檔</a>
+      <Link className="global-account-link" href="/admin">我的存檔</Link>
     </div>
     <div className="global-function-menu" id="global-function-menu" hidden={!open}>
       <div className="global-menu-heading"><div><small>ZOLACOCO GUIDE</small><h2>今天，想走進哪一個空間？</h2></div><button type="button" onClick={() => setOpen(false)} aria-label="關閉功能選單">×</button></div>
       <div className="global-menu-groups">
-        {menuGroups.map((group) => <section key={group.label}><h3>{group.label}</h3>{group.items.map((item) => <a href={item.href} key={item.title} onClick={() => setOpen(false)}><span><b>{item.title}</b><small>{item.note}</small></span><i aria-hidden="true">→</i></a>)}</section>)}
+        {menuGroups.map((group) => <section key={group.label}><h3>{group.label}</h3>{group.items.map((item) => <Link href={item.href} key={item.title} onClick={() => setOpen(false)}><span><b>{item.title}</b><small>{item.note}</small></span><i aria-hidden="true">→</i></Link>)}</section>)}
       </div>
       <div className="font-tier-row" role="group" aria-label="調整網站字級">
         <span><b>閱讀字級</b><small>會記住你的選擇</small></span>
         {(["small", "medium", "large"] as FontTier[]).map((tier, index) => <button type="button" key={tier} className={fontTier === tier ? "active" : ""} aria-pressed={fontTier === tier} onClick={() => chooseFont(tier)}>{["小", "中", "大"][index]}</button>)}
       </div>
-      <a className="global-admin-link" href="/admin" onClick={() => setOpen(false)}>查看此裝置的完整存檔 →</a>
+      <Link className="global-admin-link" href="/admin" onClick={() => setOpen(false)}>查看此裝置的完整存檔 →</Link>
     </div>
   </header>;
 }
