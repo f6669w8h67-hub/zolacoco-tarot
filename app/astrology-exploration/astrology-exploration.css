@@ -35,3 +35,57 @@
   .astro-choices>button>i{width:30px;height:30px}
   .astro-service-copy h1{font-size:34px}
 }
+
+/* High-resolution scene rendering, restored soundscape, and clearer reading contrast. */
+.astro-page{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+.astro-intro-art,.astro-scene,.astro-service-art,.astro-result,.astro-records{background-repeat:no-repeat;background-size:cover;image-rendering:auto}
+.astro-audio-only{position:fixed;width:1px;height:1px;overflow:hidden;clip-path:inset(100%);pointer-events:none}
+.astro-audio-only iframe{width:1px;height:1px;border:0}
+.astro-music-toggle{position:fixed;z-index:900;top:88px;right:18px;min-height:46px;display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border:1px solid rgba(255,231,188,.7);border-radius:999px;color:#fffaf1;background:linear-gradient(145deg,rgba(53,44,83,.96),rgba(95,57,82,.96));box-shadow:inset 0 1px rgba(255,255,255,.28),0 10px 28px rgba(6,7,20,.32);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);font-size:13px;font-weight:700;letter-spacing:.03em}
+.astro-music-toggle>i{height:18px;display:flex;align-items:center;gap:3px;font-style:normal}
+.astro-music-toggle>i span{width:2px;height:7px;border-radius:2px;background:#fff3d8}
+.astro-music-toggle.is-playing>i span{animation:astroSoundBars .9s ease-in-out infinite alternate}
+.astro-music-toggle.is-playing>i span:nth-child(2){height:15px;animation-delay:.2s}
+.astro-music-toggle.is-playing>i span:nth-child(3){height:11px;animation-delay:.4s}
+@keyframes astroSoundBars{from{transform:scaleY(.45);opacity:.65}to{transform:scaleY(1.15);opacity:1}}
+
+.astro-intro-copy>small,.astro-step-panel>small,.astro-result-hero>small,.astro-service-copy>small{color:#fff0cf;text-shadow:0 1px 5px rgba(0,0,0,.55)}
+.astro-about{background:rgba(13,16,36,.58);border-color:rgba(255,229,183,.48)}
+.astro-about h2,.astro-intro-copy>aside b{color:#fffaf2}
+.astro-about p,.astro-intro-copy>aside p,.astro-lead,.astro-mindset p{color:#eee6f0}
+.astro-about li{color:#fff7e9;background:rgba(12,15,34,.62);border:1px solid rgba(255,232,194,.26)}
+.astro-mindset{border-color:rgba(255,226,175,.48);background:rgba(15,17,39,.72)}
+.astro-mindset b{color:#fff4d8}
+.astro-primary{color:#fff!important;border-color:#f4d9a7!important;background:linear-gradient(145deg,#a45d78,#4c345f)!important;text-shadow:0 1px 2px rgba(31,18,37,.45)!important;font-weight:700}
+.astro-text-button{color:#fff3e2;font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,.55)}
+.astro-progress,.astro-progress button,.astro-back{color:#f5edf5}
+.astro-choices>button{color:#fff;border-color:rgba(238,220,244,.38);background:rgba(10,13,31,.7);box-shadow:inset 0 1px rgba(255,255,255,.06)}
+.astro-choices>button:hover,.astro-choices>button.active{border-color:#f0d7a5;background:linear-gradient(90deg,rgba(125,64,91,.88),rgba(52,40,77,.92))}
+.astro-choices>button>i{color:#fff5de;border-color:rgba(255,226,174,.7);background:rgba(8,10,26,.48)}
+.astro-choices>button span b{color:#fff;font-weight:700}
+.astro-choices>button span small{color:#e7dfe9}
+.astro-choices>button em,.astro-choices>button.active em{color:#fff1d4;font-weight:600}
+.astro-note{border-color:rgba(255,224,173,.44);background:rgba(9,11,28,.7)}
+.astro-note>b{color:#fff}
+.astro-note>span{color:#e6dce7}
+.astro-note>small{color:#d5cad9}
+.astro-questions li:before{color:#fff2d0}
+.astro-result-actions button:not(.astro-primary),.astro-record-list button{color:#392f43;border-color:#d2bbc9;background:#fffaf3;font-weight:600}
+.astro-service-actions a:not(.astro-primary){color:#392f43;border-color:#ead3b0;background:#fffaf3;font-weight:700}
+.astro-service-copy>p,.astro-service-grid ul{color:#e7dfe9}
+.astro-service-grid article{border-color:rgba(255,226,176,.4);background:rgba(9,12,29,.56)}
+.astro-service-grid h2{color:#fffaf3}
+.astro-service-note{color:#cfc7d4!important}
+
+@media(max-width:600px){
+  .astro-music-toggle{top:74px;right:10px;min-height:42px;padding:8px 12px;font-size:12px}
+  .astro-result,.astro-records{background-attachment:scroll}
+  .astro-intro-art,.astro-scene,.astro-service-art{background-position:center center}
+}
+
+@media(max-width:900px){
+  .astro-intro-art,.astro-service-art{background-image:linear-gradient(0deg,#12162b,transparent 68%),var(--scene-mobile,var(--scene))}
+  .astro-scene{background-image:linear-gradient(0deg,#17182d,transparent 70%),var(--scene-mobile,var(--scene))}
+  .astro-result{background-image:linear-gradient(180deg,rgba(12,15,32,.58),#12152c 68%),var(--scene-mobile,var(--scene))}
+  .astro-records{background-image:linear-gradient(180deg,rgba(13,15,33,.58),#11142b),var(--scene-mobile,var(--scene))}
+}
