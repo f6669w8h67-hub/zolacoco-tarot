@@ -91,19 +91,19 @@ const stateCopy: Record<string, string> = {
 };
 
 const scenes: Record<View, string> = {
-  intro: "/astrology-exploration/scene-01.webp",
-  theme: "/astrology-exploration/scene-02.webp",
-  state: "/astrology-exploration/scene-04.webp",
-  need: "/astrology-exploration/scene-03.webp",
-  focus: "/astrology-exploration/scene-05.webp",
-  result: "/astrology-exploration/scene-06.webp",
-  service: "/astrology-exploration/scene-07.webp",
-  records: "/astrology-exploration/scene-06.webp",
+  intro: "/astrology-exploration/scene-01.png",
+  theme: "/astrology-exploration/scene-02.png",
+  state: "/astrology-exploration/scene-03.png",
+  need: "/astrology-exploration/scene-04.png",
+  focus: "/astrology-exploration/scene-05.png",
+  result: "/astrology-exploration/scene-06.png",
+  service: "/astrology-exploration/scene-07.png",
+  records: "/astrology-exploration/scene-06.png",
 };
 
 const sceneStyle = (view: View) => ({
   "--scene": `url('${scenes[view]}')`,
-  "--scene-mobile": `url('${scenes[view].replace(".webp", "-mobile.webp")}')`,
+  "--scene-mobile": `url('${scenes[view]}')`,
 } as React.CSSProperties);
 
 const dateLabel = () => new Intl.DateTimeFormat("zh-TW", { year: "numeric", month: "long", day: "numeric" }).format(new Date());
@@ -161,13 +161,6 @@ export default function AstrologyExplorationPage() {
   const musicFrame = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [view]);
-  useEffect(() => {
-    const mobile = window.matchMedia("(max-width: 900px)").matches;
-    Array.from(new Set(Object.values(scenes))).forEach((scene) => {
-      const image = new Image();
-      image.src = mobile ? scene.replace(".webp", "-mobile.webp") : scene;
-    });
-  }, []);
 
   const result = useMemo(() => theme && state && need && focus ? makeResult(theme, state, need, focus, note) : null, [theme, state, need, focus, note]);
 
