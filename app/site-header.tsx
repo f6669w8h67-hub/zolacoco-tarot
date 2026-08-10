@@ -75,7 +75,7 @@ export default function SiteHeader() {
       <button className="global-menu-trigger" type="button" aria-expanded={open} aria-controls="global-function-menu" onClick={() => setOpen((value) => !value)}>
         <span>全部功能</span><i aria-hidden="true">⌄</i>
       </button>
-      <Link className="global-account-link" href="/admin">我的存檔</Link>
+      <Link className="global-account-link" href="/account">登入／會員</Link>
     </div>
     <div className="global-function-menu" id="global-function-menu" hidden={!open}>
       <div className="global-menu-heading"><div><small>ZOLACOCO GUIDE</small><h2>今天，想走進哪一個空間？</h2></div><button type="button" onClick={() => setOpen(false)} aria-label="關閉功能選單">×</button></div>
@@ -85,6 +85,10 @@ export default function SiteHeader() {
       <div className="font-tier-row" role="group" aria-label="調整網站字級">
         <span><b>閱讀字級</b><small>會記住你的選擇</small></span>
         {(["small", "medium", "large"] as FontTier[]).map((tier, index) => <button type="button" key={tier} className={fontTier === tier ? "active" : ""} aria-pressed={fontTier === tier} onClick={() => chooseFont(tier)}>{["小", "中", "大"][index]}</button>)}
+      </div>
+      <div className="global-account-panel">
+        <span><b>目前為訪客模式</b><small>探索紀錄只保存在這台裝置，正式會員登入尚未開放。</small></span>
+        <Link href="/account" onClick={() => setOpen(false)}>查看登入與會員說明 →</Link>
       </div>
       <Link className="global-admin-link" href="/admin" onClick={() => setOpen(false)}>查看此裝置的完整存檔 →</Link>
     </div>

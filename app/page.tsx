@@ -362,9 +362,9 @@ export default function Home() {
         <a className="brand" href="#top" aria-label="回到首頁" onClick={() => setMenuOpen(false)}>ZOLACOCO <span>TAROT</span></a>
         <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="primary-menu" aria-label={menuOpen ? "關閉選單" : "開啟選單"} onClick={() => setMenuOpen((open) => !open)}><i /><i /><i /></button>
         <nav className="primary-menu" id="primary-menu" aria-label="主要功能選單">
-          <a href="#draw" onClick={() => setMenuOpen(false)}>塔羅抽牌</a><a href="/pendulum">靈擺占卜</a><a href="/astro-dice">星骰指引</a><a href="#explore" onClick={() => setMenuOpen(false)}>內在探索</a><a href="/pendulum#membership">會員方案</a><a href="#about" onClick={() => setMenuOpen(false)}>關於 Zola</a>
+          <a href="#draw" onClick={() => setMenuOpen(false)}>塔羅抽牌</a><a href="/pendulum">靈擺占卜</a><a href="/astro-dice">星骰指引</a><a href="#explore" onClick={() => setMenuOpen(false)}>內在探索</a><a href="/account">登入／會員</a><a href="#about" onClick={() => setMenuOpen(false)}>關於 Zola</a>
         </nav>
-        <div className="account-nav"><a className="account-link" href="/admin">我的存檔</a></div>
+        <div className="account-nav"><a className="account-link" href="/account">登入／會員</a></div>
       </header>
 
       <section className="hero" id="top">
@@ -373,6 +373,11 @@ export default function Home() {
           <p className="eyebrow">A MESSAGE FOR YOUR PRESENT MOMENT</p>
           <h1><span>把問題放在心裡</span><em>抽一張屬於你的牌</em></h1>
           <p className="intro">答案不替你決定人生，而是陪你看清此刻真正需要留意的方向。</p>
+          <div className="visitor-status" role="status">
+            <span aria-hidden="true" />
+            <p><b>目前以訪客模式使用</b><small>探索紀錄只保存在這台裝置</small></p>
+            <a href="/account">登入與會員說明 →</a>
+          </div>
           <a className="primary" href="#draw">開始抽牌 <span>↓</span></a>
           <p className="ritual">深呼吸三次，想著一個你最近最在意的問題</p>
         </div>
@@ -579,7 +584,7 @@ export default function Home() {
 
       <section className="consult" id="consult">
         <div className="consult-copy"><p className="eyebrow">ONE-ON-ONE TAROT READING</p><h2>一張牌可以安放此刻<br />完整諮詢陪你看清整段脈絡</h2><p>如果你正卡在反覆拉扯的感情、工作選擇或一個遲遲做不了的決定，我會從你的真實處境整理問題，陪你看見盲點、關係動態與下一步，而不是只告訴你一個結果。</p></div>
-        <div className="consult-card"><span>適合現在的你，如果——</span><ul><li>同一個問題已經反覆困擾很久</li><li>知道要放下，情緒卻一直被拉回去</li><li>需要的不只是答案，而是具體方向</li></ul><a href="https://www.instagram.com/zolacoco_tarot" target="_blank" rel="noreferrer">預約一對一塔羅諮詢 <b>↗</b></a><small>由 Zola 親自回覆，依你的實際狀況整理適合的諮詢方式</small></div>
+        <div className="consult-card"><span>適合現在的你，如果——</span><ul><li>同一個問題已經反覆困擾很久</li><li>知道要放下，情緒卻一直被拉回去</li><li>需要的不只是答案，而是具體方向</li></ul><a href="https://lin.ee/XIi2Nam" target="_blank" rel="noreferrer">前往官方 LINE 預約 <b>↗</b></a><small>由 Zola 親自回覆，依你的實際狀況整理適合的諮詢方式</small></div>
       </section>
 
       <section className="about" id="about">
