@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import MembershipGate from "./membership-gate";
 import SiteHeader from "./site-header";
 
 const geistSans = Geist({
@@ -30,13 +32,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const authConfigured = Boolean(
+    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY,
+  );
+  const content = <>
+    <SiteHeader />
+    {authConfigured ? <MembershipGate>{children}</MembershipGate> : children}
+  </>;
+
   return (
     <html lang="zh-Hant">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SiteHeader />
-        {children}
+        {authConfigured ? <ClerkProvider>{content}</ClerkProvider> : content}
       </body>
     </html>
   );

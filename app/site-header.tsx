@@ -75,7 +75,7 @@ export default function SiteHeader() {
       <button className="global-menu-trigger" type="button" aria-expanded={open} aria-controls="global-function-menu" onClick={() => setOpen((value) => !value)}>
         <span>全部功能</span><i aria-hidden="true">⌄</i>
       </button>
-      <Link className="global-account-link" href="/account">登入／會員</Link>
+      <Link className="global-account-link" href="/account">會員中心</Link>
     </div>
     <div className="global-function-menu" id="global-function-menu" hidden={!open}>
       <div className="global-menu-heading"><div><small>ZOLACOCO GUIDE</small><h2>今天，想走進哪一個空間？</h2></div><button type="button" onClick={() => setOpen(false)} aria-label="關閉功能選單">×</button></div>
@@ -87,10 +87,11 @@ export default function SiteHeader() {
         {(["small", "medium", "large"] as FontTier[]).map((tier, index) => <button type="button" key={tier} className={fontTier === tier ? "active" : ""} aria-pressed={fontTier === tier} onClick={() => chooseFont(tier)}>{["小", "中", "大"][index]}</button>)}
       </div>
       <div className="global-account-panel">
-        <span><b>目前為訪客模式</b><small>探索紀錄只保存在這台裝置，正式會員登入尚未開放。</small></span>
-        <Link href="/account" onClick={() => setOpen(false)}>查看登入與會員說明 →</Link>
+        <span><b>VIP 會員使用權</b><small>註冊後等待 Zola 開通；開通期間內可使用全部網站功能。</small></span>
+        <Link href="/account" onClick={() => setOpen(false)}>登入或查看權限 →</Link>
       </div>
       <Link className="global-admin-link" href="/admin" onClick={() => setOpen(false)}>查看此裝置的完整存檔 →</Link>
+      <Link className="global-admin-link" href="/zola-admin" onClick={() => setOpen(false)}>Zola 會員後台登入 →</Link>
     </div>
   </header>;
 }

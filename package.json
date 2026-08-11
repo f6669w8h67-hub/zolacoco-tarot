@@ -16,6 +16,8 @@
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.7.3",
+    "@neondatabase/serverless": "^1.1.0",
     "drizzle-orm": "0.45.2",
     "next": "16.2.6",
     "react": "19.2.6",
@@ -40,5 +42,5 @@
     "wrangler": "4.92.0"
   },
   "type": "module",
-  "displayName": "Zolacoco Tarot \u62bd\u724c\u6307\u5f15"
+  "displayName": "Zolacoco Tarot 抽牌指引"
 }
