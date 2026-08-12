@@ -20,13 +20,22 @@ const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
   if (!session.userId) return session.redirectToSignIn({ returnBackUrl: request.url });
   if (!process.env.DATABASE_URL) return NextResponse.redirect(new URL("/account?setup=database", request.url));
 
-  const sql = neon(process.env.DATABASE_URL);
-  const rows = await sql`
-    SELECT role, status, access_expires_at
-    FROM members
-    WHERE clerk_user_id = ${session.userId}
-    LIMIT 1
-  `;
+  let rows;
+  try {
+    const sql = neon(process.env.DATABASE_URL);
+    rows = await sql`
+      SELECT role, status, access_expires_at
+      FROM members
+      WHERE clerk_user_id = ${session.userId}
+      LIMIT 1
+    `;
+  } catch (error) {
+    console.error("[membership-proxy] member lookup failed", {
+      pathname: request.nextUrl.pathname,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return NextResponse.redirect(new URL("/account?setup=membership", request.url));
+  }
   const member = rows[0] as { role?: string; status?: string; access_expires_at?: string | null } | undefined;
   const allowed = member?.role === "admin" || (
     member?.status === "active" &&

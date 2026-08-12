@@ -23,6 +23,7 @@ export type Membership = {
 };
 
 let sqlClient: NeonQueryFunction<false, false> | null = null;
+let membershipSchemaPromise: Promise<void> | null = null;
 
 export function isMembershipConfigured() {
   return Boolean(
@@ -36,6 +37,60 @@ export function getSql() {
   if (!process.env.DATABASE_URL) throw new Error("DATABASE_URL is not configured");
   sqlClient ??= neon(process.env.DATABASE_URL);
   return sqlClient;
+}
+
+export async function ensureMembershipSchema() {
+  const sql = getSql();
+
+  membershipSchemaPromise ??= (async () => {
+    await sql`
+      CREATE TABLE IF NOT EXISTS members (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        clerk_user_id text UNIQUE,
+        email text NOT NULL,
+        full_name text,
+        line_id text,
+        birthday date,
+        role text NOT NULL DEFAULT 'member' CHECK (role IN ('admin', 'member')),
+        status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'suspended', 'expired')),
+        access_starts_at timestamptz,
+        access_expires_at timestamptz,
+        suspended_at timestamptz,
+        last_login_at timestamptz,
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        CONSTRAINT members_access_window_valid CHECK (
+          access_expires_at IS NULL OR access_starts_at IS NULL OR access_expires_at > access_starts_at
+        )
+      )
+    `;
+    await sql`CREATE UNIQUE INDEX IF NOT EXISTS members_email_lower_idx ON members (lower(email))`;
+    await sql`CREATE INDEX IF NOT EXISTS members_status_expiry_idx ON members (status, access_expires_at)`;
+    await sql`
+      CREATE TABLE IF NOT EXISTS member_access_audit (
+        id bigserial PRIMARY KEY,
+        member_id uuid REFERENCES members(id) ON DELETE SET NULL,
+        admin_email text NOT NULL,
+        action text NOT NULL CHECK (action IN ('created', 'activated', 'extended', 'suspended', 'restored', 'expired', 'updated', 'deleted')),
+        months_delta integer,
+        previous_status text,
+        new_status text,
+        previous_expires_at timestamptz,
+        new_expires_at timestamptz,
+        note text,
+        created_at timestamptz NOT NULL DEFAULT now()
+      )
+    `;
+    await sql`
+      CREATE INDEX IF NOT EXISTS member_access_audit_member_created_idx
+      ON member_access_audit (member_id, created_at DESC)
+    `;
+  })().catch((error) => {
+    membershipSchemaPromise = null;
+    throw error;
+  });
+
+  await membershipSchemaPromise;
 }
 
 export function isAdminEmail(email: string | null | undefined) {
@@ -63,6 +118,7 @@ export async function requireIdentity() {
 
 export async function syncCurrentMember(): Promise<Membership> {
   const identity = await requireIdentity();
+  await ensureMembershipSchema();
   const sql = getSql();
   const admin = isAdminEmail(identity.email);
 
