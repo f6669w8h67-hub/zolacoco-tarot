@@ -1,3 +1,4 @@
+import { hasMemberAccess, isClerkConfigured } from "./membership-access";
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
 import { auth, currentUser } from "@clerk/nextjs/server";
 
@@ -98,6 +99,7 @@ export function isAdminEmail(email: string | null | undefined) {
 }
 
 export async function getIdentity() {
+  if (!isClerkConfigured(process.env)) throw new MembershipError("MEMBERSHIP_NOT_CONFIGURED", 503);
   const { userId } = await auth();
   if (!userId) return null;
 
@@ -181,8 +183,8 @@ export async function requireAdmin() {
 export async function requireActiveMember() {
   const member = await syncCurrentMember();
   if (member.role === "admin") return member;
-  if (member.effective_status !== "active") {
-    throw new MembershipError(member.effective_status.toUpperCase(), 403);
+  if (!hasMemberAccess(member)) {
+    throw new MembershipError(member.status === "active" ? "MEMBERSHIP_EXPIRED" : member.effective_status.toUpperCase(), 403);
   }
   return member;
 }
