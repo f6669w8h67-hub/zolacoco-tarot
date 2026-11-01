@@ -1,24 +1,35 @@
 import { neon } from "@neondatabase/serverless";
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 
-const configured = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY,
-);
-const isOpenRoute = createRouteMatcher([
-  "/account(.*)",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/api/membership/me(.*)",
-  "/api/membership/admin(.*)",
-]);
+import {
+  allowsMembershipPreview,
+  hasMemberAccess,
+  isClerkConfigured,
+  isMembershipServiceRoute,
+  isPublicMembershipPage,
+} from "./lib/membership-access";
+
+const configured = isClerkConfigured(process.env);
+
+function unavailable(request: NextRequest, error: string) {
+  const headers = { "Cache-Control": "no-store" };
+  return /^\/(api|trpc)(\/|$)/.test(request.nextUrl.pathname)
+    ? Response.json({ error }, { status: 503, headers })
+    : new Response("會員服務暫時無法使用，請稍後再試或聯絡 Zola。", { status: 503, headers });
+}
 
 const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
-  if (isOpenRoute(request)) return NextResponse.next();
+  if (isPublicMembershipPage(request.nextUrl.pathname) || isMembershipServiceRoute(request.nextUrl.pathname)) return NextResponse.next();
 
   const session = await clerkAuth();
-  if (!session.userId) return session.redirectToSignIn({ returnBackUrl: request.url });
-  if (!process.env.DATABASE_URL) return NextResponse.redirect(new URL("/account?setup=database", request.url));
+  if (!session.userId) {
+    if (/^\/(api|trpc)(\/|$)/.test(request.nextUrl.pathname)) {
+      return Response.json({ error: "UNAUTHENTICATED" }, { status: 401 });
+    }
+    return session.redirectToSignIn({ returnBackUrl: request.url });
+  }
+  if (!process.env.DATABASE_URL) return unavailable(request, "MEMBERSHIP_NOT_CONFIGURED");
 
   let rows;
   try {
@@ -34,24 +45,26 @@ const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
       pathname: request.nextUrl.pathname,
       error: error instanceof Error ? error.message : String(error),
     });
-    return NextResponse.redirect(new URL("/account?setup=membership", request.url));
+    return unavailable(request, "MEMBERSHIP_SERVICE_ERROR");
   }
   const member = rows[0] as { role?: string; status?: string; access_expires_at?: string | null } | undefined;
-  const allowed = member?.role === "admin" || (
-    member?.status === "active" &&
-    member.access_expires_at &&
-    new Date(member.access_expires_at) > new Date()
-  );
+  const allowed = hasMemberAccess(member);
   if (allowed) return NextResponse.next();
 
-  if (request.nextUrl.pathname.startsWith("/api/")) {
-    return Response.json({ error: member?.status?.toUpperCase() ?? "MEMBERSHIP_REQUIRED" }, { status: 403 });
+  if (/^\/(api|trpc)(\/|$)/.test(request.nextUrl.pathname)) {
+    return Response.json({ error: member?.status === "active" ? "MEMBERSHIP_EXPIRED" : member?.status?.toUpperCase() ?? "MEMBERSHIP_REQUIRED" }, { status: 403 });
   }
   return NextResponse.redirect(new URL("/account", request.url));
 }) : null;
 
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
-  if (!handler) return NextResponse.next();
+  if (!handler) {
+    if (isPublicMembershipPage(request.nextUrl.pathname)) return NextResponse.next();
+    if (allowsMembershipPreview(process.env) && !isMembershipServiceRoute(request.nextUrl.pathname)) {
+      return NextResponse.next();
+    }
+    return unavailable(request, "MEMBERSHIP_NOT_CONFIGURED");
+  }
   return handler(request, event);
 }
 
