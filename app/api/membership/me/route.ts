@@ -1,5 +1,7 @@
 import { membershipErrorResponse, syncCurrentMember } from "@/lib/membership";
 
+import { notifyPendingMember } from "@/lib/member-activation-email";
+
 export const dynamic = "force-dynamic";
 
 export async function GET() {
@@ -36,6 +38,9 @@ export async function PATCH(request: Request) {
           ELSE status
         END AS effective_status
     `;
+    if (rows[0]?.role === "member" && rows[0].status === "pending") {
+      await notifyPendingMember(sql, member.id);
+    }
     return Response.json({ member: rows[0] });
   } catch (error) {
     return membershipErrorResponse(error);
