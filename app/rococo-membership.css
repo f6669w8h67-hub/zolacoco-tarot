@@ -1,0 +1,45 @@
+/* Rococo member experience — isolated to authentication and membership pages. */
+:root{--rococo-ivory:#fffaf2;--rococo-gold:#c69a61;--rococo-rose:#b77c8c;--rococo-ink:#744750}
+.auth-page,.membership-gate,.account-page{background:#fffaf2;color:var(--rococo-ink)}
+.auth-page{padding:115px 16px 56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
+.rococo-shell{position:relative;width:min(510px,100%);padding:46px clamp(18px,5vw,44px) 34px;border:2px solid #d1a36b;border-radius:46% 46% 24px 24px / 65px 65px 24px 24px;background:#fffaf2;box-shadow:0 0 0 7px #fffaf2,0 0 0 8px #e4c7a1,0 20px 50px #9e6e6420;text-align:center;animation:rococo-enter .55s ease both}
+.rococo-shell:before,.rococo-shell:after,.membership-gate>section:before,.membership-gate>section:after,.account-hero:before,.account-hero:after{content:"❦";position:absolute;color:#c69a61;font:42px Georgia,serif;line-height:1;pointer-events:none}
+.rococo-shell:before,.membership-gate>section:before,.account-hero:before{left:13px;top:13px}
+.rococo-shell:after,.membership-gate>section:after,.account-hero:after{right:13px;bottom:13px;transform:rotate(180deg)}
+.rococo-crest{width:92px;height:78px;margin:0 auto 12px;display:grid;place-items:center;border:2px solid #d5a66c;border-radius:48% 48% 46% 46%;background:#fff2e9;color:#b7827e;box-shadow:0 0 0 5px #f8e9dd,0 0 0 6px #d6b188;font:38px Georgia,serif}
+.rococo-brand{margin:10px 0 0;color:#8c4d52;font:500 27px/1.1 Georgia,serif;letter-spacing:.09em}
+.rococo-kicker{margin:10px 0 25px;color:#a57561;font:11px Georgia,serif;letter-spacing:.22em}
+.rococo-divider{height:1px;margin:0 auto 23px;max-width:280px;background:linear-gradient(90deg,transparent,#c99c68,transparent);position:relative}
+.rococo-divider:after{content:"✦";position:absolute;left:calc(50% - 9px);top:-11px;padding:0 5px;background:#fffaf2;color:#c99c68}
+.rococo-title{font:500 clamp(25px,5vw,33px)/1.4 Georgia,"Noto Serif TC",serif;color:#834d53;margin:0}
+.rococo-description{margin:9px 0 25px;color:#9b6668;font-size:13px;line-height:1.8}
+.rococo-shell .cl-card{box-shadow:none!important;border:0!important;background:transparent!important;width:100%!important}
+.rococo-shell .cl-headerTitle,.rococo-shell .cl-headerSubtitle{display:none!important}
+.rococo-shell .cl-formButtonPrimary{background:linear-gradient(180deg,#dca2a5,#a96376)!important;border:1px solid #c99c68!important;box-shadow:0 3px 0 #b58b5e,0 8px 20px #a963762b!important;color:white!important}
+.rococo-shell .cl-formFieldInput{border:1px solid #d8b28b!important;background:#fffdf9!important;border-radius:12px!important}
+.rococo-shell .cl-formFieldInput:focus{outline:2px solid #c69a61!important;outline-offset:1px}
+.rococo-shell .cl-footerActionLink,.rococo-shell .cl-formFieldAction{color:#99596a!important}
+.rococo-shell .cl-socialButtonsBlockButton{border-color:#dec3a5!important}
+.rococo-shell .cl-dividerLine{background:#e2cbb2!important}
+.rococo-shell .cl-formFieldLabel{color:#754e54!important}
+.rococo-shell .cl-footer{background:transparent!important}
+.membership-gate{padding:115px 16px 55px}
+.membership-gate>section,.account-hero{position:relative;width:min(650px,100%);margin-inline:auto;border:2px solid #cda06b;border-radius:80px 80px 24px 24px;background:#fffaf2;color:#744750;box-shadow:0 0 0 7px #fffaf2,0 0 0 8px #e6cfb2,0 22px 55px #966a6624;animation:rococo-enter .55s ease both}
+.membership-gate>section{padding:52px clamp(22px,5vw,60px)}
+.membership-gate .eyebrow,.account-hero .eyebrow{color:#b38a5d}
+.membership-gate-mark{background:#fff2e8;color:#a86f7c;border:2px solid #d3a66b;box-shadow:0 0 0 7px #f6e9dd;font-size:32px}
+.membership-gate h1,.account-hero h1{color:#834d53}
+.membership-gate section>p:last-of-type{color:#795d60}
+.membership-gate-actions :is(a,button),.account-primary,.member-profile-card form button{background:linear-gradient(180deg,#dca2a5,#a96376);color:#fff!important;border:1px solid #c99c68;box-shadow:0 4px 0 #b58b5e,0 8px 20px #a9637626;border-radius:16px}
+.membership-gate-actions a:last-child,.account-secondary{background:#fffaf2;color:#895563!important;border:1px solid #c99c68;box-shadow:none}
+.account-page{padding-top:125px}
+.account-hero{padding:44px 24px;margin-bottom:42px}
+.account-hero>p:last-of-type{color:#795d60}
+.member-profile-card{background:#fffdf8;border:1px solid #d4ad80}
+.member-profile-card input:focus{outline:2px solid #c99c68}
+.rococo-shell :is(button,a),.membership-gate-actions :is(button,a),.account-actions :is(button,a){transition:transform .2s ease,filter .2s ease}
+.rococo-shell :is(button,a):hover,.membership-gate-actions :is(button,a):hover,.account-actions :is(button,a):hover{filter:brightness(1.04)}
+@media(hover:hover){.rococo-shell button:hover,.membership-gate-actions :is(button,a):hover,.account-actions :is(button,a):hover{transform:translateY(-2px)}}
+@keyframes rococo-enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:600px){.rococo-shell{border-radius:75px 75px 20px 20px;padding:34px 18px 25px}.rococo-brand{font-size:24px}.rococo-shell:before,.rococo-shell:after,.membership-gate>section:before,.membership-gate>section:after,.account-hero:before,.account-hero:after{font-size:26px}.membership-gate>section{border-radius:65px 65px 20px 20px;padding:40px 23px}.account-hero{border-radius:65px 65px 20px 20px;padding:40px 18px}.auth-page{padding-top:105px}}
+@media(prefers-reduced-motion:reduce){.rococo-shell,.membership-gate>section,.account-hero{animation:none}.rococo-shell :is(button,a),.membership-gate-actions :is(button,a),.account-actions :is(button,a){transition:none}}
