@@ -3,7 +3,8 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "./rococo-membership.css";
-import MembershipGate from "./membership-gate";
+import MembershipGate, { UnconfiguredMembershipGate } from "./membership-gate";
+import { allowsMembershipPreview, isClerkConfigured } from "@/lib/membership-access";
 import SiteHeader from "./site-header";
 
 const geistSans = Geist({
@@ -33,12 +34,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const authConfigured = Boolean(
-    process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY,
-  );
+  const authConfigured = isClerkConfigured(process.env);
   const content = <>
     <SiteHeader />
-    {authConfigured ? <MembershipGate>{children}</MembershipGate> : children}
+    {authConfigured ? (
+      <MembershipGate>{children}</MembershipGate>
+    ) : allowsMembershipPreview(process.env) ? children : (
+      <UnconfiguredMembershipGate>{children}</UnconfiguredMembershipGate>
+    )}
   </>;
 
   return (

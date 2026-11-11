@@ -106,3 +106,29 @@ The timeout defaults can be overridden for a controlled canary with `SITES_INSTA
 
 - [vinext Documentation](https://github.com/cloudflare/vinext)
 - [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+
+### VIP access configuration
+
+Production requires both `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and
+`CLERK_SECRET_KEY`. Missing/partial configuration returns **503** for VIP pages
+and APIs, rather than opening access. Database configuration/lookup failures also
+return 503. Signed-out API requests return 401; ineligible members receive 403.
+Ordinary members need `status = active` and a valid future `access_expires_at`;
+admins retain access without an expiry.
+
+Only `/account`, `/sign-in`, `/sign-up` (and their child paths) bypass subscription
+checks. `/api/membership/me` and `/api/membership/admin` bypass the subscription
+check only: their existing server identity/admin guards still apply. Static assets
+continue to use the proxy matcher exclusions. Add any future public page explicitly
+to `lib/membership-access.ts`; similar prefixes are not public.
+
+Keyless local development/test environments keep the existing preview behavior.
+For a built Vercel preview, explicitly set `MEMBERSHIP_PREVIEW=true` in the
+**Preview** environment only (`VERCEL_ENV=preview`). This bypass applies only when
+Clerk is unconfigured. `VERCEL_ENV=production` always disables it. Do not set a
+production deployment's `NODE_ENV` to `development` or `test`.
+
+Run `npm run test:membership` for isolated access regressions (real source with
+Clerk/Neon adapters stubbed; no credentials or live database needed). `npm test`
+also runs the existing build/rendered-preview verification. These tests do not
+verify production secrets or demonstrate any past unauthorized access.
