@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./rococo-membership.css";
 import MembershipGate from "./membership-gate";
 import SiteHeader from "./site-header";
 
