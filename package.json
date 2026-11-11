@@ -15,7 +15,7 @@
     "validate:artifact": "bash scripts/validate-artifact.sh",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
-    "test:membership": "node --experimental-vm-modules --test tests/membership-access.test.mjs"
+    "test:membership": "node --experimental-vm-modules --test tests/membership-access.test.mjs tests/member-identity.test.mjs"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.7.3",

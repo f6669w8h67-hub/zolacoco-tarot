@@ -149,7 +149,7 @@ test("sign-in/sign-up render setup screens when only the public key exists", asy
 async function membershipService({ env = configured, member = active, userId = "user_1", email = "admin@example.com", file = "lib/membership.ts" } = {}) {
   return loadTypescript(file, { env: { ...env, ADMIN_EMAIL: "admin@example.com" }, mocks: {
     "@clerk/nextjs/server": { auth: async () => ({ userId }), currentUser: async () => ({
-      emailAddresses: [{ id: "primary", emailAddress: email }], primaryEmailAddressId: "primary",
+      emailAddresses: [{ id: "primary", emailAddress: email, verification: { status: "verified" } }], primaryEmailAddressId: "primary",
     }) },
     "@neondatabase/serverless": { neon: () => async (strings) => strings.join("").includes("INSERT INTO members") ? [{ email, ...member }] : [] },
   } });
