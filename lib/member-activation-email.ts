@@ -8,7 +8,17 @@ export async function notifyPendingMember(sql: Sql, memberId: string) {
   const from = process.env.MEMBERSHIP_EMAIL_FROM?.trim();
   const to = process.env.MEMBERSHIP_EMAIL_TO?.trim();
   const origin = process.env.MEMBERSHIP_ADMIN_ORIGIN?.trim();
-  if (!apiKey || !from || !to || !origin) return;
+  // Enabled but incomplete: say which names are missing (never their values), so it is not silent.
+  if (!apiKey || !from || !to || !origin) {
+    const missing = [
+      !apiKey && "RESEND_API_KEY",
+      !from && "MEMBERSHIP_EMAIL_FROM",
+      !to && "MEMBERSHIP_EMAIL_TO",
+      !origin && "MEMBERSHIP_ADMIN_ORIGIN",
+    ].filter(Boolean);
+    console.error("member_activation_email_misconfigured", { missing });
+    return;
+  }
 
   try {
     const url = new URL(origin);
