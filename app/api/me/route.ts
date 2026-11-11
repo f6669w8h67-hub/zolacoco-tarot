@@ -1,9 +1,10 @@
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { authorizeMemberData } from "@/lib/member-data-auth";
+import { isAdminEmail } from "@/lib/membership";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const user = await getChatGPTUser();
-  if (!user) return Response.json({ user: null });
-  return Response.json({ user: { ...user, isAdmin: user.email.toLowerCase() === (process.env.ADMIN_EMAIL ?? "").toLowerCase() } });
+  const access = await authorizeMemberData();
+  if (!access.ok) return access.response;
+  return Response.json({ user: { ...access.user, isAdmin: isAdminEmail(access.user.email) } });
 }

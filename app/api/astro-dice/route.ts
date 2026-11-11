@@ -1,4 +1,4 @@
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { authorizeMemberData } from "@/lib/member-data-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +20,9 @@ async function ensureSchema(){
 }
 
 export async function POST(request:Request){
-  const user=await getChatGPTUser();
-  if(!user)return Response.json({error:"請先登入"},{status:401});
+  const access=await authorizeMemberData();
+  if(!access.ok)return access.response;
+  const user=access.user;
   const body=await request.json() as Record<string,unknown>;
   const question=String(body.question??"").trim().slice(0,180);
   const category=String(body.category??"").trim().slice(0,24);
@@ -37,8 +38,9 @@ export async function POST(request:Request){
 }
 
 export async function GET(){
-  const user=await getChatGPTUser();
-  if(!user)return Response.json({error:"請先登入"},{status:401});
+  const access=await authorizeMemberData();
+  if(!access.ok)return access.response;
+  const user=access.user;
   await ensureSchema(); const { env }=await import("cloudflare:workers");
   const result=await env.DB.prepare("SELECT id,question,category,planet_name,sign_name,house_name,note,created_at FROM astro_dice_entries WHERE user_email=? ORDER BY created_at DESC LIMIT 30").bind(user.email).all();
   return Response.json({entries:result.results??[]});
