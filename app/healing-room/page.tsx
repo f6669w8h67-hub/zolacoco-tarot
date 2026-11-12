@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { tarotCards, type TarotCard } from "../tarot-data";
+import { cardLabel, tarotCards, type TarotCard } from "../tarot-data";
 import "./healing-room.css";
 
 type Room = "lobby" | "emotion" | "relationship" | "sleep" | "strength" | "records";
@@ -30,7 +30,7 @@ function dateLabel(){ return new Intl.DateTimeFormat("zh-TW",{year:"numeric",mon
 function makeId(){ return globalThis.crypto?.randomUUID?.()??`heal-${Date.now()}-${Math.random().toString(36).slice(2,9)}`; }
 
 function CardReveal({card,label}:{card:TarotCard;label:string}){
-  return <div className="heal-card-reveal"><div className="heal-tarot"><img src={card.art} alt={card.scene}/><small>{card.numeral} · {card.en}</small><b>{card.name}</b></div><div><span>{label}</span><h3>{card.name}</h3><p>{card.truth}</p><aside><b>今天可以做的一個小行動</b><p>{card.action}</p></aside></div></div>
+  return <div className="heal-card-reveal"><div className="heal-tarot"><img src={card.art} alt={card.scene}/><small>{cardLabel(card)}</small><b>{card.name}</b></div><div><span>{label}</span><h3>{card.name}</h3><p>{card.truth}</p><aside><b>今天可以做的一個小行動</b><p>{card.action}</p></aside></div></div>
 }
 
 function StepShell({eyebrow,title,copy,step,total,onBack,children}:{eyebrow:string;title:string;copy?:string;step:number;total:number;onBack:()=>void;children:React.ReactNode}){

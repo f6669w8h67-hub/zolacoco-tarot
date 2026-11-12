@@ -109,7 +109,7 @@ const minorSeeds: Record<keyof typeof suitMeta, Array<Omit<CardSeed,"name"|"en"|
     { keywords:"抓緊・控制・安全焦慮", scene:"萊恩緊抱一枚錢幣，頭頂與腳下各壓著金幣，城市在遠處。", truth:"妳正在用控制換安全感，但抓得越緊，流動與信任越少。", blindSpot:"害怕失去，讓妳把「保有」放在「是否值得」之前。", action:"選一件可以小幅放手的事，觀察是否真的會失控。" },
     { keywords:"匱乏・被排除・求助", scene:"兩隻疲憊的貓走過雪夜，身旁教堂彩窗亮著五枚錢幣。", truth:"目前確實有資源或支持不足，但妳不必獨自撐過去。", blindSpot:"因為羞愧或怕麻煩別人，而看不見其實就在附近的援助。", action:"向一個具體的人提出一個具體請求。" },
     { keywords:"給予・回收・權力平衡", scene:"富足的萊恩一爪持天秤，一爪把金幣分給兩隻需要幫助的貓。", truth:"付出與接受正在被衡量；真正的問題是資源分配是否公平。", blindSpot:"給予看似慷慨，也可能讓關係形成依賴或權力落差。", action:"把金錢、時間與情緒勞動都算進付出。" },
-    { keywords:"等待成果・檢視投報", scene:"萊恩靠著鋤頭凝視掛滿七枚錢幣的藤蔓，評估哪些果實已成熟。", truth:"成長需要時間，但等待不代表不能檢查方法是否有效。", blindSpot:"因為投入很多而不願調整，即使回報已經長期偏低。", action:"設定一個可量化指標與下一次檢查日期。" },
+    { keywords:"等待成果・檢視投報・耐心經營", scene:"萊恩靠著鋤頭凝視掛滿七枚錢幣的藤蔓，評估哪些果實已成熟。", truth:"成長需要時間，但等待不代表不能檢查方法是否有效。", blindSpot:"因為投入很多而不願調整，即使回報已經長期偏低。", action:"設定一個可量化指標與下一次檢查日期。" },
     { keywords:"練習・專注・技術累積", scene:"萊恩工匠在工作臺逐一雕刻八枚星幣，牆上作品整齊排列。", truth:"答案不在天分，而在重複練習；妳現在需要的是把基本功做紮實。", blindSpot:"一直追求新方法，卻沒有把任何一項練到穩定。", action:"選一個核心能力，連續七天固定練習。" },
     { keywords:"獨立・收成・自我價值", scene:"優雅的萊恩站在葡萄園，九枚錢幣結成果實，獵鷹停在手套上。", truth:"妳正在建立不依附別人也能成立的安全感，這份成果值得被承認。", blindSpot:"過度獨立，可能讓妳不敢接受真正健康的合作與照顧。", action:"享受一項自己創造的成果，也允許可信任的人參與。" },
     { keywords:"長期・家族・穩固基礎", scene:"三代貓咪在拱門家徽下相聚，十枚錢幣排列成生命樹圖樣。", truth:"這件事要看長期制度、家庭或共同資產，不只是當下感受。", blindSpot:"外在穩定不等於內在適合，也可能被傳統期待綁住。", action:"把五年後仍重要的條件放到決策最前面。" },
@@ -141,6 +141,11 @@ export const minorCards: TarotCard[] = (Object.keys(suitMeta) as Array<keyof typ
 });
 
 export const tarotCards: TarotCard[] = [...majorCards, ...minorCards];
+
+/** Card face label: "VIII · STRENGTH", but court cards just "QUEEN OF CUPS" (not "QUEEN · QUEEN OF CUPS"). */
+export function cardLabel(card: Pick<TarotCard, "numeral" | "en">) {
+  return card.en.startsWith(`${card.numeral} `) ? card.en : `${card.numeral} · ${card.en}`;
+}
 
 export const topicLens: Record<string, Record<TarotSuit,string>> = {
   感情:{ major:"這張牌邀請妳回到關係裡最核心的選擇。", wands:"可以留意眼前的熱度，是否也有被持續的行動接住。", cups:"可以看看彼此的感受是否互相流動，而不只是妳一個人被觸動。", swords:"可以先梳理溝通、界線，以及眼前真正發生的事。", pentacles:"可以觀察承諾是否慢慢落實在時間、投入與生活安排裡。" },

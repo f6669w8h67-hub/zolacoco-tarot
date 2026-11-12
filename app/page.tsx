@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { tarotCards, topicLens, type TarotCard } from "./tarot-data";
+import { cardLabel, tarotCards, topicLens, type TarotCard } from "./tarot-data";
 import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
 import { loadMemberProfile } from "@/lib/member-client";
 import {
@@ -88,7 +88,7 @@ function PracticeCard({ card, hidden = false, flipped = true }: { card: TarotCar
       <div className="practice-tarot-back"><div className="back-frame" /></div>
       <div className="practice-tarot-front">
         <img src={card.art} alt={card.scene} onError={(event) => { event.currentTarget.src = "/cat-tarot-master.png"; }} />
-        <div className="practice-card-title"><small>{card.numeral} · {card.en}</small><strong>{card.name}</strong><span>ZOLACOCO CAT TAROT</span></div>
+        <div className="practice-card-title"><small>{cardLabel(card)}</small><strong>{card.name}</strong><span>ZOLACOCO CAT TAROT</span></div>
       </div>
     </div>
   </div>;
@@ -563,7 +563,7 @@ export default function Home() {
                 {selected.map((card, i) => <section className="card-reading-unit" key={`${card.id}-reading`}>
                   <div className="result-card-wrap">
                     <span>{String(i + 1).padStart(2, "0")} · {activeSpread.positions[i]}</span>
-                    <div className={`tarot-card suit-${card.suit} ${revealed ? "revealed" : ""}`}><div className="tarot-inner"><div className="tarot-back"><div className="back-frame" /></div><div className="tarot-front"><div className="cat-art"><img src={card.art} alt={card.scene} onError={(event) => { event.currentTarget.src = "/cat-tarot-master.png"; }} /></div><p>{card.numeral} · {card.en}</p><h3>{card.name}</h3><small>ZOLACOCO CAT TAROT</small></div></div></div>
+                    <div className={`tarot-card suit-${card.suit} ${revealed ? "revealed" : ""}`}><div className="tarot-inner"><div className="tarot-back"><div className="back-frame" /></div><div className="tarot-front"><div className="cat-art"><img src={card.art} alt={card.scene} onError={(event) => { event.currentTarget.src = "/cat-tarot-master.png"; }} /></div><p>{cardLabel(card)}</p><h3>{card.name}</h3><small>ZOLACOCO CAT TAROT</small></div></div></div>
                     <p className="result-card-name">{card.name}｜{card.keywords}</p>
                   </div>
                   <div className="position-reading"><p className="scene-note">牌面｜{card.scene}</p><div className="reading-point"><b>這個主題正在提醒妳</b><p>{topicLens[topic][card.suit]}</p></div><div className="reading-point"><b>這張牌所在的位置</b><p>{positionLens[spreadId][i]}</p></div><div className="reading-point"><b>牌卡想帶給妳的提醒</b><p>{card.truth}</p></div><div className="reading-point blind"><b>需要留意的地方</b><p>{card.blindSpot}</p></div><div className="reading-point next"><b>妳可以先這樣做</b><p>{card.action}</p></div></div>
