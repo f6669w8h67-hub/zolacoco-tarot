@@ -30,7 +30,7 @@
 .membership-gate-mark{background:#fff2e8;color:#a86f7c;border:2px solid #d3a66b;box-shadow:0 0 0 7px #f6e9dd;font-size:32px}
 .membership-gate h1,.account-hero h1{color:#834d53}
 .membership-gate section>p:last-of-type{color:#795d60}
-.membership-gate-actions :is(a,button),.account-primary,.member-profile-card form button{background:linear-gradient(180deg,#dca2a5,#a96376);color:#fff!important;border:1px solid #c99c68;box-shadow:0 4px 0 #b58b5e,0 8px 20px #a9637626;border-radius:16px}
+.membership-gate-actions :is(a,button),.account-primary,.member-profile-card form button{background:linear-gradient(180deg,#f6dcdf,#e7b7bd);color:#6b3447!important;border:1px solid #c99c68;box-shadow:0 3px 0 #d3ab7d,0 8px 20px #a963761f;border-radius:16px}
 .membership-gate-actions a:last-child,.account-secondary{background:#fffaf2;color:#895563!important;border:1px solid #c99c68;box-shadow:none}
 .account-page{padding-top:125px}
 .account-hero{padding:44px 24px;margin-bottom:42px}
@@ -49,7 +49,7 @@
 .account-hero-anchor,.member-profile-card{scroll-margin-top:96px}
 .account-hero>p.account-lead{max-width:600px;margin:22px auto 0;color:#795d60;font-size:15px;line-height:1.95}
 .account-hero>p.account-meta{width:max-content;max-width:100%;line-height:1.6;margin:16px auto 0;padding:7px 15px;border:1px solid #e2c49c;border-radius:999px;background:#fff4ea;color:#8c5c4f;font-size:13px;font-weight:600}
-.account-hero>p.account-meta-warning{border-color:#d9a37b;background:#fdebe1;color:#9a4f4a}
+.account-hero>p.account-meta-warning{border-color:#e8b48f;background:#fdeee3;color:#8a4f2f}
 .account-hero .account-actions{margin-top:26px}
 .account-actions :is(a,button){min-height:48px;padding:12px 24px;display:inline-flex;align-items:center;justify-content:center;border-radius:16px;text-decoration:none;font-family:inherit;font-size:14px;font-weight:650;line-height:1.3;cursor:pointer}
 .account-hero>p.account-line-hint{max-width:470px;margin:14px auto 0;color:#9b7774;font-size:12px;line-height:1.75}
@@ -60,8 +60,10 @@
 .account-quiet-actions{margin:16px 0 0;display:flex;justify-content:center;gap:16px}
 .account-hero>p.account-quiet-actions{margin:16px auto 0}
 .account-quiet-actions a,.account-signout{min-height:44px;padding:8px 6px;display:inline-flex;align-items:center;border:0;background:none;color:#99596a;font-family:inherit;font-size:13px;text-decoration:underline;text-decoration-color:#d8b28b;text-underline-offset:4px;cursor:pointer}
-.account-status.status-expiring i{background:#c98a4b;box-shadow:0 0 0 4px #c98a4b22}
-.account-status.status-error i{background:#a3474f;box-shadow:0 0 0 4px #a3474f1f}
+.account-status.status-expiring i{background:#e09a68;box-shadow:0 0 0 4px #e09a6826}
+.account-status.status-expired i{background:#b77c8c;box-shadow:0 0 0 4px #b77c8c1f}
+.account-status.status-suspended i{background:#a39189;box-shadow:0 0 0 4px #a391891f}
+.account-status.status-error i{background:#a39189;box-shadow:0 0 0 4px #a391891f}
 
 .account-steps{max-width:640px;margin:30px auto 0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;list-style:none;text-align:center}
 .account-steps li{position:relative;padding:0 4px;display:grid;justify-items:center;align-content:start;gap:5px}
@@ -87,8 +89,11 @@ a.account-space:hover{border-color:#c99c68}
 @media(hover:hover){a.account-space:hover{transform:translateY(-2px)}}
 .account-space.is-locked{border-style:dashed;background:#fffaf2;box-shadow:none}
 .account-space.is-locked>span{position:static;width:max-content;margin-top:4px;padding:2px 9px;transform:none;border:1px solid #e3cdb1;border-radius:999px;color:#a57561;font-size:10px;letter-spacing:.06em}
-.account-archive-link{margin:16px 0 0;text-align:center}
-.account-archive-link a{color:#99596a;font-size:13px;text-underline-offset:4px}
+.account-records-link{position:relative;max-width:520px;margin:18px auto 0;padding:14px 44px 14px 20px;display:grid;gap:3px;border:1px solid #e3cdb1;border-radius:16px;background:#fffaf2;color:#744750;text-decoration:none}
+.account-records-link b{color:#834d53;font-size:14px}
+.account-records-link small{color:#9b7774;font-size:12px}
+.account-records-link>span{position:absolute;top:50%;right:18px;transform:translateY(-50%);color:#c69a61}
+.account-records-link:hover{border-color:#c99c68}
 
 .account-page .member-profile-card{position:relative;width:min(760px,100%);margin:0 auto 46px;padding:30px clamp(18px,4vw,36px);border:1px solid #d4ad80;border-radius:28px;background:#fffdf8;box-shadow:0 0 0 6px #fffaf2,0 0 0 7px #ecd9c1,0 18px 44px #966a661a}
 .member-profile-head{margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -104,7 +109,10 @@ a.account-space:hover{border-color:#c99c68}
 .member-profile-notice{margin:14px 0 0;color:#5f7d64;font-size:13px;line-height:1.7}
 .member-profile-notice:empty{margin:0}
 .member-profile-notice.is-error{color:#a3474f}
-.member-privacy-note{margin:18px 0 0;padding:14px 16px;border-radius:14px;background:#fbf1e6;color:#8b6d6a;font-size:12px;line-height:1.85}
+.member-privacy-note{margin:18px 0 0;padding:16px 18px;border-radius:14px;background:#fbf1e6;color:#8b6d6a;font-size:12px;line-height:1.85}
+.member-privacy-note b{display:block;margin-bottom:6px;color:#744750;font-size:13px}
+.member-privacy-note p{margin:0 0 6px}
+.member-privacy-note p:last-child{margin-bottom:0}
 .member-profile-card .member-profile-foot{margin-top:10px;padding:0;display:flex;justify-content:flex-end;background:none;text-align:right}
 .account-page :is(a,button,summary,input):focus-visible{outline:2px solid #c69a61;outline-offset:3px}
 
@@ -119,3 +127,4 @@ a.account-space:hover{border-color:#c99c68}
 @media(max-width:480px){.account-space-grid{gap:9px}.account-space{min-height:88px;padding:14px 30px 14px 14px;border-radius:16px}.account-space b{font-size:14px}.account-space small{font-size:11px}.account-space>span{right:12px}.account-space.is-locked{padding-right:14px}}
 @media(prefers-reduced-motion:reduce){.account-space{transition:none}a.account-space:hover{transform:none}}
 .account-meta>span{white-space:nowrap}
+@media(max-width:359px){.account-space-grid{grid-template-columns:1fr}.account-space{min-height:72px}}

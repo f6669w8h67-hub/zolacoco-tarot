@@ -93,7 +93,7 @@ function lines(...parts: Array<string | false | null | undefined>) {
 // find the account (never the birthday), and the member reviews them before sending.
 export function activationRequestMessage(member: ClientMember) {
   return lines(
-    "Zola 你好，我已經在 Zolacoco Tarot 註冊會員，想申請開通使用期限。",
+    "Zola 好，我已經在 Zolacoco Tarot 註冊會員，想申請開通使用期限。",
     member.full_name?.trim() && `姓名：${member.full_name.trim()}`,
     member.line_id?.trim() && `LINE：${member.line_id.trim()}`,
     `註冊 Email：${member.email}`,
@@ -103,7 +103,7 @@ export function activationRequestMessage(member: ClientMember) {
 export function renewalRequestMessage(member: ClientMember) {
   const until = formatTaipeiDate(member.access_expires_at);
   return lines(
-    "Zola 你好，我想延長 Zolacoco Tarot 的會員使用期限。",
+    "Zola 好，我想延長 Zolacoco Tarot 的會員使用期限。",
     member.full_name?.trim() && `姓名：${member.full_name.trim()}`,
     `註冊 Email：${member.email}`,
     until && `目前期限：${until}`,
@@ -112,14 +112,14 @@ export function renewalRequestMessage(member: ClientMember) {
 
 export function supportRequestMessage(member: ClientMember) {
   return lines(
-    "Zola 你好，我的 Zolacoco Tarot 會員權限目前顯示暫停，想請你協助確認。",
+    "Zola 好，我的 Zolacoco Tarot 會員權限目前顯示暫停，想請 Zola 協助確認。",
     member.full_name?.trim() && `姓名：${member.full_name.trim()}`,
     `註冊 Email：${member.email}`,
   );
 }
 
 export const LINKED_EMAIL_HELP_MESSAGE =
-  "Zola 你好，我登入 Zolacoco Tarot 會員中心時，畫面顯示「這個 Email 已連結其他帳號」，想請你協助確認。";
+  "Zola 好，我登入 Zolacoco Tarot 會員中心時，畫面顯示「這個 Email 已連結其他帳號」，想請 Zola 協助確認。";
 
 export type ProfileInput = { fullName: string; lineId: string; birthday: string };
 

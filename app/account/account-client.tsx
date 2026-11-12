@@ -36,6 +36,33 @@ export default function AccountClient() {
     return () => { active = false; };
   }, [isLoaded, isSignedIn, applyLoad]);
 
+  // Keep the countdown honest while the page stays open, and pick up an activation
+  // Zola made while the member was away (e.g. in LINE). A failed background refresh
+  // keeps the current screen; the server still decides access on every request.
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
+    let lastFetch = Date.now();
+    function refresh() {
+      if (document.visibilityState !== "visible") return;
+      setNow(Date.now());
+      if (Date.now() - lastFetch < 30_000) return;
+      lastFetch = Date.now();
+      void loadMemberProfile().then((result) => {
+        if (!result.ok) return;
+        setMember(result.member);
+        setNow(Date.now());
+      });
+    }
+    const tick = window.setInterval(() => setNow(Date.now()), 60_000);
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.clearInterval(tick);
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [isLoaded, isSignedIn]);
+
   const retry = useCallback(() => {
     setFailure(null);
     void loadMemberProfile().then(applyLoad);
