@@ -2,14 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { tarotCards, topicLens, type TarotCard } from "./tarot-data";
-import { ZOLA_LINE_URL } from "@/lib/contact";
+import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
+import { loadMemberProfile } from "@/lib/member-client";
+import {
+  QUESTION_LIMIT, SPREADS, TAROT_TOPICS, type SpreadId, cleanQuestion, consultMessage,
+  memberExpiryLabel, recommendedSpread, spreadAfterTopicChange, spreadsForTopic, tarotRecord,
+} from "@/lib/tarot-reading";
 
-const topics = ["感情", "工作", "人際", "金錢", "創業", "今日指引"];
-const spreads = [
-  { id: "healing", name: "單張療癒牌", sub: "此刻的內在訊息", positions: ["此刻的療癒訊息"] },
-  { id: "timeline", name: "三張時間流", sub: "過去・現在・下一步", positions: ["過去留下的影響", "現在需要看見的事", "接下來可以走的一步"] },
-  { id: "relationship", name: "關係鏡像牌陣", sub: "我・對方・關係課題", positions: ["我的內在狀態", "對方目前的狀態", "這段關係的核心課題"] },
-];
 
 const exploreTools = [
   { id: "archetype", number: "01", title: "此刻的內在原型", en: "INNER ARCHETYPE", desc: "從幾個直覺選擇，看見此刻最靠近你的大牌能量。" },
@@ -110,9 +109,9 @@ const archetypeCardIds = ["major-02", "major-07", "major-03"];
 const journalCardIds = ["cups-13", "swords-08", "major-08", "cups-06", "pentacles-04", "major-17", "major-21"];
 
 const positionLens: Record<string,string[]> = {
-  healing:["這是你現在值得溫柔看見的訊息。"],
-  timeline:["這個模式可能來自過去，也仍在輕輕影響你現在的判斷。","這是現況中值得先照顧的核心，看見它之後，事情才有機會慢慢鬆動。","這不是固定的預言，而是此刻可以陪你往前走的方向。"],
-  relationship:["這張牌映照出你帶進關係裡的需要與反應。","牌面呈現的是對方目前可觀察到的狀態，我們不替對方斷言還沒說出口的心意。","這是雙方可以一起看見的關係課題，理解之後，才有機會走出原本的循環。"],
+  healing:["這是妳現在值得溫柔看見的訊息。"],
+  timeline:["這個模式可能來自過去，也仍在輕輕影響妳現在的判斷。","這是現況中值得先照顧的核心，看見它之後，事情才有機會慢慢鬆動。","這不是固定的預言，而是此刻可以陪妳往前走的方向。"],
+  relationship:["這張牌映照出妳帶進關係裡的需要與反應。","牌面呈現的是對方目前可觀察到的狀態，我們不替對方斷言還沒說出口的心意。","這是雙方可以一起看見的關係課題，理解之後，才有機會走出原本的循環。"],
 };
 
 function shuffledDeck() {
@@ -124,20 +123,41 @@ function shuffledDeck() {
   return deck;
 }
 
+// Desktop fans every card on one arc (--offset). Phones split the deck into two rows
+// (--m-row / --m-offset) so every card stays on screen with a 44px tap strip.
+function mobileFanStyle(index: number, total: number) {
+  const firstRow = Math.ceil(total / 2);
+  const row = index < firstRow ? 0 : 1;
+  const inRow = row === 0 ? index : index - firstRow;
+  const rowSize = row === 0 ? firstRow : total - firstRow;
+  return {
+    "--i": index,
+    "--offset": index - (total - 1) / 2,
+    "--m-row": row,
+    "--m-offset": inRow - (rowSize - 1) / 2,
+  } as React.CSSProperties;
+}
+
 function synthesis(cards: TarotCard[], spreadId: string) {
   if (cards.length < 3) return cards[0]?.truth ?? "";
   const [first, second, third] = cards;
   const firstKey = first.keywords.split("・")[0];
   const secondKey = second.keywords.split("・")[0];
   const thirdKey = third.keywords.split("・")[0];
-  if (spreadId === "relationship") return `你這邊帶著「${firstKey}」，對方目前呈現「${secondKey}」，而這段關係值得一起看見的課題是「${thirdKey}」。感情可以是起點，真正的靠近仍需要雙方都願意理解與調整。`;
-  return `過去的「${firstKey}」可能仍在影響你，現況邀請你看見「${secondKey}」。接下來不必急著得到所有答案，可以先從 ${third.name} 的「${thirdKey}」踏出一小步。`;
+  if (spreadId === "relationship") return `妳這邊帶著「${firstKey}」，對方目前呈現「${secondKey}」，而這段關係值得一起看見的課題是「${thirdKey}」。感情可以是起點，真正的靠近仍需要雙方都願意理解與調整。`;
+  return `過去的「${firstKey}」可能仍在影響妳，現況邀請妳看見「${secondKey}」。接下來不必急著得到所有答案，可以先從 ${third.name} 的「${thirdKey}」踏出一小步。`;
 }
 
 export default function Home() {
   const [topic, setTopic] = useState("今日指引");
   const [selected, setSelected] = useState<TarotCard[]>([]);
-  const [spreadId, setSpreadId] = useState("healing");
+  const [spreadId, setSpreadId] = useState<SpreadId>(recommendedSpread("今日指引"));
+  const [spreadChosen, setSpreadChosen] = useState(false);
+  const [question, setQuestion] = useState("");
+  const [soundOpen, setSoundOpen] = useState(false);
+  const [soundBlocked, setSoundBlocked] = useState(false);
+  const [memberBanner, setMemberBanner] = useState<{ active: boolean; expires: string | null } | null>(null);
+  const [consultCopy, setConsultCopy] = useState<"idle" | "done" | "failed">("idle");
   const [revealed, setRevealed] = useState(false);
   const [shuffling, setShuffling] = useState(false);
   const [seed, setSeed] = useState(0);
@@ -160,13 +180,19 @@ export default function Home() {
   const [pendulumResult, setPendulumResult] = useState<PendulumResult | null>(null);
   const [pendulumMoving, setPendulumMoving] = useState(false);
   const [pendulumSaveState, setPendulumSaveState] = useState<"idle" | "saved" | "error">("idle");
-  const [menuOpen, setMenuOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [soundscape, setSoundscape] = useState<Soundscape>("forest");
   const audioFrames = useRef<Partial<Record<Soundscape, HTMLIFrameElement | null>>>({});
+  // YouTube players are created only after a member picks a soundscape (Issue #9 P7),
+  // so opening the page no longer loads three video players on a phone.
+  const [mountedSoundscapes, setMountedSoundscapes] = useState<Soundscape[]>([]);
+  const pendingSoundscape = useRef<Soundscape | null>(null);
+  const loadedSoundscapes = useRef(new Set<Soundscape>());
 
   const positions = [-12, -6, 0, 6, 12];
-  const activeSpread = spreads.find((item) => item.id === spreadId) ?? spreads[0];
+  const activeSpread = SPREADS.find((item) => item.id === spreadId) ?? SPREADS[0];
+  const offeredSpreads = spreadsForTopic(topic);
+  const recommendedId = recommendedSpread(topic);
   const intuitionCard = tarotCards[intuitionCardIndex] ?? tarotCards[0];
   const intuitionOptions = intuitionOptionsFor(intuitionCard, intuitionCardIndex);
   const archetypeQuestions = archetypeQuestionSets[archetypeSetIndex] ?? archetypeQuestionSets[0];
@@ -188,6 +214,17 @@ export default function Home() {
     stopAllSoundscapes();
     setSoundscape(nextSoundscape);
     setSoundEnabled(true);
+    pendingSoundscape.current = nextSoundscape;
+    setSoundBlocked(false);
+    if (!mountedSoundscapes.includes(nextSoundscape)) {
+      // If the player has not loaded after a while (blocked network, content blocker), say so.
+      window.setTimeout(() => {
+        if (pendingSoundscape.current === nextSoundscape && !loadedSoundscapes.current.has(nextSoundscape)) setSoundBlocked(true);
+      }, 8000);
+      // The new iframe starts itself (autoplay=1) and onLoad repeats the play command.
+      setMountedSoundscapes((current) => [...current, nextSoundscape]);
+      return;
+    }
     const play = () => {
       sendPlayerCommand(nextSoundscape, "unMute");
       sendPlayerCommand(nextSoundscape, "setVolume", [65]);
@@ -200,12 +237,26 @@ export default function Home() {
 
   function toggleSoundscape(nextSoundscape: Soundscape) {
     if (soundEnabled && soundscape === nextSoundscape) {
+      pendingSoundscape.current = null;
       stopAllSoundscapes();
       setSoundEnabled(false);
       return;
     }
     startSoundscape(nextSoundscape);
   }
+
+  // Hero status for signed-in members (Issue #9 B4). Records still live on this device only.
+  useEffect(() => {
+    let active = true;
+    void loadMemberProfile().then((result) => {
+      if (!active || !result.ok) return;
+      const member = result.member;
+      const expires = member.role === "admin" ? null : member.access_expires_at;
+      const valid = member.role === "admin" || (member.effective_status === "active" && Boolean(expires) && new Date(String(expires)).getTime() > Date.now());
+      setMemberBanner({ active: valid, expires: valid ? memberExpiryLabel(expires) : null });
+    });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     const requestedTool = new URLSearchParams(window.location.search).get("tool");
@@ -288,25 +339,44 @@ export default function Home() {
     setRevealed(false);
     setSpreadCards([]);
     setTarotSaveState("idle");
+    setConsultCopy("idle");
     document.getElementById("draw")?.scrollIntoView({ behavior: "smooth" });
   }
 
   function saveTarotReading() {
-    if (!selected.length) return;
+    if (!selected.length || tarotSaveState === "saved") return;
     try {
       const records = JSON.parse(localStorage.getItem(TAROT_STORAGE_KEY) ?? "[]") as unknown[];
-      records.unshift({ id: Date.now(), topic, spread: activeSpread.name, cards: selected.map((card, index) => ({ name: card.name, position: activeSpread.positions[index], keywords: card.keywords, truth: card.truth, action: card.action })), created_at: new Date().toISOString() });
+      records.unshift(tarotRecord({
+        question, topic, spread: activeSpread.name,
+        cards: selected.map((card, index) => ({ id: card.id, name: card.name, position: activeSpread.positions[index], keywords: card.keywords, truth: card.truth, action: card.action })),
+      }, Date.now()));
       localStorage.setItem(TAROT_STORAGE_KEY, JSON.stringify(records.slice(0, 60)));
       setTarotSaveState("saved");
     } catch { setTarotSaveState("error"); }
   }
 
-  function changeTopic(item: string) {
-    setTopic(item); setSelected([]); setSpreadCards([]); setRevealed(false);
+  const consultText = consultMessage({
+    topic, spreadName: activeSpread.name, question,
+    cards: selected.map((card, index) => ({ id: card.id, name: card.name, position: activeSpread.positions[index] })),
+  });
+
+  async function copyConsult() {
+    try {
+      await navigator.clipboard.writeText(consultText);
+      setConsultCopy("done");
+    } catch {
+      setConsultCopy("failed");
+    }
   }
 
-  function changeSpread(item: string) {
-    setSpreadId(item); setSelected([]); setSpreadCards([]); setRevealed(false);
+  function changeTopic(item: string) {
+    setTopic(item); setSelected([]); setSpreadCards([]); setRevealed(false);
+    setSpreadId((current) => spreadAfterTopicChange(item, current, spreadChosen));
+  }
+
+  function changeSpread(item: SpreadId) {
+    setSpreadId(item); setSpreadChosen(true); setSelected([]); setSpreadCards([]); setRevealed(false);
   }
 
   function answerArchetype(answer: number) {
@@ -359,14 +429,6 @@ export default function Home() {
         .tool-tabs em { color:#816164!important; }
         .spread-options button.active>small,.spread-options button.active>i { color:#875936!important; }
       `}</style>
-      <header className={`nav site-nav ${menuOpen ? "menu-open" : ""}`}>
-        <a className="brand" href="#top" aria-label="回到首頁" onClick={() => setMenuOpen(false)}>ZOLACOCO <span>TAROT</span></a>
-        <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="primary-menu" aria-label={menuOpen ? "關閉選單" : "開啟選單"} onClick={() => setMenuOpen((open) => !open)}><i /><i /><i /></button>
-        <nav className="primary-menu" id="primary-menu" aria-label="主要功能選單">
-          <a href="#draw" onClick={() => setMenuOpen(false)}>塔羅抽牌</a><a href="/pendulum">靈擺占卜</a><a href="/astro-dice">星骰指引</a><a href="#explore" onClick={() => setMenuOpen(false)}>內在探索</a><a href="/account">登入／會員</a><a href="#about" onClick={() => setMenuOpen(false)}>關於 Zola</a>
-        </nav>
-        <div className="account-nav"><a className="account-link" href="/account">登入／會員</a></div>
-      </header>
 
       <section className="hero" id="top">
         <div className="orb orb-one" /><div className="orb orb-two" />
@@ -374,10 +436,14 @@ export default function Home() {
           <p className="eyebrow">A MESSAGE FOR YOUR PRESENT MOMENT</p>
           <h1><span>把問題放在心裡</span><em>抽一張屬於你的牌</em></h1>
           <p className="intro">答案不替你決定人生，而是陪你看清此刻真正需要留意的方向。</p>
-          <div className="visitor-status" role="status">
+          <div className="visitor-status member-status" role="status">
             <span aria-hidden="true" />
-            <p><b>目前以訪客模式使用</b><small>探索紀錄只保存在這台裝置</small></p>
-            <a href="/account">登入與會員說明 →</a>
+            <p>
+              {memberBanner?.active ? <b>✨ 會員探索模式已開啟</b> : null}
+              {memberBanner?.active && memberBanner.expires ? <small className="member-status-expiry">會員使用期限：{memberBanner.expires}</small> : null}
+              <small>妳的抽牌紀錄目前保存在這台裝置，建議定期備份。</small>
+            </p>
+            <a href="/admin">我的占卜紀錄 →</a>
           </div>
           <a className="primary" href="#draw">開始抽牌 <span>↓</span></a>
           <p className="ritual">深呼吸三次，想著一個你最近最在意的問題</p>
@@ -396,12 +462,17 @@ export default function Home() {
       <section className="draw-section" id="draw">
         <div className="section-heading">
           <span>01</span><p>CHOOSE YOUR FOCUS</p>
-          <h2>今天，你想問什麼？</h2>
+          <h2>今天，妳想問什麼？</h2>
           <small className="deck-note">完整 78 張萊恩 × 蝦蝦貓咪塔羅 · 22 張大牌＋56 張小牌</small>
         </div>
-        <div className="tarot-soundscape" aria-label="塔羅抽牌背景音樂">
-          <div className="tarot-soundscape-heading"><span aria-hidden="true">♫</span><div><small>CHOOSE YOUR SOUNDSCAPE</small><h3>先選一段音樂，讓心慢下來</h3><p>點選後會直接播放；再次點擊同一首即可停止。</p></div></div>
-          <div className="tarot-soundscape-options">
+        <div className={`tarot-soundscape ${soundOpen ? "is-open" : "is-collapsed"}`} aria-label="塔羅抽牌背景音樂">
+          <button type="button" className="tarot-soundscape-toggle" aria-expanded={soundOpen} aria-controls="tarot-soundscape-options" onClick={() => setSoundOpen((open) => !open)}>
+            <span aria-hidden="true">♫</span>
+            <b>背景音景</b>
+            <small>{soundEnabled ? `播放中・${soundscapes[soundscape].label}` : "關閉"}</small>
+            <i aria-hidden="true">{soundOpen ? "收起" : "選擇"}</i>
+          </button>
+          <div className="tarot-soundscape-options" id="tarot-soundscape-options" hidden={!soundOpen}>
             {(Object.keys(soundscapes) as Soundscape[]).map((item) => {
               const content = soundscapes[item];
               const active = soundEnabled && soundscape === item;
@@ -410,22 +481,42 @@ export default function Home() {
               </button>;
             })}
           </div>
-          <p className="tarot-music-status" aria-live="polite">{soundEnabled ? `正在播放「${soundscapes[soundscape].label}」，抽牌時會持續播放。` : "也可以不播放音樂，直接開始抽牌。"}</p>
+          <p className="tarot-music-status" aria-live="polite" hidden={!soundOpen && !soundBlocked}>{soundBlocked ? "目前無法播放音景，妳仍可以繼續抽牌。" : soundEnabled ? `正在播放「${soundscapes[soundscape].label}」，抽牌時會持續播放；再點一次即可停止。` : "點選後才會載入並播放；也可以不播放，直接開始抽牌。"}</p>
           <div className="tarot-audio-only-player" aria-hidden="true">
-            {(Object.keys(soundscapes) as Soundscape[]).map((item) => <iframe key={item} ref={(node) => { audioFrames.current[item] = node; }} src={`https://www.youtube-nocookie.com/embed/${soundscapes[item].videoId}?enablejsapi=1&playsinline=1&loop=1&playlist=${soundscapes[item].videoId}&controls=0&rel=0`} title={`${soundscapes[item].label}背景音樂`} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" tabIndex={-1} />)}
+            {mountedSoundscapes.map((item) => <iframe key={item} ref={(node) => { audioFrames.current[item] = node; }} src={`https://www.youtube-nocookie.com/embed/${soundscapes[item].videoId}?enablejsapi=1&autoplay=1&playsinline=1&loop=1&playlist=${soundscapes[item].videoId}&controls=0&rel=0`} title={`${soundscapes[item].label}背景音樂`} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" tabIndex={-1}
+              onLoad={() => {
+                loadedSoundscapes.current.add(item);
+                setSoundBlocked(false);
+                if (pendingSoundscape.current !== item) return;
+                const play = () => {
+                  sendPlayerCommand(item, "unMute");
+                  sendPlayerCommand(item, "setVolume", [65]);
+                  sendPlayerCommand(item, "playVideo");
+                };
+                play();
+                window.setTimeout(play, 600);
+                window.setTimeout(play, 1500);
+              }} />)}
           </div>
         </div>
         <div className="topics" role="group" aria-label="選擇抽牌主題">
-          {topics.map((item) => <button key={item} className={topic === item ? "active" : ""} onClick={() => changeTopic(item)}>{item}</button>)}
+          {TAROT_TOPICS.map((item) => <button key={item} type="button" className={topic === item ? "active" : ""} aria-pressed={topic === item} onClick={() => changeTopic(item)}>{item}</button>)}
         </div>
 
         <div className="spread-options" role="group" aria-label="選擇塔羅牌陣">
-          {spreads.map((item, index) => <button key={item.id} className={spreadId === item.id ? "active" : ""} onClick={() => changeSpread(item.id)}>
-            <i>{String(index + 1).padStart(2, "0")}</i>
+          {offeredSpreads.map((item) => <button key={item.id} type="button" className={spreadId === item.id ? "active" : ""} aria-pressed={spreadId === item.id} onClick={() => changeSpread(item.id)}>
             <span className={`spread-motif motif-${item.positions.length}`} aria-hidden="true">{item.positions.map((_, cardIndex) => <b key={cardIndex} />)}</span>
-            <span>{item.name}</span><small>{item.sub}</small>
+            <span className="spread-name">{item.name}{item.id === recommendedId ? <em className="spread-recommended">推薦</em> : null}</span>
+            <small>{item.sub}</small>
           </button>)}
         </div>
+
+        <label className="tarot-question">
+          <span>寫下妳想問的問題（選填）</span>
+          <textarea value={question} maxLength={QUESTION_LIMIT} rows={2} placeholder="例如：這段關係接下來會如何發展？"
+            onChange={(event) => setQuestion(event.target.value.slice(0, QUESTION_LIMIT))} />
+          <small aria-live="polite">{[...question].length} / {QUESTION_LIMIT}</small>
+        </label>
 
         {selected.length < activeSpread.positions.length ? (
           <div className={`deck-stage ${shuffling ? "shuffling" : ""}`}>
@@ -443,7 +534,7 @@ export default function Home() {
                 </div>)}
               </div>}
               <div className="spread-deck" role="group" aria-label="從展開的牌組中選擇一張牌">
-                {spreadCards.map((card, i) => <button key={card.id} className={`pick-card ${exitingCardId === card.id ? "is-selected" : ""}`} disabled={Boolean(exitingCardId)} onClick={() => chooseCard(card)} aria-label={`選擇第 ${i + 1} 張牌，選取後牌會移出牌組`} style={{ "--i": i, "--offset": i - (spreadCards.length - 1) / 2 } as React.CSSProperties}><div className="back-frame" /></button>)}
+                {spreadCards.map((card, i) => <button key={card.id} className={`pick-card ${exitingCardId === card.id ? "is-selected" : ""}`} disabled={Boolean(exitingCardId)} onClick={() => chooseCard(card)} aria-label={`選擇第 ${i + 1} 張牌，選取後牌會移出牌組`} style={mobileFanStyle(i, spreadCards.length)}><div className="back-frame" /></button>)}
               </div>
               <button className="reshuffle" onClick={shuffleDeck}>重新洗牌</button>
             </>}
@@ -452,8 +543,9 @@ export default function Home() {
           <div className="result" aria-live="polite">
             <article className="reading">
               <div className="result-intro">
-                <p className="reading-label">你的「{topic}」指引 · {activeSpread.name}</p>
-                <h2>{selected.length === 1 ? "這張牌想告訴你" : "屬於你的三張牌"}</h2>
+                <p className="reading-label">「{topic}」・{activeSpread.name}</p>
+                <h2>妳的塔羅指引</h2>
+                {cleanQuestion(question) ? <p className="reading-question"><b>妳這次的提問：</b>{cleanQuestion(question)}</p> : null}
                 {selected.length > 1 && <div className="synthesis"><span>整體訊息</span><p>{synthesis(selected, spreadId)}</p></div>}
               </div>
               <div className={`reading-sequence count-${selected.length}`}>
@@ -463,10 +555,27 @@ export default function Home() {
                     <div className={`tarot-card suit-${card.suit} ${revealed ? "revealed" : ""}`}><div className="tarot-inner"><div className="tarot-back"><div className="back-frame" /></div><div className="tarot-front"><div className="cat-art"><img src={card.art} alt={card.scene} onError={(event) => { event.currentTarget.src = "/cat-tarot-master.png"; }} /></div><p>{card.numeral} · {card.en}</p><h3>{card.name}</h3><small>ZOLACOCO CAT TAROT</small></div></div></div>
                     <p className="result-card-name">{card.name}｜{card.keywords}</p>
                   </div>
-                  <div className="position-reading"><p className="scene-note">牌面｜{card.scene}</p><div className="reading-point"><b>此刻的核心提醒</b><p>{topicLens[topic][card.suit]} {positionLens[spreadId][i]} {card.truth}</p></div><div className="reading-point blind"><b>你也可以留意</b><p>{card.blindSpot}</p></div><div className="reading-point next"><b>可以先這樣做</b><p>{card.action}</p></div></div>
+                  <div className="position-reading"><p className="scene-note">牌面｜{card.scene}</p><div className="reading-point"><b>這個主題正在提醒妳</b><p>{topicLens[topic][card.suit]}</p></div><div className="reading-point"><b>這張牌所在的位置</b><p>{positionLens[spreadId][i]}</p></div><div className="reading-point"><b>牌卡想帶給妳的提醒</b><p>{card.truth}</p></div><div className="reading-point blind"><b>需要留意的地方</b><p>{card.blindSpot}</p></div><div className="reading-point next"><b>妳可以先這樣做</b><p>{card.action}</p></div></div>
                 </section>)}
               </div>
-              <div className="reading-actions"><button className="flow-button secondary-flow" onClick={reset}>重新抽牌</button><button className="flow-button secondary-flow" onClick={saveTarotReading}>{tarotSaveState === "saved" ? "已存到我的存檔 ✓" : tarotSaveState === "error" ? "存檔失敗，請再試一次" : "儲存這次抽牌"}</button><a className="flow-button primary-flow" href="#explore">下一步・認識自己的解牌直覺 <b>→</b></a></div>
+              <section className="tarot-consult" aria-labelledby="tarot-consult-title">
+                <h3 id="tarot-consult-title">想把這次的牌看得更完整？</h3>
+                <p>帶著這次的問題與牌卡，預約更完整的一對一解讀。</p>
+                <div className="tarot-consult-actions">
+                  <a className="flow-button primary-flow" href={lineMessageUrl(consultText)} target="_blank" rel="noreferrer" onClick={() => void copyConsult()}>讓 Zola 幫我深入解讀 ✨</a>
+                  <button type="button" className="flow-button secondary-flow" onClick={() => void copyConsult()}>{consultCopy === "done" ? "已複製抽牌內容" : "複製抽牌內容"}</button>
+                </div>
+                <p className="tarot-consult-note" aria-live="polite">{consultCopy === "failed"
+                  ? "這個瀏覽器無法自動複製，請展開下方內容後手動選取。"
+                  : <>按下後會先複製抽牌內容，再開啟 Zola 的官方 LINE；內容會提供給 LINE 中的諮詢對象 Zola。若 LINE 沒有自動帶入，貼上即可。電腦沒有 LINE 時，也可以到 <a href={ZOLA_LINE_URL} target="_blank" rel="noreferrer">官方 LINE</a> 貼上。</>}</p>
+                <details className="tarot-consult-preview" open={consultCopy === "failed" || undefined}><summary>查看抽牌內容</summary><pre>{consultText}</pre></details>
+              </section>
+              <div className="reading-actions">
+                <button className="flow-button secondary-flow" onClick={reset}>重新抽牌</button>
+                <button className="flow-button secondary-flow" onClick={saveTarotReading} disabled={tarotSaveState === "saved"}>{tarotSaveState === "saved" ? "已儲存" : tarotSaveState === "error" ? "存檔失敗，請再試一次" : "儲存這次抽牌"}</button>
+                <a className="flow-button primary-flow" href="#explore">下一步・認識自己的解牌直覺 <b>→</b></a>
+              </div>
+              {tarotSaveState === "saved" ? <p className="tarot-saved-note" role="status">這次的塔羅指引已保存 ✨ <a href="/admin">查看我的占卜紀錄 →</a></p> : null}
             </article>
           </div>
         )}

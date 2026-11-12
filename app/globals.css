@@ -1908,3 +1908,80 @@ html[data-font-tier="small"] main button:not(.image-start-hitbox){font-size:13px
   .global-account-short{display:none}
   .global-menu-trigger{padding:8px 11px}
 }
+
+/* Tarot draw on phones (Issue #9 B1/B2): readable progress slots and a two-row fan
+   that keeps all cards on screen with at least a 44px tap strip per card. */
+@media(max-width:600px){
+  .selection-progress{width:100%;padding:0 6px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;overflow:visible}
+  .choice-slot{min-width:0;grid-template-columns:1fr;justify-items:center;gap:6px;text-align:center}
+  .choice-slot p{font-size:11px;line-height:1.45;word-break:keep-all;overflow-wrap:anywhere}
+  .spread-deck{height:300px;padding:0;overflow:visible}
+  .spread-deck{--fan-step:min(42px,calc((100vw - 96px) / 6))}
+  .pick-card{width:68px;height:114px;left:calc(50% - 34px);top:calc(18px + var(--m-row) * 146px);transform-origin:50% 120%;transform:translateX(calc(var(--m-offset) * var(--fan-step))) rotate(calc(var(--m-offset) * 2deg))}
+  .pick-card:hover,.pick-card:focus-visible{transform:translateX(calc(var(--m-offset) * var(--fan-step))) translateY(-12px) rotate(calc(var(--m-offset) * 2deg))}
+  .pick-card:active{transform:translateX(calc(var(--m-offset) * var(--fan-step))) translateY(-28px) scale(.86)}
+  .pick-card .back-frame b{font-size:22px}
+  .pick-card .back-frame span{font-size:10px}
+  /* spreadIn keeps its last frame (fill-mode both), so phones need their own end position. */
+  .pick-card{animation-name:spreadInPhone}
+}
+@keyframes spreadInPhone{from{opacity:0;transform:translateX(0) rotate(0)}to{opacity:1;transform:translateX(calc(var(--m-offset) * var(--fan-step))) rotate(calc(var(--m-offset) * 2deg))}}
+
+/* Tarot draw refinements (Issue #9, ChatGPT spec). */
+.tarot-soundscape.is-collapsed{padding:6px}
+.tarot-soundscape-toggle{width:100%;min-height:48px;padding:8px 14px;display:flex;align-items:center;gap:10px;border:0;border-radius:18px;background:transparent;color:#6f4b50;font-family:inherit;text-align:left;cursor:pointer}
+.tarot-soundscape-toggle>span{display:grid;place-items:center;flex:0 0 34px;height:34px;border:1px solid rgba(174,128,79,.48);border-radius:50%;background:rgba(255,252,246,.78);color:#996a47;font:16px/1 Georgia,serif}
+.tarot-soundscape-toggle b{color:#573941;font-size:14px;font-weight:600}
+.tarot-soundscape-toggle small{color:#876b68;font-size:12px}
+.tarot-soundscape-toggle i{margin-left:auto;padding:4px 12px;border:1px solid rgba(174,128,79,.42);border-radius:999px;color:#8a5c4a;font-size:12px;font-style:normal}
+.tarot-soundscape.is-open .tarot-soundscape-toggle{margin-bottom:12px}
+.tarot-soundscape-options[hidden],.tarot-music-status[hidden]{display:none!important}
+.topics button{min-height:44px}
+.spread-name{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.spread-recommended{padding:1px 8px;border:1px solid #c69a61;border-radius:999px;background:#fff6ea;color:#93623f;font-size:10px;font-style:normal;letter-spacing:.06em;line-height:1.6}
+.tarot-question{width:min(720px,100%);margin:-30px auto 34px;display:grid;gap:8px;color:#6d5056;text-align:left}
+.tarot-question>span{font-size:14px;font-weight:600;color:#5a3d45}
+.tarot-question textarea{width:100%;min-height:64px;padding:12px 14px;resize:vertical;border:1px solid rgba(158,113,74,.43);border-radius:16px;background:#fffaf4;color:#503a41;font:15px/1.6 inherit;font-family:inherit}
+.tarot-question textarea:focus-visible{outline:2px solid #c69a61;outline-offset:2px}
+.tarot-question small{justify-self:end;color:#9b7774;font-size:11px}
+.reading-question{margin:10px auto 0;max-width:620px;color:#6d5056;font-size:14px;line-height:1.8}
+.reading-question b{color:#8a5c4a;font-weight:600}
+.tarot-consult{margin:34px auto 10px;max-width:640px;padding:22px clamp(16px,4vw,28px);border:1px solid rgba(188,145,84,.5);border-radius:22px;background:rgba(255,249,242,.82);text-align:center}
+.tarot-consult h3{margin:0;color:#5a3d45;font:500 20px/1.4 Georgia,"Noto Serif TC",serif}
+.tarot-consult>p{margin:8px 0 0;color:#7c5f62;font-size:13px;line-height:1.8}
+.tarot-consult-actions{margin-top:16px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.tarot-consult-actions :is(a,button){min-height:48px}
+.tarot-consult .tarot-consult-note{max-width:500px;margin:12px auto 0;color:#9b7774;font-size:12px}
+.tarot-consult-note a{color:#99596a;text-underline-offset:3px}
+.tarot-consult-preview{max-width:500px;margin:10px auto 0;text-align:left;font-size:12px;color:#795d60}
+.tarot-consult-preview summary{width:max-content;margin:auto;min-height:32px;display:flex;align-items:center;color:#99596a;cursor:pointer}
+.tarot-consult-preview pre{margin:8px 0 0;padding:14px 16px;border:1px dashed #d8b28b;border-radius:14px;background:#fffdf9;white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:13px;line-height:1.8}
+.tarot-saved-note{margin:14px 0 0;text-align:center;color:#5f7d64;font-size:13px}
+.tarot-saved-note a{margin-left:6px;color:#99596a;font-weight:600;text-underline-offset:3px}
+.reading-actions button:disabled{cursor:default;opacity:.75}
+.member-status p{gap:2px}
+.member-status .member-status-expiry{color:#8a5c4a;font-weight:600}
+@media(max-width:850px){
+  .topics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:22px}
+  .topics button{min-width:0;padding:10px 8px}
+  .spread-options{margin:0 0 22px;grid-template-columns:1fr;gap:8px}
+  .spread-options button{min-height:56px;padding:10px 14px;display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:12px;text-align:left}
+  .spread-options button:before,.spread-options button:after{display:none}
+  .spread-options button .spread-motif{grid-row:span 2;height:34px;margin:0}
+  .spread-options button .spread-motif b{width:16px;height:26px}
+  .spread-options button>span.spread-name{justify-content:flex-start;font-size:15px}
+  .spread-options button>small{display:none;margin-top:2px}
+  .spread-options button.active>small{display:block}
+  .spread-options button.active{transform:none}
+  .tarot-question{margin:0 auto 22px}
+  .tarot-soundscape{margin-bottom:18px}
+  .draw-section .deck-note{margin-bottom:16px}
+  .draw-section .section-heading h2{margin-bottom:12px}
+  .deck-stage .card-fan{height:158px;transform:scale(.62);margin-bottom:6px}
+  .tarot-question textarea{min-height:56px}
+}
+.archive-card-thumbs{margin-top:12px;display:flex;gap:10px;flex-wrap:wrap}
+.archive-card-thumbs figure{margin:0;width:84px;display:grid;gap:4px}
+.archive-card-thumbs img{width:84px;height:140px;object-fit:cover;border-radius:8px;border:1px solid #d7b986;background:#152b67}
+.archive-card-thumbs figcaption{display:grid;gap:1px;color:#8a6963;font-size:10px;line-height:1.4}
+.archive-card-thumbs figcaption b{color:#5f4341;font-size:12px}

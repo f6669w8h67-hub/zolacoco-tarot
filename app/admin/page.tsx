@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { tarotCards } from "../tarot-data";
 
 type StoredValue = unknown[] | Record<string, string>;
 type Archive = Record<string, StoredValue>;
@@ -22,7 +23,23 @@ function count(value: StoredValue | undefined) {
 function itemTitle(item: unknown) {
   if (!item || typeof item !== "object") return "已儲存紀錄";
   const row = item as Record<string, unknown>;
-  return String(row.question ?? row.topic ?? row.type ?? row.theme ?? row.title ?? "已儲存紀錄");
+  // An empty question (optional since Issue #9) falls back to the topic.
+  return String((row.question || undefined) ?? row.topic ?? row.type ?? row.theme ?? row.title ?? "已儲存紀錄");
+}
+
+// Tarot records saved since Issue #9 carry card ids; older ones only have names and still render as text.
+function CardThumbs({ item }: { item: unknown }) {
+  const cards = item && typeof item === "object" && Array.isArray((item as Record<string, unknown>).cards)
+    ? ((item as Record<string, unknown>).cards as Record<string, unknown>[])
+    : [];
+  const withArt = cards.map((card) => ({ card, art: tarotCards.find((entry) => entry.id === card.id)?.art })).filter((entry) => entry.art);
+  if (!withArt.length) return null;
+  return <div className="archive-card-thumbs">
+    {withArt.map(({ card, art }, index) => <figure key={`${String(card.id)}-${index}`}>
+      <img src={art} alt={String(card.name ?? "")} loading="lazy" onError={(event) => { event.currentTarget.style.display = "none"; }} />
+      <figcaption>{String(card.position ?? "")}<b>{String(card.name ?? "")}</b></figcaption>
+    </figure>)}
+  </div>;
 }
 
 function itemDetail(item: unknown) {
@@ -70,7 +87,7 @@ export default function ArchivePage() {
       const entries = Array.isArray(value) ? value : Object.entries(value ?? {}).map(([day, content]) => ({ question: `DAY ${Number(day) + 1}`, summary: content }));
       return <section className="admin-section archive-section" key={source.key}>
         <h2>{source.title}</h2><p className="admin-summary">{count(value)} 筆</p>
-        {!ready ? <div className="admin-empty">正在讀取存檔…</div> : entries.length === 0 ? <div className="admin-empty">目前還沒有紀錄。</div> : <div className="archive-list">{entries.slice(0, 30).map((item, index) => <article key={String((item as Record<string, unknown>).id ?? index)}><div><b>{itemTitle(item)}</b><small>{itemDetail(item)}</small></div><p>{String((item as Record<string, unknown>).summary ?? (item as Record<string, unknown>).note ?? (item as Record<string, unknown>).sentence ?? "")}</p></article>)}</div>}
+        {!ready ? <div className="admin-empty">正在讀取存檔…</div> : entries.length === 0 ? <div className="admin-empty">目前還沒有紀錄。</div> : <div className="archive-list">{entries.slice(0, 30).map((item, index) => <article key={String((item as Record<string, unknown>).id ?? index)}><div><b>{itemTitle(item)}</b><small>{itemDetail(item)}</small></div>{source.key === "zolacoco-tarot-records-v1" ? <CardThumbs item={item} /> : null}<p>{String((item as Record<string, unknown>).summary ?? (item as Record<string, unknown>).note ?? (item as Record<string, unknown>).sentence ?? "")}</p></article>)}</div>}
       </section>;
     })}
   </main>;
