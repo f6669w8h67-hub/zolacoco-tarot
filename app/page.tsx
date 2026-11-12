@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { tarotCards, topicLens, type TarotCard } from "./tarot-data";
+import { ZOLA_LINE_URL } from "@/lib/contact";
 
 const topics = ["感情", "工作", "人際", "金錢", "創業", "今日指引"];
 const spreads = [
@@ -584,7 +585,7 @@ export default function Home() {
 
       <section className="consult" id="consult">
         <div className="consult-copy"><p className="eyebrow">ONE-ON-ONE TAROT READING</p><h2>一張牌可以安放此刻<br />完整諮詢陪你看清整段脈絡</h2><p>如果你正卡在反覆拉扯的感情、工作選擇或一個遲遲做不了的決定，我會從你的真實處境整理問題，陪你看見盲點、關係動態與下一步，而不是只告訴你一個結果。</p></div>
-        <div className="consult-card"><span>適合現在的你，如果——</span><ul><li>同一個問題已經反覆困擾很久</li><li>知道要放下，情緒卻一直被拉回去</li><li>需要的不只是答案，而是具體方向</li></ul><a href="https://lin.ee/XIi2Nam" target="_blank" rel="noreferrer">前往官方 LINE 預約 <b>↗</b></a><small>由 Zola 親自回覆，依你的實際狀況整理適合的諮詢方式</small></div>
+        <div className="consult-card"><span>適合現在的你，如果——</span><ul><li>同一個問題已經反覆困擾很久</li><li>知道要放下，情緒卻一直被拉回去</li><li>需要的不只是答案，而是具體方向</li></ul><a href={ZOLA_LINE_URL} target="_blank" rel="noreferrer">前往官方 LINE 預約 <b>↗</b></a><small>由 Zola 親自回覆，依你的實際狀況整理適合的諮詢方式</small></div>
       </section>
 
       <section className="about" id="about">
