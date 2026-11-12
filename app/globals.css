@@ -1861,9 +1861,9 @@ body { line-height:1.75; letter-spacing:.008em; }
 @keyframes globalMenuIn{from{opacity:0;transform:translateY(-8px) scale(.985)}to{opacity:1;transform:none}}
 
 /* Reading-size tiers: preserve display type while enlarging practical reading copy. */
-html[data-font-tier="small"] main :where(p,li,label,input,textarea,select,blockquote):not(.eyebrow):not([class*="eyebrow"]):not(.reading-label){font-size:14px!important}
-html[data-font-tier="medium"] main :where(p,li,label,input,textarea,select,blockquote):not(.eyebrow):not([class*="eyebrow"]):not(.reading-label){font-size:16px!important}
-html[data-font-tier="large"] main :where(p,li,label,input,textarea,select,blockquote):not(.eyebrow):not([class*="eyebrow"]):not(.reading-label){font-size:19px!important;line-height:1.95!important}
+html[data-font-tier="small"] main :where(p,li,label,input,textarea,select,blockquote):not(.eyebrow):not([class*="eyebrow"]):not(.reading-label):not([class*="rc-card-face"]){font-size:14px!important}
+html[data-font-tier="medium"] main :where(p,li,label,input,textarea,select,blockquote):not(.eyebrow):not([class*="eyebrow"]):not(.reading-label):not([class*="rc-card-face"]){font-size:16px!important}
+html[data-font-tier="large"] main :where(p,li,label,input,textarea,select,blockquote):not(.eyebrow):not([class*="eyebrow"]):not(.reading-label):not([class*="rc-card-face"]){font-size:19px!important;line-height:1.95!important}
 html[data-font-tier="small"] main button:not(.image-start-hitbox){font-size:13px!important}html[data-font-tier="medium"] main button:not(.image-start-hitbox){font-size:15px!important}html[data-font-tier="large"] main button:not(.image-start-hitbox){font-size:17px!important}
 
 /* Pull the first tarot step closer to the preceding section. */

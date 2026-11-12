@@ -188,6 +188,8 @@ test("root layout selects a closed fallback in production and retains developmen
       "next/font/google": { Geist: () => ({ variable: "sans" }), Geist_Mono: () => ({ variable: "mono" }) },
       "./globals.css": {},
       "./rococo-membership.css": {},
+      "./styles/rococo-tokens.css": {},
+      "./styles/rococo-tarot.css": {},
       "./site-header": { default: () => null },
       "./membership-gate": { default: wrapper("authenticated"), UnconfiguredMembershipGate: wrapper("closed") },
     } });
