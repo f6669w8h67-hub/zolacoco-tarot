@@ -5,17 +5,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { isPublicMembershipPage } from "@/lib/membership-access";
+
 type AccessState = {
   status: "loading" | "allowed" | "pending" | "suspended" | "expired" | "error";
 };
 
-const openPaths = ["/sign-in", "/sign-up", "/account"];
+export function UnconfiguredMembershipGate({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  if (isPublicMembershipPage(pathname)) return children;
+  return <AccessScreen eyebrow="MEMBER ACCESS" title="會員服務設定中" message="目前無法確認會員權限，請稍後再試或聯絡 Zola。" />;
+}
 
 export default function MembershipGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { isLoaded, isSignedIn } = useAuth();
   const [access, setAccess] = useState<AccessState>({ status: "loading" });
-  const isOpenPath = openPaths.some((path) => pathname.startsWith(path));
+  const isOpenPath = isPublicMembershipPage(pathname);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || isOpenPath) return;

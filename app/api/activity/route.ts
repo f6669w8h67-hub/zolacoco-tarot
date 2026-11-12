@@ -1,4 +1,4 @@
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { authorizeMemberData } from "@/lib/member-data-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -18,8 +18,9 @@ async function ensureSchema() {
 }
 
 export async function POST(request: Request) {
-  const user = await getChatGPTUser();
-  if (!user) return Response.json({ saved: false }, { status: 401 });
+  const access = await authorizeMemberData();
+  if (!access.ok) return access.response;
+  const user = access.user;
   const body = await request.json() as { type?: string; title?: string; summary?: string; details?: unknown };
   const type = String(body.type ?? "").trim().slice(0, 50);
   const title = String(body.title ?? "").trim().slice(0, 120);

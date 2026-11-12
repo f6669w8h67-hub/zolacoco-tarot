@@ -1,3 +1,4 @@
+import { hasMemberAccess, isClerkConfigured } from "./membership-access";
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
 import { auth, currentUser } from "@clerk/nextjs/server";
 
@@ -98,13 +99,17 @@ export function isAdminEmail(email: string | null | undefined) {
 }
 
 export async function getIdentity() {
+  if (!isClerkConfigured(process.env)) throw new MembershipError("MEMBERSHIP_NOT_CONFIGURED", 503);
   const { userId } = await auth();
   if (!userId) return null;
 
   const user = await currentUser();
   const primary = user?.emailAddresses.find((item) => item.id === user.primaryEmailAddressId);
-  const email = (primary?.emailAddress ?? user?.emailAddresses[0]?.emailAddress ?? "").trim().toLowerCase();
-  if (!email) return null;
+  const chosen = primary ?? user?.emailAddresses[0];
+  if (!chosen?.emailAddress) return null;
+  // Only a verified address may identify a member; an unverified address could be claimed by anyone.
+  if (chosen.verification?.status !== "verified") throw new MembershipError("EMAIL_NOT_VERIFIED", 403);
+  const email = chosen.emailAddress.trim().toLowerCase();
 
   const fullName = [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() || null;
   return { userId, email, fullName };
@@ -138,6 +143,7 @@ export async function syncCurrentMember(): Promise<Membership> {
       role = CASE WHEN lower(EXCLUDED.email) = ${ADMIN_EMAIL} THEN 'admin' ELSE members.role END,
       status = CASE WHEN lower(EXCLUDED.email) = ${ADMIN_EMAIL} THEN 'active' ELSE members.status END,
       last_login_at = now()
+    WHERE members.clerk_user_id IS NULL OR members.clerk_user_id = EXCLUDED.clerk_user_id
     RETURNING *,
       CASE
         WHEN role = 'admin' THEN 'active'
@@ -146,6 +152,8 @@ export async function syncCurrentMember(): Promise<Membership> {
       END AS effective_status
   `;
 
+  // No row means this email already belongs to a different Clerk user; never re-link silently.
+  if (!rows[0]) throw new MembershipError("EMAIL_ALREADY_LINKED", 409);
   const member = rows[0] as Membership;
   if (member.role !== "admin" && member.status === "active" && member.effective_status === "expired") {
     const expired = await sql`
@@ -181,8 +189,8 @@ export async function requireAdmin() {
 export async function requireActiveMember() {
   const member = await syncCurrentMember();
   if (member.role === "admin") return member;
-  if (member.effective_status !== "active") {
-    throw new MembershipError(member.effective_status.toUpperCase(), 403);
+  if (!hasMemberAccess(member)) {
+    throw new MembershipError(member.status === "active" ? "MEMBERSHIP_EXPIRED" : member.effective_status.toUpperCase(), 403);
   }
   return member;
 }

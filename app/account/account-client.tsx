@@ -2,7 +2,8 @@
 
 import { SignInButton, SignOutButton, useAuth } from "@clerk/nextjs";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { loadMemberProfile, saveMemberProfile } from "@/lib/member-client";
 
 type Member = {
   email: string;
@@ -19,31 +20,41 @@ export default function AccountClient() {
   const [member, setMember] = useState<Member | null>(null);
   const [message, setMessage] = useState("");
 
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  const applyLoad = useCallback((result: Awaited<ReturnType<typeof loadMemberProfile>>) => {
+    if (result.ok) { setMember(result.member); setLoadFailed(false); }
+    else setLoadFailed(true);
+  }, []);
+
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
-    fetch("/api/membership/me", { cache: "no-store" })
-      .then((response) => response.json())
-      .then(({ member: value }) => setMember(value));
-  }, [isLoaded, isSignedIn]);
+    let active = true;
+    void loadMemberProfile().then((result) => { if (active) applyLoad(result); });
+    return () => { active = false; };
+  }, [isLoaded, isSignedIn, applyLoad]);
 
   async function saveProfile(formData: FormData) {
     setMessage("儲存中…");
-    const response = await fetch("/api/membership/me", {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        fullName: formData.get("fullName"),
-        lineId: formData.get("lineId"),
-        birthday: formData.get("birthday"),
-      }),
+    const result = await saveMemberProfile({
+      fullName: String(formData.get("fullName") ?? ""),
+      lineId: String(formData.get("lineId") ?? ""),
+      birthday: String(formData.get("birthday") ?? ""),
     });
-    const result = await response.json();
-    if (!response.ok) { setMessage(result.error ?? "儲存失敗，請稍後再試。"); return; }
+    if (!result.ok) { setMessage(result.message); return; }
     setMember(result.member);
     setMessage("會員資料已儲存。");
   }
 
-  if (!isLoaded || (isSignedIn && !member)) return <main className="account-page"><section className="account-hero"><h1>正在讀取會員資料…</h1></section></main>;
+  if (!isLoaded) return <main className="account-page"><section className="account-hero"><h1>正在讀取會員資料…</h1></section></main>;
+  // A failed request is shown as a retryable error, never as "not yet activated".
+  if (isSignedIn && !member && loadFailed) return <main className="account-page"><section className="account-hero">
+    <p className="eyebrow">ZOLACOCO MEMBER</p><span className="account-status"><i aria-hidden="true" />暫時無法讀取</span>
+    <h1>會員資料暫時讀不到</h1>
+    <p role="alert">這不代表尚未開通。請稍後再試；若持續出現，請聯絡 Zola 協助確認。</p>
+    <div className="account-actions"><button className="account-primary" type="button" onClick={() => void loadMemberProfile().then(applyLoad)}>重新讀取</button></div>
+  </section></main>;
+  if (isSignedIn && !member) return <main className="account-page"><section className="account-hero"><h1>正在讀取會員資料…</h1></section></main>;
   if (!isSignedIn) return <main className="account-page"><section className="account-hero">
     <p className="eyebrow">ZOLACOCO MEMBER</p><span className="account-status"><i aria-hidden="true" />尚未登入</span>
     <h1>一個帳號，<br />開啟完整探索空間</h1>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { runMemberAction } from "@/lib/member-client";
 
 type Member = {
   id: string;
@@ -25,11 +26,15 @@ export default function AdminClient() {
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const response = await fetch("/api/membership/admin", { cache: "no-store" });
-    if (!response.ok) { setNotice(response.status === 403 ? "此帳號沒有管理員權限。" : "無法讀取會員資料。"); return; }
-    const data = await response.json();
-    setMembers(data.members);
-    setNotice("");
+    try {
+      const response = await fetch("/api/membership/admin", { cache: "no-store" });
+      if (!response.ok) { setNotice(response.status === 403 ? "此帳號沒有管理員權限。" : "無法讀取會員資料。"); return; }
+      const data = await response.json();
+      setMembers(data.members);
+      setNotice("");
+    } catch {
+      setNotice("無法讀取會員資料，請稍後重新整理。");
+    }
   }, []);
   useEffect(() => {
     fetch("/api/membership/admin", { cache: "no-store" })
@@ -46,13 +51,10 @@ export default function AdminClient() {
 
   async function operate(member: Member, action: "activate" | "suspend" | "restore") {
     setBusy(`${member.id}-${action}`); setNotice("");
-    const response = await fetch("/api/membership/admin", {
-      method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({ memberId: member.id, action, months: months[member.id] ?? 1 }),
-    });
-    const data = await response.json();
+    // runMemberAction never throws, so the busy state is always released below.
+    const result = await runMemberAction({ memberId: member.id, action, months: months[member.id] ?? 1 });
     setBusy(null);
-    if (!response.ok) { setNotice(data.error ?? "操作失敗。"); return; }
+    if (!result.ok) { setNotice(result.message); return; }
     setNotice(action === "activate" ? `已為 ${member.full_name ?? member.email} 增加 ${months[member.id] ?? 1} 個月。` : action === "suspend" ? "已手動停權。" : "已恢復原有期限。");
     await load();
   }

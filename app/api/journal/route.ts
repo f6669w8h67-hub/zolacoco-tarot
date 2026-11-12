@@ -1,4 +1,4 @@
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { authorizeMemberData } from "@/lib/member-data-auth";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +20,9 @@ async function ensureSchema() {
 }
 
 export async function GET() {
-  const user = await getChatGPTUser();
-  if (!user) return Response.json({ error: "請先登入" }, { status: 401 });
+  const access = await authorizeMemberData();
+  if (!access.ok) return access.response;
+  const user = access.user;
   await ensureSchema();
   const { env } = await import("cloudflare:workers");
   const result = await env.DB.prepare("SELECT day, prompt, card_id AS cardId, card_name AS cardName, content, updated_at AS updatedAt FROM journal_entries WHERE user_email = ? ORDER BY day").bind(user.email).all();
@@ -29,8 +30,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const user = await getChatGPTUser();
-  if (!user) return Response.json({ error: "請先登入" }, { status: 401 });
+  const access = await authorizeMemberData();
+  if (!access.ok) return access.response;
+  const user = access.user;
   const body = await request.json() as { day?: number; prompt?: string; cardId?: string; cardName?: string; content?: string };
   const day = Number(body.day);
   const content = String(body.content ?? "").trim();
