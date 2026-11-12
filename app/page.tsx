@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { cardLabel, tarotCards, topicLens, type TarotCard } from "./tarot-data";
+import { tarotCards, topicLens, type TarotCard } from "./tarot-data";
+import { TarotCardBack, TarotCardFace } from "./tarot-card";
 import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
 import { loadMemberProfile } from "@/lib/member-client";
 import {
   QUESTION_LIMIT, SPREADS, TAROT_TOPICS, type SpreadId, cleanQuestion, consultMessage,
-  memberExpiryLabel, recommendedSpread, spreadAfterTopicChange, spreadsForTopic, tarotRecord,
+  memberExpiryLabel, recommendedSpread, relationshipLens, spreadAfterTopicChange, spreadForTopic, spreadsForTopic, tarotRecord,
 } from "@/lib/tarot-reading";
 
 
@@ -85,11 +86,8 @@ type IntuitionOption = { text: string; correct: boolean; note: string };
 function PracticeCard({ card, hidden = false, flipped = true }: { card: TarotCard; hidden?: boolean; flipped?: boolean }) {
   return <div className={`practice-tarot-card ${flipped ? "is-flipped" : ""}`} aria-label={hidden ? "尚未翻開的塔羅練習牌" : `${card.name}塔羅牌`}>
     <div className="practice-tarot-inner">
-      <div className="practice-tarot-back"><div className="back-frame" /></div>
-      <div className="practice-tarot-front">
-        <img src={card.art} alt={card.scene} onError={(event) => { event.currentTarget.src = "/cat-tarot-master.png"; }} />
-        <div className="practice-card-title"><small>{cardLabel(card)}</small><strong>{card.name}</strong><span>ZOLACOCO CAT TAROT</span></div>
-      </div>
+      <TarotCardBack className="practice-tarot-back" />
+      <TarotCardFace card={card} className="practice-tarot-front" />
     </div>
   </div>;
 }
@@ -138,13 +136,15 @@ function mobileFanStyle(index: number, total: number) {
   } as React.CSSProperties;
 }
 
-function synthesis(cards: TarotCard[], spreadId: string) {
+function synthesis(cards: TarotCard[], spreadId: string, topic: string, positions: string[]) {
   if (cards.length < 3) return cards[0]?.truth ?? "";
   const [first, second, third] = cards;
   const firstKey = first.keywords.split("・")[0];
   const secondKey = second.keywords.split("・")[0];
   const thirdKey = third.keywords.split("・")[0];
-  if (spreadId === "relationship") return `妳這邊帶著「${firstKey}」，對方目前呈現「${secondKey}」，而這段關係值得一起看見的課題是「${thirdKey}」。感情可以是起點，真正的靠近仍需要雙方都願意理解與調整。`;
+  if (spreadId === "relationship" && (topic === "感情" || topic === "人際")) return `妳這邊帶著「${firstKey}」，對方目前呈現「${secondKey}」，而這段關係值得一起看見的課題是「${thirdKey}」。關係可以是起點，真正的靠近仍需要雙方都願意理解與調整。`;
+  // Other topics have no "對方": name the positions instead of implying another person (spec v2, #12).
+  if (spreadId === "relationship") return `「${positions[0]}」落在「${firstKey}」，「${positions[1]}」呈現「${secondKey}」，而「${positions[2]}」是「${thirdKey}」。先看清這三者之間的關係，再決定下一步要從哪裡開始。`;
   return `過去的「${firstKey}」可能仍在影響妳，現況邀請妳看見「${secondKey}」。接下來不必急著得到所有答案，可以先從 ${third.name} 的「${thirdKey}」踏出一小步。`;
 }
 
@@ -190,8 +190,9 @@ export default function Home() {
   const loadedSoundscapes = useRef(new Set<Soundscape>());
 
   const positions = [-12, -6, 0, 6, 12];
-  const activeSpread = SPREADS.find((item) => item.id === spreadId) ?? SPREADS[0];
-  const offeredSpreads = spreadsForTopic(topic);
+  // Same spread ids for every topic; the relationship spread names its positions per topic.
+  const activeSpread = spreadForTopic(spreadId, topic);
+  const offeredSpreads = spreadsForTopic(topic).map((item) => spreadForTopic(item.id, topic));
   const recommendedId = recommendedSpread(topic);
   const intuitionCard = tarotCards[intuitionCardIndex] ?? tarotCards[0];
   const intuitionOptions = intuitionOptionsFor(intuitionCard, intuitionCardIndex);
@@ -354,7 +355,7 @@ export default function Home() {
     try {
       const records = JSON.parse(localStorage.getItem(TAROT_STORAGE_KEY) ?? "[]") as unknown[];
       records.unshift(tarotRecord({
-        question, topic, spread: activeSpread.name,
+        question, topic, spread: activeSpread.name, spreadId,
         cards: selected.map((card, index) => ({ id: card.id, name: card.name, position: activeSpread.positions[index], keywords: card.keywords, truth: card.truth, action: card.action })),
       }, Date.now()));
       localStorage.setItem(TAROT_STORAGE_KEY, JSON.stringify(records.slice(0, 60)));
@@ -408,34 +409,6 @@ export default function Home() {
 
   return (
     <main>
-      <style>{`
-        .primary,.draw-button,.reshuffle,.flow-button,.learning-bridge a,.consult-card a,
-        .topics button,.spread-options button,.tool-tabs button,.answer-list button,
-        .feeling-list button,.day-picker button,.archetype-result button,.tool-primary {
-          position:relative; overflow:hidden; border:1px solid rgba(200,165,104,.9)!important;
-          color:#70484b!important; background:linear-gradient(145deg,rgba(255,241,240,.98),rgba(243,212,215,.95))!important;
-          text-shadow:none!important; box-shadow:inset 0 2px 1px rgba(255,255,255,.98),inset 0 -10px 20px rgba(189,120,133,.09),0 10px 24px rgba(114,70,75,.12)!important;
-          backdrop-filter:blur(12px);
-        }
-        .primary:before,.draw-button:before,.reshuffle:before,.flow-button:before,
-        .learning-bridge a:before,.consult-card a:before,.topics button:before,
-        .spread-options button:before,.tool-tabs button:before,.answer-list button:before,
-        .feeling-list button:before,.archetype-result button:before,.tool-primary:before {
-          content:""; position:absolute; left:9%; right:9%; top:2px; height:40%; border-radius:999px;
-          background:linear-gradient(180deg,rgba(255,255,255,.82),rgba(255,255,255,0)); pointer-events:none;
-        }
-        .topics button.active,.topics button:hover,.spread-options button.active,
-        .tool-tabs button.active,.tool-tabs button:hover,.answer-list button:hover,
-        .feeling-list button:hover,.feeling-list button.active,.day-picker button.active {
-          border-color:#b99150!important; color:#684046!important;
-          background:linear-gradient(145deg,rgba(255,236,235,.99),rgba(233,191,197,.97))!important;
-          box-shadow:inset 0 2px 1px rgba(255,255,255,.98),inset 0 -12px 24px rgba(177,106,119,.12),0 13px 28px rgba(108,66,72,.16)!important;
-        }
-        .tool-tabs small,.tool-tabs i,.answer-list span,.teaching-options button>span,
-        .spread-options button>i,.spread-options button>small { color:#9a6b48!important; }
-        .tool-tabs em { color:#816164!important; }
-        .spread-options button.active>small,.spread-options button.active>i { color:#875936!important; }
-      `}</style>
 
       <section className="hero" id="top">
         <div className="orb orb-one" /><div className="orb orb-two" />
@@ -470,7 +443,7 @@ export default function Home() {
         <div className="section-heading">
           <span>01</span><p>CHOOSE YOUR FOCUS</p>
           <h2>今天，妳想問什麼？</h2>
-          <small className="deck-note">完整 78 張萊恩 × 蝦蝦貓咪塔羅 · 22 張大牌＋56 張小牌</small>
+          <small className="deck-note">完整 78 張萊恩貓咪塔羅・蝦蝦驚喜客串</small>
         </div>
         <div className={`tarot-soundscape ${soundOpen ? "is-open" : "is-collapsed"}`} aria-label="塔羅抽牌背景音樂">
           <button type="button" className="tarot-soundscape-toggle" aria-expanded={soundOpen} aria-controls="tarot-soundscape-options" onClick={() => setSoundOpen((open) => !open)}>
@@ -516,7 +489,7 @@ export default function Home() {
 
         <div className="spread-options" role="group" aria-label="選擇塔羅牌陣">
           {offeredSpreads.map((item) => <button key={item.id} type="button" className={spreadId === item.id ? "active" : ""} aria-pressed={spreadId === item.id} onClick={() => changeSpread(item.id)}>
-            <span className={`spread-motif motif-${item.positions.length}`} aria-hidden="true">{item.positions.map((_, cardIndex) => <b key={cardIndex} />)}</span>
+            <span className={`spread-motif motif-${item.id}`} aria-hidden="true">{item.positions.map((_, cardIndex) => <b key={cardIndex} />)}</span>
             <span className="spread-name">{item.name}{item.id === recommendedId ? <em className="spread-recommended">推薦</em> : null}</span>
             <small>{item.sub}</small>
           </button>)}
@@ -533,7 +506,7 @@ export default function Home() {
           <div className={`deck-stage ${shuffling ? "shuffling" : ""}`}>
             {spreadCards.length === 0 ? <>
               <div className="card-fan" aria-hidden="true">
-                {positions.map((p, i) => <div key={`${seed}-${i}`} className="card-back" style={{ transform: `translateX(${p * 2}px) rotate(${p}deg)` }}><div className="back-frame" /></div>)}
+                {positions.map((p, i) => <TarotCardBack key={`${seed}-${i}`} className="card-back" style={{ transform: `translateX(${p * 2}px) rotate(${p}deg)` }} />)}
               </div>
               <button className="draw-button" onClick={shuffleDeck} disabled={shuffling}>{shuffling ? "正在洗牌…" : "先洗牌，讓心慢下來"}</button>
               <p>深呼吸三次，把注意力輕輕帶回自己</p>
@@ -557,16 +530,22 @@ export default function Home() {
                 <p className="reading-label">「{topic}」・{activeSpread.name}</p>
                 <h2>妳的塔羅指引</h2>
                 {cleanQuestion(question) ? <p className="reading-question"><b>妳這次的提問：</b>{cleanQuestion(question)}</p> : null}
-                {selected.length > 1 && <div className="synthesis"><span>整體訊息</span><p>{synthesis(selected, spreadId)}</p></div>}
+                {selected.length > 1 && <div className="synthesis"><span>整體訊息</span><p>{synthesis(selected, spreadId, topic, activeSpread.positions)}</p></div>}
+              </div>
+              <div className={`spread-board spread-board--${spreadId}`} role="list" aria-label={`${activeSpread.name}的牌卡位置`}>
+                {selected.map((card, i) => <figure className={`spread-slot spread-slot--${i + 1}`} role="listitem" key={`${card.id}-slot`}>
+                  <figcaption className="spread-slot__position"><b>{String(i + 1).padStart(2, "0")}</b>{activeSpread.positions[i]}</figcaption>
+                  <div className={`tarot-card suit-${card.suit} ${revealed ? "revealed" : ""}`}><div className="tarot-inner"><TarotCardBack className="tarot-back" /><TarotCardFace card={card} className="tarot-front" /></div></div>
+                </figure>)}
               </div>
               <div className={`reading-sequence count-${selected.length}`}>
-                {selected.map((card, i) => <section className="card-reading-unit" key={`${card.id}-reading`}>
-                  <div className="result-card-wrap">
-                    <span>{String(i + 1).padStart(2, "0")} · {activeSpread.positions[i]}</span>
-                    <div className={`tarot-card suit-${card.suit} ${revealed ? "revealed" : ""}`}><div className="tarot-inner"><div className="tarot-back"><div className="back-frame" /></div><div className="tarot-front"><div className="cat-art"><img src={card.art} alt={card.scene} onError={(event) => { event.currentTarget.src = "/cat-tarot-master.png"; }} /></div><p>{cardLabel(card)}</p><h3>{card.name}</h3><small>ZOLACOCO CAT TAROT</small></div></div></div>
-                    <p className="result-card-name">{card.name}｜{card.keywords}</p>
-                  </div>
-                  <div className="position-reading"><p className="scene-note">牌面｜{card.scene}</p><div className="reading-point"><b>這個主題正在提醒妳</b><p>{topicLens[topic][card.suit]}</p></div><div className="reading-point"><b>這張牌所在的位置</b><p>{positionLens[spreadId][i]}</p></div><div className="reading-point"><b>牌卡想帶給妳的提醒</b><p>{card.truth}</p></div><div className="reading-point blind"><b>需要留意的地方</b><p>{card.blindSpot}</p></div><div className="reading-point next"><b>妳可以先這樣做</b><p>{card.action}</p></div></div>
+                {selected.map((card, i) => <section className="card-reading-unit" key={`${card.id}-reading`} aria-labelledby={`reading-${card.id}`}>
+                  <header className="reading-unit-head">
+                    <span>{String(i + 1).padStart(2, "0")}・{activeSpread.positions[i]}</span>
+                    <h3 id={`reading-${card.id}`}>{card.name}</h3>
+                    <p>{card.keywords}</p>
+                  </header>
+                  <div className="position-reading"><p className="scene-note">牌面｜{card.scene}</p><div className="reading-point"><b>這個主題正在提醒妳</b><p>{topicLens[topic][card.suit]}</p></div><div className="reading-point"><b>這張牌所在的位置</b><p>{spreadId === "relationship" ? relationshipLens(topic, i) : positionLens[spreadId][i]}</p></div><div className="reading-point"><b>牌卡想帶給妳的提醒</b><p>{card.truth}</p></div><div className="reading-point blind"><b>需要留意的地方</b><p>{card.blindSpot}</p></div><div className="reading-point next"><b>妳可以先這樣做</b><p>{card.action}</p></div></div>
                 </section>)}
               </div>
               <section className="tarot-consult" aria-labelledby="tarot-consult-title">

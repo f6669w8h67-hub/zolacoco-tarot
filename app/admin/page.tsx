@@ -7,13 +7,14 @@ import { tarotCards } from "../tarot-data";
 type StoredValue = unknown[] | Record<string, string>;
 type Archive = Record<string, StoredValue>;
 
+// `href` is where an empty section sends the visitor to make her first record.
 const sources = [
-  { key: "zolacoco-tarot-records-v1", title: "塔羅抽牌紀錄" },
-  { key: "zolacoco-journal-notes-v1", title: "七日內在筆記" },
-  { key: "zolacoco-pendulum-records-v1", title: "靈擺問答紀錄" },
-  { key: "zolacoco-astro-dice-records-v1", title: "星骰探索紀錄" },
-  { key: "zolacoco-healing-records-v1", title: "療癒小房間紀錄" },
-  { key: "zolacoco-astrology-exploration-records-v1", title: "星盤內在探索紀錄" },
+  { key: "zolacoco-tarot-records-v1", title: "塔羅抽牌紀錄", href: "/#draw", start: "去抽一次牌" },
+  { key: "zolacoco-journal-notes-v1", title: "七日內在筆記", href: "/#explore", start: "寫第一天的筆記" },
+  { key: "zolacoco-pendulum-records-v1", title: "靈擺問答紀錄", href: "/pendulum", start: "問靈擺一個問題" },
+  { key: "zolacoco-astro-dice-records-v1", title: "星骰探索紀錄", href: "/astro-dice", start: "擲一次星骰" },
+  { key: "zolacoco-healing-records-v1", title: "療癒小房間紀錄", href: "/healing-room", start: "走進療癒小房間" },
+  { key: "zolacoco-astrology-exploration-records-v1", title: "星盤內在探索紀錄", href: "/astrology-exploration", start: "開始星盤探索" },
 ] as const;
 
 function count(value: StoredValue | undefined) {
@@ -85,9 +86,9 @@ export default function ArchivePage() {
     {sources.map((source) => {
       const value = archive[source.key];
       const entries = Array.isArray(value) ? value : Object.entries(value ?? {}).map(([day, content]) => ({ question: `DAY ${Number(day) + 1}`, summary: content }));
-      return <section className="admin-section archive-section" key={source.key}>
-        <h2>{source.title}</h2><p className="admin-summary">{count(value)} 筆</p>
-        {!ready ? <div className="admin-empty">正在讀取存檔…</div> : entries.length === 0 ? <div className="admin-empty">目前還沒有紀錄。</div> : <div className="archive-list">{entries.slice(0, 30).map((item, index) => <article key={String((item as Record<string, unknown>).id ?? index)}><div><b>{itemTitle(item)}</b><small>{itemDetail(item)}</small></div>{source.key === "zolacoco-tarot-records-v1" ? <CardThumbs item={item} /> : null}<p>{String((item as Record<string, unknown>).summary ?? (item as Record<string, unknown>).note ?? (item as Record<string, unknown>).sentence ?? "")}</p></article>)}</div>}
+      return <section className="admin-section archive-section" key={source.key} aria-labelledby={`archive-${source.key}`}>
+        <header className="archive-section-head"><h2 id={`archive-${source.key}`}>{source.title}</h2><p className="admin-summary">{ready ? count(value) : "—"} 筆</p></header>
+        {!ready ? <div className="admin-empty">正在讀取存檔…</div> : entries.length === 0 ? <div className="admin-empty"><p>目前還沒有紀錄。</p><Link href={source.href}>{source.start} →</Link></div> : <div className="archive-list">{entries.slice(0, 30).map((item, index) => <article key={String((item as Record<string, unknown>).id ?? index)}><div><b>{itemTitle(item)}</b><small>{itemDetail(item)}</small></div>{source.key === "zolacoco-tarot-records-v1" ? <CardThumbs item={item} /> : null}<p>{String((item as Record<string, unknown>).summary ?? (item as Record<string, unknown>).note ?? (item as Record<string, unknown>).sentence ?? "")}</p></article>)}</div>}
       </section>;
     })}
   </main>;

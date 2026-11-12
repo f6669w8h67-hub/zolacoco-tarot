@@ -14,8 +14,6 @@ export const SPREADS: Spread[] = [
   { id: "relationship", name: "關係探索牌陣", sub: "我・對方・關係課題", positions: ["我的內在狀態", "對方目前的狀態", "這段關係的核心課題"] },
 ];
 
-/** The relationship spread only makes sense when there is another person in the question. */
-const RELATIONSHIP_TOPICS: readonly string[] = ["感情", "人際"];
 
 const RECOMMENDED: Record<string, SpreadId> = {
   感情: "relationship",
@@ -26,8 +24,45 @@ const RECOMMENDED: Record<string, SpreadId> = {
   今日指引: "healing",
 };
 
+/** Every topic offers every spread (owner decision, Issue #12); the recommendation differs per topic. */
 export function spreadsForTopic(topic: string): Spread[] {
-  return SPREADS.filter((spread) => spread.id !== "relationship" || RELATIONSHIP_TOPICS.includes(topic));
+  void topic;
+  return SPREADS;
+}
+
+/**
+ * The relationship spread is offered for every topic, so its positions are named per topic:
+ * money or a business question has no "對方", and the reading must not imply one (spec v2, #12).
+ */
+const RELATIONSHIP_POSITIONS: Record<string, [string, string, string]> = {
+  感情: ["我的狀態", "對方的狀態", "關係課題"],
+  人際: ["我的狀態", "對方的狀態", "關係課題"],
+  工作: ["我的立場", "相關人物或環境", "合作課題"],
+  金錢: ["我的資源與選擇", "外部條件", "資源平衡課題"],
+  創業: ["我的準備", "市場與合作因素", "發展課題"],
+  今日指引: ["我的內在狀態", "外界的影響", "今天的核心課題"],
+};
+
+/** What a spread looks like for this topic: same id, topic-specific position names and subtitle. */
+export function spreadForTopic(spreadId: SpreadId, topic: string): Spread {
+  const base = SPREADS.find((spread) => spread.id === spreadId) ?? SPREADS[0];
+  if (base.id !== "relationship") return base;
+  const positions = RELATIONSHIP_POSITIONS[topic] ?? RELATIONSHIP_POSITIONS["今日指引"];
+  return { ...base, positions: [...positions], sub: positions.join("・") };
+}
+
+/** Reading line for each position of the relationship spread, per topic. Never claims what someone else thinks. */
+const RELATIONSHIP_LENS: Record<string, [string, string, string]> = {
+  感情: ["這張牌映照出妳帶進關係裡的需要與反應。", "牌面呈現的是對方目前可觀察到的狀態，我們不替對方斷言還沒說出口的心意。", "這是雙方可以一起看見的關係課題，理解之後，才有機會走出原本的循環。"],
+  人際: ["這張牌映照出妳在這段互動裡的需要與反應。", "牌面呈現的是對方目前可觀察到的狀態，我們不替對方斷言還沒說出口的想法。", "這是這段互動值得一起看見的課題，理解之後，相處才有機會調整。"],
+  工作: ["這張牌映照出妳在這件事裡的立場與做法。", "這張牌呈現相關人物或環境目前可觀察到的狀態，不代表任何人的真實想法。", "這是合作中值得先看清的課題，理解之後，分工與溝通才容易對齊。"],
+  金錢: ["這張牌映照出妳手上的資源與可以做的選擇。", "這張牌呈現目前的外部條件與限制。", "這是資源分配與平衡值得留意的課題。"],
+  創業: ["這張牌映照出妳目前的準備程度。", "這張牌呈現市場與合作夥伴等外部因素目前的狀態。", "這是事業現階段最值得先處理的發展課題。"],
+  今日指引: ["這張牌映照出妳今天的內在狀態。", "這張牌呈現今天外界帶來的影響。", "這是今天值得溫柔留意的核心課題。"],
+};
+
+export function relationshipLens(topic: string, index: number) {
+  return (RELATIONSHIP_LENS[topic] ?? RELATIONSHIP_LENS["今日指引"])[index] ?? "";
 }
 
 export function recommendedSpread(topic: string): SpreadId {
@@ -82,6 +117,7 @@ export type TarotRecord = {
   question: string;
   topic: string;
   spread: string;
+  spread_id?: SpreadId;
   cards: TarotRecordCard[];
   created_at: string;
 };
@@ -90,12 +126,13 @@ export function newRecordId(now: number, random: () => number = Math.random) {
   return `tarot-${now.toString(36)}-${Math.floor(random() * 36 ** 6).toString(36).padStart(6, "0")}`;
 }
 
-export function tarotRecord(input: { question: string; topic: string; spread: string; cards: TarotRecordCard[] }, now: number, random?: () => number): TarotRecord {
+export function tarotRecord(input: { question: string; topic: string; spread: string; spreadId?: SpreadId; cards: TarotRecordCard[] }, now: number, random?: () => number): TarotRecord {
   return {
     id: newRecordId(now, random),
     question: cleanQuestion(input.question),
     topic: input.topic,
     spread: input.spread,
+    ...(input.spreadId ? { spread_id: input.spreadId } : {}),
     cards: input.cards,
     created_at: new Date(now).toISOString(),
   };

@@ -2,13 +2,50 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   QUESTION_LIMIT, SPREADS, cleanQuestion, consultMessage, memberExpiryLabel, newRecordId,
-  recommendedSpread, spreadAfterTopicChange, spreadsForTopic, tarotRecord,
+  recommendedSpread, relationshipLens, spreadAfterTopicChange, spreadForTopic, spreadsForTopic, tarotRecord,
 } from "../lib/tarot-reading.ts";
 
-test("relationship spread is offered only for 感情 and 人際", () => {
-  for (const topic of ["感情", "人際"]) assert.deepEqual(spreadsForTopic(topic).map((s) => s.id), ["healing", "timeline", "relationship"]);
-  for (const topic of ["工作", "金錢", "創業", "今日指引"]) assert.deepEqual(spreadsForTopic(topic).map((s) => s.id), ["healing", "timeline"]);
+const TOPICS = ["感情", "人際", "工作", "金錢", "創業", "今日指引"];
+
+test("every topic offers all three spreads, including 關係探索牌陣 (owner decision, #12)", () => {
+  for (const topic of ["感情", "人際", "工作", "金錢", "創業", "今日指引"]) assert.deepEqual(spreadsForTopic(topic).map((s) => s.id), ["healing", "timeline", "relationship"]);
   assert.equal(SPREADS.find((s) => s.id === "relationship").name, "關係探索牌陣");
+});
+
+test("all 18 topic × spread combinations have named positions (spec v2 acceptance)", () => {
+  const expected = {
+    感情: ["我的狀態", "對方的狀態", "關係課題"],
+    人際: ["我的狀態", "對方的狀態", "關係課題"],
+    工作: ["我的立場", "相關人物或環境", "合作課題"],
+    金錢: ["我的資源與選擇", "外部條件", "資源平衡課題"],
+    創業: ["我的準備", "市場與合作因素", "發展課題"],
+    今日指引: ["我的內在狀態", "外界的影響", "今天的核心課題"],
+  };
+  let combos = 0;
+  for (const topic of TOPICS) {
+    for (const { id } of spreadsForTopic(topic)) {
+      const spread = spreadForTopic(id, topic);
+      combos += 1;
+      assert.equal(spread.positions.length, id === "healing" ? 1 : 3, `${topic} ${id}`);
+      for (const position of spread.positions) assert.ok(position.trim(), `${topic} ${id} position`);
+      if (id === "relationship") {
+        assert.deepEqual(spread.positions, expected[topic], topic);
+        assert.equal(spread.sub, expected[topic].join("・"));
+      }
+    }
+  }
+  assert.equal(combos, 18);
+});
+
+test("relationship readings never claim to know the other person's mind", () => {
+  for (const topic of TOPICS) {
+    for (const index of [0, 1, 2]) {
+      const lens = relationshipLens(topic, index);
+      assert.ok(lens.trim(), `${topic} ${index}`);
+      assert.equal(/其實(想|愛|在乎)|心裡(想|在)|真正的心意是|一定會/.test(lens), false, `${topic} ${index}: ${lens}`);
+    }
+  }
+  assert.equal(relationshipLens("未知主題", 0), relationshipLens("今日指引", 0));
 });
 
 test("each topic has the spread ChatGPT recommended", () => {
@@ -21,8 +58,9 @@ test("each topic has the spread ChatGPT recommended", () => {
 test("changing topic keeps a member's own choice only while it is still offered", () => {
   assert.equal(spreadAfterTopicChange("工作", "healing", false), "timeline");
   assert.equal(spreadAfterTopicChange("工作", "healing", true), "healing");
-  // The relationship spread disappears for 金錢, so fall back to the recommendation.
-  assert.equal(spreadAfterTopicChange("金錢", "relationship", true), "timeline");
+  // A member who picked the relationship spread keeps it on any topic.
+  assert.equal(spreadAfterTopicChange("金錢", "relationship", true), "relationship");
+  assert.equal(spreadAfterTopicChange("金錢", "relationship", false), "timeline");
   assert.equal(spreadAfterTopicChange("感情", "timeline", true), "timeline");
 });
 
@@ -49,6 +87,7 @@ test("records get a unique id, the question and card ids", () => {
   assert.match(record.id, /^tarot-/);
   assert.equal(record.question, "我該怎麼面對？");
   assert.equal(record.cards[0].id, "cups-13");
+  assert.equal(tarotRecord({ question: "", topic: "工作", spread: "關係探索牌陣", spreadId: "relationship", cards: [] }, now, () => 0.5).spread_id, "relationship");
   assert.equal(record.created_at, "2026-11-12T02:00:00.000Z");
   assert.notEqual(newRecordId(now, () => 0.1), newRecordId(now, () => 0.2));
 });

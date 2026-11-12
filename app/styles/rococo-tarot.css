@@ -1,0 +1,515 @@
+/* Bright Rococo tarot (Issue #12, ChatGPT spec v2): card face, card back, spread selection,
+   spread board and reading list. Card-face text has fixed geometry, so the reading-size
+   setting (html[data-font-tier]) leaves it alone; see globals.css. The page's inline <style> sets button gradients with
+   !important, so draw-section rules here are scoped under #draw. */
+
+/* ---------- Card face: 5:8 ivory card, label / art window / name plate (spec v2 §3) ---------- */
+.rc-card-face {
+  display: grid !important;
+  grid-template-rows: 40px minmax(0, 1fr) 48px;
+  padding: 10px !important;
+  border: 1px solid #c69a61 !important;
+  border-radius: 12px !important;
+  background: #fffdf9 !important;
+  color: #49343b !important;
+  box-shadow: 0 8px 22px rgba(73, 52, 59, .1) !important;
+  overflow: hidden;
+  text-align: center;
+}
+.rc-card-face::before {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  inset: 5px;
+  border: 1px solid #d8be96;
+  border-radius: 8px;
+  pointer-events: none;
+}
+.rc-card-face::after { display: none !important; content: none !important; }
+.rc-card-face > * { position: relative !important; inset: auto !important; z-index: 1; }
+.rc-card-face__label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 !important;
+  padding: 0 4px !important;
+  background: none !important;
+  color: #77552e !important;
+  font: 500 11px/1.25 Georgia, "Times New Roman", serif !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase;
+  text-shadow: none !important;
+  overflow: hidden;
+}
+.rc-card-face__art {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0;
+  margin: 0 !important;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #f3e9da !important;
+}
+.rc-card-face__art::after { display: none !important; content: none !important; }
+.rc-card-face__art img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center !important;
+  display: block;
+  filter: none !important;
+}
+.rc-card-face__name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: none !important;
+  color: #49343b !important;
+  font: 600 18px/1.4 "Noto Serif TC", "Songti TC", serif !important;
+  letter-spacing: .06em !important;
+  text-shadow: none !important;
+}
+
+/* small faces keep the label at 10px minimum (spec v2 §3.2) */
+.practice-tarot-front.rc-card-face { position: absolute; inset: 0; transform: rotateY(180deg); grid-template-rows: 36px minmax(0, 1fr) 40px; padding: 8px !important; }
+.practice-tarot-front .rc-card-face__label { font-size: 10px !important; }
+.practice-tarot-front .rc-card-face__name { font-size: 16px !important; }
+.heal-tarot.rc-card-face { position: relative; width: min(220px, 70vw); aspect-ratio: 5 / 8; margin: auto; }
+.heal-tarot .rc-card-face__label { font-size: 10px !important; }
+
+/* ---------- Card back: ivory, blush, gold lattice, moon-and-stars medallion (spec v2 §3.4) ---------- */
+.card-back,
+.pick-card,
+.tarot-back,
+.practice-tarot-back {
+  padding: 5px !important;
+  border: 1px solid #c69a61 !important;
+  background: #fff9f4 !important;
+  box-shadow: 0 8px 20px rgba(73, 52, 59, .12) !important;
+}
+.back-frame {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #d8be96 !important;
+  outline: 0 !important;
+  border-radius: 7px !important;
+  box-shadow: none !important;
+  background:
+    repeating-conic-gradient(from 0deg at 50% 50%, rgba(198, 154, 97, .2) 0 1deg, transparent 1deg 15deg),
+    repeating-linear-gradient(45deg, rgba(198, 154, 97, .18) 0 1px, transparent 1px 22px),
+    repeating-linear-gradient(-45deg, rgba(198, 154, 97, .18) 0 1px, transparent 1px 22px),
+    radial-gradient(circle at 50% 50%, #f3e5e9 0, #f7ebee 45%, #fff9f4 100%) !important;
+  color: #b0884f !important;
+}
+/* medallion: 36% of the card width, crescent moon */
+.back-frame::before {
+  content: "☾";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 36%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  display: grid;
+  place-items: center;
+  border: 1px solid #c69a61;
+  border-radius: 50%;
+  background: #fff9f4;
+  box-shadow: 0 0 0 4px #fff9f4, 0 0 0 5px #d8be96;
+  color: #b0884f;
+  font: 400 clamp(12px, 3.6vw, 28px)/1 Georgia, serif;
+  pointer-events: none;
+}
+/* four small stars around the medallion */
+.back-frame::after {
+  content: "✦   ✦\A\A\A\A✦   ✦";
+  white-space: pre;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  color: #c69a61;
+  font-size: clamp(6px, 1.6vw, 10px);
+  line-height: 1.5;
+  text-align: center;
+  pointer-events: none;
+}
+.back-frame > * { display: none !important; }
+.pick-card:hover .back-frame,
+.pick-card:focus-visible .back-frame { border-color: #c69a61 !important; }
+
+/* ---------- Spread selection cards with position diagrams (spec v2 §4.1) ---------- */
+#draw .spread-options { gap: 16px; }
+#draw .spread-options button {
+  min-height: 88px;
+  padding: 16px !important;
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 14px;
+  border: 1px solid #d8be96 !important;
+  border-radius: 16px !important;
+  background: #fffdf9 !important;
+  color: #49343b !important;
+  box-shadow: none !important;
+  text-align: left;
+  transform: none !important;
+}
+#draw .spread-options button::before,
+#draw .spread-options button::after { display: none !important; content: none !important; }
+#draw .spread-options button.active {
+  border: 2px solid #c69a61 !important;
+  padding: 15px !important;
+  background: #f1dfe5 !important;
+}
+@media (hover: hover) {
+  #draw .spread-options button:hover { background: #fbf3f5 !important; }
+  #draw .spread-options button.active:hover { background: #f1dfe5 !important; }
+}
+#draw .spread-options .spread-motif {
+  grid-row: span 2;
+  width: 64px;
+  height: 52px;
+  margin: 0 !important;
+  display: grid !important;
+  place-content: center;
+  grid-auto-flow: column;
+  gap: 4px;
+}
+#draw .spread-options .spread-motif b {
+  width: 14px !important;
+  height: 22px !important;
+  border: 1px solid #c69a61 !important;
+  border-radius: 3px !important;
+  background: #fff9f4 !important;
+  box-shadow: none !important;
+}
+/* relationship: one card on top, two below */
+#draw .spread-options .spread-motif.motif-relationship { grid-auto-flow: row; grid-template-columns: 14px 14px; column-gap: 8px; row-gap: 4px; }
+#draw .spread-options .spread-motif.motif-relationship b:nth-child(3) { grid-row: 1; grid-column: 1 / -1; justify-self: center; }
+#draw .spread-options .spread-name { display: flex !important; flex-wrap: wrap; align-items: center; gap: 4px 10px; justify-content: flex-start !important; font: 600 17px/1.4 "Noto Serif TC", "Songti TC", serif; color: #49343b; }
+#draw .spread-options button > small { display: block !important; margin: 4px 0 0 !important; color: #704d58 !important; font-size: 13px !important; letter-spacing: .02em !important; }
+#draw .spread-recommended { background: #f1dfe5; border-color: #c69a61; color: #744750; font-size: 12px; font-weight: 600; padding: 2px 10px; }
+#draw .spread-options button.active .spread-recommended { background: #fffdf9; }
+
+/* ---------- Result: spread board (geometry) + reading list (spec v2 §4.2) ---------- */
+.spread-board {
+  margin: 28px auto 36px;
+  display: grid;
+  justify-content: center;
+  gap: 28px;
+}
+.spread-slot { margin: 0; display: grid; justify-items: center; gap: 10px; }
+.spread-slot__position {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #704d58;
+  font: 500 14px/1.4 "Noto Sans TC", "PingFang TC", sans-serif;
+}
+.spread-slot__position b {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid #c69a61;
+  border-radius: 50%;
+  color: #77552e;
+  font: 500 11px/1 Georgia, serif;
+}
+.spread-board .tarot-card {
+  width: 240px !important;
+  height: auto !important;
+  aspect-ratio: 5 / 8 !important;
+  margin: 0 !important;
+}
+.spread-board--timeline { grid-template-columns: repeat(3, auto); }
+.spread-board--timeline .tarot-card { width: clamp(160px, 18vw, 220px) !important; }
+/* relationship triangle: 課題 on top, 我 and 對方 below */
+.spread-board--relationship { grid-template-columns: repeat(2, auto); column-gap: 40px; row-gap: 32px; }
+.spread-board--relationship .spread-slot--3 { grid-row: 1; grid-column: 1 / -1; }
+.spread-board--relationship .spread-slot--1 { grid-row: 2; grid-column: 1; }
+.spread-board--relationship .spread-slot--2 { grid-row: 2; grid-column: 2; }
+.spread-board--relationship .tarot-card { width: clamp(160px, 18vw, 220px) !important; }
+
+.reading-sequence { display: grid !important; gap: 18px !important; }
+.reading-sequence .card-reading-unit {
+  display: block !important;
+  padding: 22px !important;
+  border: 1px solid #d8be96 !important;
+  border-radius: 16px !important;
+  background: #fffdf9 !important;
+  box-shadow: 0 6px 24px rgba(73, 52, 59, .06) !important;
+}
+.reading-unit-head { margin-bottom: 10px; display: grid; gap: 2px; text-align: left; }
+.reading-unit-head span { color: #77552e; font-size: 13px; font-weight: 500; }
+.reading-unit-head h3 { margin: 0; color: #49343b; font: 600 21px/1.45 "Noto Serif TC", "Songti TC", serif; }
+.reading-unit-head p { margin: 0; color: #704d58; font-size: 14px; }
+.reading-sequence .position-reading { margin: 0 !important; }
+
+@media (min-width: 851px) {
+  .reading-sequence.count-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* phones: geometry becomes a vertical reading order (spec v2 §4.2) */
+@media (max-width: 600px) {
+  .spread-board,
+  .spread-board--timeline,
+  .spread-board--relationship { grid-template-columns: 1fr; row-gap: 26px; }
+  .spread-board--relationship .spread-slot--1,
+  .spread-board--relationship .spread-slot--2,
+  .spread-board--relationship .spread-slot--3 { grid-row: auto; grid-column: auto; }
+  .spread-board .tarot-card,
+  .spread-board--timeline .tarot-card,
+  .spread-board--relationship .tarot-card { width: min(240px, 70vw) !important; }
+  .reading-sequence .card-reading-unit { padding: 18px !important; }
+  #draw .spread-options button { grid-template-columns: 56px 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spread-board .tarot-inner { transition: none !important; }
+}
+
+/* ---------- Explore section, bright (全站明亮, Issue #12) ----------
+   The section was a night-sky band; it now sits on the same ivory and blush palette as the
+   draw section. Buttons keep the page's pink-pearl treatment; only surfaces and text change. */
+.explore {
+  background: linear-gradient(170deg, #fffaf2 0%, #faefed 55%, #f4e4e8 100%) !important;
+  color: #49343b !important;
+}
+.explore::before { border-color: rgba(198, 154, 97, .22) !important; box-shadow: 0 0 0 55px rgba(198, 154, 97, .03), 0 0 0 110px rgba(198, 154, 97, .02) !important; }
+.explore .explore-heading .eyebrow,
+.explore .tool-progress,
+.explore .archetype-result > span,
+.explore .archetype-result > p,
+.explore .reveal-copy span,
+.explore .learning-bridge > span { color: #77552e !important; }
+.explore .explore-heading h2,
+.explore .tool-stage h3,
+.explore .archetype-result h3,
+.explore .learning-bridge h3 { color: #49343b !important; }
+.explore .explore-heading > p:last-child,
+.explore .tool-hint,
+.explore .archetype-result blockquote,
+.explore .reveal-copy p,
+.explore .learning-bridge p,
+.explore .practice-lesson p,
+.explore .answer-feedback p { color: #704d58 !important; }
+.explore .tool-progress { border-bottom-color: #e6d3b5 !important; }
+.explore .tool-progress b { color: #704d58 !important; }
+.explore .tool-stage {
+  border: 1px solid #d8be96 !important;
+  background: #fffdf9 !important;
+  box-shadow: 0 18px 44px rgba(73, 52, 59, .08) !important;
+  backdrop-filter: none !important;
+}
+.explore .archetype-orbit { border-color: #c69a61 !important; box-shadow: 0 0 0 10px #fbf3ea !important; }
+.explore .archetype-orbit b { color: #b0884f !important; }
+.explore .archetype-result button,
+.explore .tool-primary { border-color: #c69a61 !important; }
+.explore .reveal-copy { border-top-color: #e6d3b5 !important; }
+.explore .intuition-scene { box-shadow: 0 14px 30px rgba(73, 52, 59, .14) !important; }
+.explore .intuition-scene img { background: #f3e9da !important; }
+.explore .intuition-card { background: #fff9f4 !important; box-shadow: 0 14px 30px rgba(73, 52, 59, .14) !important; }
+.explore .practice-tarot-card { filter: drop-shadow(0 14px 18px rgba(73, 52, 59, .16)) !important; }
+.explore .practice-lesson { border-color: #e6d3b5 !important; background: #fbf4ec !important; }
+.explore .practice-lesson b,
+.explore .answer-feedback b { color: #77552e !important; }
+.explore .answer-feedback { border-color: #e6d3b5 !important; background: #fbf4ec !important; }
+.explore .answer-feedback.correct { border-color: #b8d4bd !important; background: #eef6ef !important; }
+.explore .answer-feedback.trap { border-color: #e2bfb3 !important; background: #fbefea !important; }
+.explore .teaching-options button > span,
+.explore .answer-list span { border-color: #c69a61 !important; color: #77552e !important; }
+.explore .journal-date { border-color: #c69a61 !important; color: #77552e !important; }
+.explore .journal-tool textarea {
+  border: 1px solid #d8be96 !important;
+  background: #fffdf9 !important;
+  color: #49343b !important;
+}
+.explore .journal-tool textarea:focus { border-color: #c69a61 !important; }
+.explore .journal-tool textarea::placeholder { color: #9b8189 !important; }
+.explore .day-picker button { border-color: #d8be96 !important; color: #704d58 !important; }
+.explore .day-picker button.active { background: #f1dfe5 !important; border-color: #c69a61 !important; color: #49343b !important; }
+.explore .privacy-note { color: #8a6f77 !important; }
+.explore .journal-lenses span { border-color: #e6d3b5 !important; background: #fffdf9 !important; color: #704d58 !important; }
+.explore .learning-bridge { border-color: #d8be96 !important; background: #fffdf9 !important; }
+.explore .learning-bridge a:not(:first-child) { color: #49343b !important; }
+.explore .flow-button.secondary-flow { color: #744750 !important; }
+.explore .pendulum-question,
+.explore .pendulum-asked { color: #704d58 !important; }
+
+/* practice card sizes: the journal thumbnail is too small for a two-line label, so it grows */
+.journal-card-row .practice-tarot-card { width: 132px !important; }
+/* phones: the day medallion was squeezed to 94px with 29px padding and its caption ran into
+   the frame; it now sizes to its content beside the 132px card */
+@media (max-width: 850px) {
+  .journal-card-row { gap: 12px !important; }
+  .journal-card-row .journal-date { width: 104px !important; height: auto !important; min-height: 112px; padding: 24px 6px 22px !important; border-width: 4px !important; }
+  .journal-card-row .journal-date i { font-size: 30px !important; }
+  .journal-card-row .journal-date span { margin-top: 6px !important; font-size: 10px !important; letter-spacing: 0 !important; white-space: nowrap; }
+}
+
+/* ---------- Closing quote band, bright ---------- */
+.about {
+  background: linear-gradient(180deg, #f6e7ea 0%, #fffaf2 100%) !important;
+  color: #49343b !important;
+  border-top: 1px solid #ead7c0;
+}
+.about .eyebrow { color: #77552e !important; }
+.about h2 { color: #49343b !important; }
+.about > p:not(.eyebrow) { color: #704d58 !important; }
+.about h2 { text-wrap: balance; }
+@media (max-width: 600px) { .about h2 { font-size: clamp(26px, 7.6vw, 32px) !important; } }
+
+/* ---------- Archive (/admin), bright Rococo ---------- */
+.admin-page {
+  padding: calc(var(--rococo-header-h, 72px) + 40px) max(18px, 6vw) 96px !important;
+  background: linear-gradient(180deg, #fffaf2 0%, #faf0ec 100%) !important;
+  color: #49343b !important;
+}
+.admin-page > * { max-width: 960px; margin-left: auto !important; margin-right: auto !important; }
+.admin-page .admin-top .eyebrow { color: #77552e; }
+.admin-page h1 { margin: 6px 0 0; font: 600 clamp(32px, 4.4vw, 44px)/1.3 "Noto Serif TC", "Songti TC", serif !important; color: #49343b; }
+.admin-page .admin-top a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid #c69a61;
+  border-radius: 999px;
+  background: #fffdf9;
+  color: #744750 !important;
+  font-size: 14px;
+  text-decoration: none;
+}
+.admin-page .access-card,
+.admin-page .archive-toolbar,
+.admin-page .archive-section {
+  border: 1px solid #d8be96 !important;
+  border-radius: 16px !important;
+  background: #fffdf9 !important;
+  box-shadow: 0 6px 24px rgba(73, 52, 59, .05);
+}
+.admin-page .access-card { color: #704d58; font-size: 14px !important; }
+.admin-page .access-card b { color: #77552e; }
+.admin-page .archive-toolbar { margin: 16px auto 28px !important; }
+.admin-page .archive-toolbar span { color: #49343b; font-weight: 500; }
+.admin-page .archive-toolbar button { border-color: #c69a61 !important; background: #f1dfe5 !important; color: #49343b !important; font-size: 14px; }
+.admin-page .archive-section { margin-bottom: 18px !important; padding: 22px 24px; }
+.archive-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #efe1cb; }
+.admin-page .archive-section h2 { margin: 0 !important; font: 600 21px/1.45 "Noto Serif TC", "Songti TC", serif !important; color: #49343b; }
+.admin-page .archive-section .admin-summary {
+  flex: none;
+  margin: 0 !important;
+  padding: 2px 10px;
+  border: 1px solid #e6d3b5;
+  border-radius: 999px;
+  background: #fbf4ec;
+  color: #77552e;
+  font-size: 13px !important;
+}
+.admin-page .admin-empty { padding: 18px 8px 6px !important; display: grid; justify-items: center; gap: 8px; color: #8a6f77; }
+.admin-page .admin-empty p { margin: 0; color: #8a6f77; }
+.admin-page .admin-empty a { color: #744750; font-weight: 500; text-decoration: none; border-bottom: 1px solid #d8be96; }
+.admin-page .archive-list article { border-color: #e6d3b5 !important; background: #fffaf2 !important; }
+.admin-page .archive-list b { color: #49343b; font-weight: 600; }
+.admin-page .archive-list small { color: #77552e !important; }
+.admin-page .archive-list p { color: #704d58 !important; }
+.admin-page .archive-list article > .archive-card-thumbs { flex-direction: row !important; flex-wrap: wrap; justify-content: flex-start !important; gap: 10px !important; }
+.admin-page .archive-card-thumbs figure { width: min(84px, calc((100% - 20px) / 3)) !important; }
+.admin-page .archive-card-thumbs img { width: 100% !important; height: auto !important; aspect-ratio: 5 / 8; object-fit: contain !important; background: #f3e9da !important; border-color: #d8be96 !important; padding: 3px; }
+.admin-page .archive-card-thumbs figcaption { color: #77552e !important; }
+.admin-page .archive-card-thumbs figcaption b { color: #49343b !important; }
+@media (max-width: 600px) {
+  .admin-page .archive-section { padding: 18px 16px; }
+  .archive-section-head { flex-wrap: wrap; }
+}
+
+/* healing room draw: the shared bright back replaces the old wine pattern */
+.card-back-art {
+  width: 160px !important;
+  aspect-ratio: 5 / 8 !important;
+  padding: 5px;
+  border: 1px solid #c69a61 !important;
+  border-radius: 12px;
+  background: #fff9f4 !important;
+  box-shadow: 0 12px 26px rgba(73, 52, 59, .14) !important;
+}
+.card-back-art .back-frame { width: 100%; height: 100%; }
+
+/* ---------- Home buttons (Issue #12 §C) ----------
+   Replaces the page's inline pink-pearl patch and the wine-gradient primaries: light pages use
+   misty-rose primaries with deep-rose text, ivory secondaries, 44px+ targets (48px CTAs). The
+   section ids keep these ahead of globals.css, which styles the same classes with !important. */
+:is(#top, #draw, #explore, #consult) :is(.primary, .draw-button, .flow-button.primary-flow, .tool-primary, .learning-bridge a:first-child, .consult-card a, .archetype-result button) {
+  min-height: 48px;
+  padding: 12px 24px !important;
+  border: 1px solid #c69a61 !important;
+  border-radius: 999px !important;
+  background: #ead7df !important;
+  color: #51323d !important;
+  font-size: 15px !important;
+  font-weight: 500;
+  text-shadow: none !important;
+  box-shadow: 0 6px 18px rgba(73, 52, 59, .08) !important;
+  backdrop-filter: none !important;
+  transition: background-color .18s ease, box-shadow .18s ease, transform .18s ease !important;
+}
+:is(#top, #draw, #explore, #consult) :is(.reshuffle, .flow-button.secondary-flow, .learning-bridge a:not(:first-child)) {
+  min-height: 44px;
+  border: 1px solid #ac8759 !important;
+  border-radius: 999px !important;
+  background: #fffdf9 !important;
+  color: #744750 !important;
+  font-size: 15px !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  transition: background-color .18s ease, transform .18s ease !important;
+}
+/* topic chips and explore choices: ivory, selected = blush with a gold edge */
+:is(#draw .topics button, #explore :is(.answer-list, .feeling-list, .teaching-options) button, #explore .day-picker button) {
+  min-height: 44px;
+  border: 1px solid #d8be96 !important;
+  background: #fffdf9 !important;
+  color: #49343b !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  transition: background-color .18s ease, border-color .18s ease !important;
+}
+#draw .topics button { border-radius: 999px !important; font-size: 15px !important; }
+:is(#draw .topics button.active, #explore .feeling-list button.active, #explore .day-picker button.active) {
+  border-color: #c69a61 !important;
+  background: #f1dfe5 !important;
+  color: #49343b !important;
+  box-shadow: inset 0 0 0 1px #c69a61 !important;
+}
+#explore .tool-tabs button {
+  border: 1px solid #d8be96 !important;
+  border-radius: 16px !important;
+  background: #fffdf9 !important;
+  color: #49343b !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  transform: none !important;
+}
+#explore .tool-tabs button.active { border-color: #c69a61 !important; background: #f1dfe5 !important; box-shadow: inset 0 0 0 1px #c69a61 !important; }
+#explore .tool-tabs :is(i, small) { color: #77552e !important; }
+#explore .tool-tabs em { color: #704d58 !important; }
+@media (hover: hover) {
+  :is(#top, #draw, #explore, #consult) :is(.primary, .draw-button, .flow-button.primary-flow, .tool-primary, .learning-bridge a:first-child, .consult-card a, .archetype-result button):hover:not(:disabled) { background: #e2c8d2 !important; transform: translateY(-1px); }
+  :is(#top, #draw, #explore, #consult) :is(.reshuffle, .flow-button.secondary-flow, .learning-bridge a:not(:first-child)):hover:not(:disabled) { background: #fbf3f5 !important; }
+  :is(#draw .topics button, #explore .tool-tabs button, #explore :is(.answer-list, .feeling-list, .teaching-options) button, #explore .day-picker button):hover:not(.active):not(:disabled) { background: #fbf3f5 !important; }
+}
+/* the glossy highlight strips of the old pearl buttons */
+:is(#top, #draw, #explore, #consult) :is(.primary, .draw-button, .reshuffle, .flow-button, .tool-primary, .learning-bridge a, .consult-card a, .topics button, .tool-tabs button, .answer-list button, .feeling-list button, .archetype-result button)::before { display: none !important; }
+:is(#top, #draw, #explore, #consult) :is(button, a, textarea):focus-visible { outline: 2px solid #77552e !important; outline-offset: 3px !important; }
+@media (max-width: 600px) {
+  #draw .tarot-consult-steps :is(a, button),
+  #top .primary { min-height: 50px; }
+}
