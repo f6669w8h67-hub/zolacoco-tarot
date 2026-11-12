@@ -1986,3 +1986,8 @@ html[data-font-tier="small"] main button:not(.image-start-hitbox){font-size:13px
 .tarot-consult-steps{margin:16px 0 0;padding:0;list-style:none;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
 .tarot-consult-steps :is(a,button){min-height:48px}
 .tarot-consult-steps button:disabled{cursor:wait;opacity:.75}
+/* Hero member status on narrow phones: let the records link wrap under the text (overlap scan, 320px). */
+@media(max-width:420px){.visitor-status.member-status{flex-wrap:wrap}.visitor-status.member-status a{margin-left:21px;white-space:normal}}
+/* Overlap scan: the hero eyebrow forced a 386px column, clipping the hero copy on phones ≤390px. */
+@media(max-width:850px){.hero{grid-template-columns:minmax(0,1fr)}.hero-copy{min-width:0}.hero .eyebrow{white-space:normal;overflow-wrap:anywhere}}
+.hero .visitor-status{width:100%;max-width:min(520px,100%);min-width:0;box-sizing:border-box}.hero .visitor-status p{min-width:0}
