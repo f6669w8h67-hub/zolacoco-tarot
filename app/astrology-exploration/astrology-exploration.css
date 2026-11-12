@@ -89,3 +89,6 @@
   .astro-result{background-image:linear-gradient(180deg,rgba(12,15,32,.58),#12152c 68%),var(--scene-mobile,var(--scene))}
   .astro-records{background-image:linear-gradient(180deg,rgba(13,15,33,.58),#11142b),var(--scene-mobile,var(--scene))}
 }
+/* Overlap scan: on phones the fixed music button sat on top of the reading text while scrolling.
+   Keep it at the top of the page instead; it scrolls away with the hero. */
+@media(max-width:850px){.astro-music-toggle{position:absolute}}
