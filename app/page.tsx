@@ -222,6 +222,8 @@ export default function Home() {
         if (pendingSoundscape.current === nextSoundscape && !loadedSoundscapes.current.has(nextSoundscape)) setSoundBlocked(true);
       }, 8000);
       // The new iframe starts itself (autoplay=1) and onLoad repeats the play command.
+      // Only one player exists at a time; the previous one unmounts and is forgotten.
+      loadedSoundscapes.current.clear();
       setMountedSoundscapes([nextSoundscape]);
       return;
     }
@@ -488,7 +490,11 @@ export default function Home() {
           </div>
           <p className="tarot-music-status" aria-live="polite" hidden={!soundOpen && !soundBlocked}>{soundBlocked ? "目前無法播放音景，妳仍可以繼續抽牌。" : soundEnabled ? `正在播放「${soundscapes[soundscape].label}」，抽牌時會持續播放；再點一次即可停止。` : "點選後才會載入並播放；也可以不播放，直接開始抽牌。"}</p>
           <div className="tarot-audio-only-player" aria-hidden="true">
-            {mountedSoundscapes.map((item) => <iframe key={item} ref={(node) => { audioFrames.current[item] = node; }} src={`https://www.youtube-nocookie.com/embed/${soundscapes[item].videoId}?enablejsapi=1&autoplay=1&playsinline=1&loop=1&playlist=${soundscapes[item].videoId}&controls=0&rel=0`} title={`${soundscapes[item].label}背景音樂`} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" tabIndex={-1}
+            {mountedSoundscapes.map((item) => <iframe key={item} ref={(node) => {
+              audioFrames.current[item] = node;
+              // An unmounted player is gone: forget that it had loaded (A → B → A, PR #10 review).
+              if (!node) loadedSoundscapes.current.delete(item);
+            }} src={`https://www.youtube-nocookie.com/embed/${soundscapes[item].videoId}?enablejsapi=1&autoplay=1&playsinline=1&loop=1&playlist=${soundscapes[item].videoId}&controls=0&rel=0`} title={`${soundscapes[item].label}背景音樂`} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" tabIndex={-1}
               onLoad={() => {
                 loadedSoundscapes.current.add(item);
                 setSoundBlocked(false);

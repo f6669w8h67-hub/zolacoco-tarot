@@ -36,3 +36,9 @@ test("LINE opens from a real link that only appears after copying finished or fa
   assert.match(source, /consultCopy === "done" \|\| consultCopy === "failed" \? <li>\s*<a className="flow-button primary-flow" href=\{lineMessageUrl\(consultText\)\}/);
   assert.match(source, /async function copyConsult\(\) \{\s*setConsultCopy\("copying"\);\s*try \{\s*await navigator\.clipboard\.writeText\(consultText\);\s*setConsultCopy\("done"\);/);
 });
+
+test("only one soundscape player exists and an unmounted one is not treated as loaded", () => {
+  assert.match(source, /loadedSoundscapes\.current\.clear\(\);\s*setMountedSoundscapes\(\[nextSoundscape\]\);/);
+  assert.match(source, /if \(!node\) loadedSoundscapes\.current\.delete\(item\);/);
+  assert.equal(source.includes("setMountedSoundscapes((current) => [...current"), false);
+});
