@@ -31,17 +31,41 @@ async function readJson(response: Response): Promise<Record<string, unknown> | n
   }
 }
 
+/**
+ * Why the account could not be loaded. Only a few server answers need their own
+ * screen; everything else (network, 500, HTML from a proxy) is "UNAVAILABLE".
+ */
+export type MemberLoadFailure =
+  | "EMAIL_NOT_VERIFIED"
+  | "EMAIL_ALREADY_LINKED"
+  | "MEMBERSHIP_NOT_CONFIGURED"
+  | "UNAUTHENTICATED"
+  | "UNAVAILABLE";
+
+const knownFailures: Record<number, MemberLoadFailure | undefined> = {
+  401: "UNAUTHENTICATED",
+  403: "EMAIL_NOT_VERIFIED",
+  409: "EMAIL_ALREADY_LINKED",
+  503: "MEMBERSHIP_NOT_CONFIGURED",
+};
+
 export async function loadMemberProfile(
   fetchImpl: Fetch = fetch,
-): Promise<{ ok: true; member: ClientMember } | { ok: false }> {
+): Promise<{ ok: true; member: ClientMember } | { ok: false; failure: MemberLoadFailure }> {
   try {
     const response = await fetchImpl("/api/membership/me", { cache: "no-store" });
-    if (!response.ok) return { ok: false };
     const data = await readJson(response);
-    if (!data?.member || typeof data.member !== "object") return { ok: false };
+    if (!response.ok) {
+      // Trust the status only together with the matching code, so an unrelated 403/409/503
+      // (e.g. from a proxy) is still shown as a temporary problem.
+      const failure = knownFailures[response.status];
+      const matches = failure === "UNAUTHENTICATED" || (failure && data?.error === failure);
+      return { ok: false, failure: matches ? failure : "UNAVAILABLE" };
+    }
+    if (!data?.member || typeof data.member !== "object") return { ok: false, failure: "UNAVAILABLE" };
     return { ok: true, member: data.member as ClientMember };
   } catch {
-    return { ok: false };
+    return { ok: false, failure: "UNAVAILABLE" };
   }
 }
 

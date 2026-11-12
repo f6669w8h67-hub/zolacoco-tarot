@@ -13,10 +13,19 @@ function respond(status, body, { text = false } = {}) {
 const unreachable = async () => { throw new TypeError("Failed to fetch"); };
 
 test("a failed profile load is reported as a failure, never as a member", async () => {
-  assert.deepEqual(await loadMemberProfile(respond(500, { error: "MEMBERSHIP_SERVICE_ERROR" })), { ok: false });
-  assert.deepEqual(await loadMemberProfile(respond(401, { error: "UNAUTHENTICATED" })), { ok: false });
-  assert.deepEqual(await loadMemberProfile(respond(200, "<html>proxy</html>", { text: true })), { ok: false });
-  assert.deepEqual(await loadMemberProfile(unreachable), { ok: false });
+  assert.deepEqual(await loadMemberProfile(respond(500, { error: "MEMBERSHIP_SERVICE_ERROR" })), { ok: false, failure: "UNAVAILABLE" });
+  assert.deepEqual(await loadMemberProfile(respond(401, { error: "UNAUTHENTICATED" })), { ok: false, failure: "UNAUTHENTICATED" });
+  assert.deepEqual(await loadMemberProfile(respond(200, "<html>proxy</html>", { text: true })), { ok: false, failure: "UNAVAILABLE" });
+  assert.deepEqual(await loadMemberProfile(unreachable), { ok: false, failure: "UNAVAILABLE" });
+});
+
+test("account problems that need their own screen are recognised only with the matching code", async () => {
+  assert.deepEqual(await loadMemberProfile(respond(403, { error: "EMAIL_NOT_VERIFIED" })), { ok: false, failure: "EMAIL_NOT_VERIFIED" });
+  assert.deepEqual(await loadMemberProfile(respond(409, { error: "EMAIL_ALREADY_LINKED" })), { ok: false, failure: "EMAIL_ALREADY_LINKED" });
+  assert.deepEqual(await loadMemberProfile(respond(503, { error: "MEMBERSHIP_NOT_CONFIGURED" })), { ok: false, failure: "MEMBERSHIP_NOT_CONFIGURED" });
+  // Same status, different or missing code (e.g. a proxy page): treated as temporary.
+  assert.deepEqual(await loadMemberProfile(respond(403, { error: "FORBIDDEN" })), { ok: false, failure: "UNAVAILABLE" });
+  assert.deepEqual(await loadMemberProfile(respond(503, "<html>busy</html>", { text: true })), { ok: false, failure: "UNAVAILABLE" });
 });
 
 test("a successful profile load returns the member", async () => {
