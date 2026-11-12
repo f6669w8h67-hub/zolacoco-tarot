@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { isPublicMembershipPage } from "@/lib/membership-access";
+import { ZOLA_LINE_URL } from "@/lib/contact";
 
 type AccessState = {
   status: "loading" | "allowed" | "pending" | "suspended" | "expired" | "error";
@@ -68,7 +69,7 @@ export default function MembershipGate({ children }: { children: React.ReactNode
 
   return <AccessScreen eyebrow="MEMBER ACCESS" title={copy[0]} message={copy[1]}>
     <Link href="/account">查看會員資料</Link>
-    <a href="https://lin.ee/XIi2Nam" target="_blank" rel="noreferrer">通知 Zola</a>
+    <a href={ZOLA_LINE_URL} target="_blank" rel="noreferrer">通知 Zola</a>
   </AccessScreen>;
 }
 

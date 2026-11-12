@@ -1,4 +1,5 @@
 import { membershipErrorResponse, syncCurrentMember } from "@/lib/membership";
+import { validateProfileInput } from "@/lib/account-state";
 
 import { notifyPendingMember } from "@/lib/member-activation-email";
 
@@ -16,14 +17,17 @@ export async function GET() {
 export async function PATCH(request: Request) {
   try {
     const member = await syncCurrentMember();
-    const body = (await request.json()) as { fullName?: string; lineId?: string; birthday?: string };
-    const fullName = body.fullName?.trim() ?? "";
-    const lineId = body.lineId?.trim() ?? "";
-    const birthday = body.birthday?.trim() ?? "";
-
-    if (!fullName || !lineId || !/^\d{4}-\d{2}-\d{2}$/.test(birthday)) {
-      return Response.json({ error: "請完整填寫真實姓名、LINE 名稱／ID 與生日。" }, { status: 400 });
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return Response.json({ error: "資料格式不正確，請重新整理後再試一次。" }, { status: 400 });
     }
+    // Same rules as the form: lengths, no control characters, and a real past date
+    // (e.g. 2026-02-31 used to pass the regex and fail later in Postgres as a 500).
+    const checked = validateProfileInput(body, Date.now());
+    if (!checked.ok) return Response.json({ error: checked.error }, { status: 400 });
+    const { fullName, lineId, birthday } = checked.value;
 
     const { getSql } = await import("@/lib/membership");
     const sql = getSql();
