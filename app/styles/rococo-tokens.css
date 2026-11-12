@@ -1,0 +1,248 @@
+/* Zolacoco Rococo design system v1.0 (Issue #12, ChatGPT spec).
+   Phase 1: tokens, base typography, focus, shared components and the global header.
+   Pages opt into the night palette with data-theme="rococo-night" on their own root;
+   nothing sets the night theme globally. */
+
+:root,
+[data-theme="rococo-light"] {
+  --rococo-bg: #fffaf2;
+  --rococo-surface: #fffdf9;
+  --rococo-surface-muted: #f7edf0;
+  --rococo-text: #49343b;
+  --rococo-text-muted: #704d58;
+  --rococo-gold: #c69a61;
+  --rococo-gold-text: #77552e;
+  --rococo-blush: #ead7df;
+  --rococo-border: #d8be96;
+  --rococo-focus: #77552e;
+  --rococo-success: #35634c;
+  --rococo-warning: #86521f;
+  --rococo-error: #9b3445;
+  --rococo-btn-primary-bg: #ead7df;
+  --rococo-btn-primary-text: #51323d;
+  --rococo-btn-primary-border: #c69a61;
+  --rococo-btn-secondary-bg: #fffdf9;
+  --rococo-btn-secondary-text: #744750;
+  --rococo-btn-secondary-border: #ac8759;
+  --rococo-tag-bg: #f1dfe5;
+  --rococo-tag-text: #744750;
+  --rococo-shadow-card: 0 6px 24px rgba(73, 52, 59, .06);
+  --rococo-radius-card: 16px;
+  --rococo-radius-control: 12px;
+  --rococo-space-section: 64px;
+  --rococo-font-title: "Noto Serif TC", "Songti TC", Georgia, serif;
+  --rococo-font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  --rococo-font-latin: Georgia, "Times New Roman", serif;
+  --rococo-header-h: 72px;
+}
+
+[data-theme="rococo-night"] {
+  --rococo-bg: #171d32;
+  --rococo-surface: #24243d;
+  --rococo-surface-muted: #30283e;
+  --rococo-text: #f4e9da;
+  --rococo-text-muted: #dec4cf;
+  --rococo-gold: #bfa178;
+  --rococo-gold-text: #e8cfa2;
+  --rococo-blush: #dfc8d0;
+  --rococo-border: #89765f;
+  --rococo-focus: #f2d69b;
+  --rococo-success: #a9d6be;
+  --rococo-warning: #f0cca0;
+  --rococo-error: #f3b5be;
+  --rococo-btn-primary-bg: #dfc8d0;
+  --rococo-btn-primary-text: #4b3040;
+  --rococo-btn-primary-border: #bfa178;
+  --rococo-btn-secondary-bg: #24243d;
+  --rococo-btn-secondary-text: #f4e9da;
+  --rococo-btn-secondary-border: #89765f;
+  --rococo-tag-bg: #30283e;
+  --rococo-tag-text: #f4e9da;
+  --rococo-shadow-card: 0 8px 28px rgba(0, 0, 0, .28);
+}
+
+@media (max-width: 760px) { :root { --rococo-header-h: 60px; } }
+@media (max-width: 600px) { :root { --rococo-space-section: 40px; } }
+
+/* Base typography: sans for reading, serif for titles (spec B1). */
+body {
+  font-family: var(--rococo-font-body);
+  color: var(--rococo-text);
+  letter-spacing: .015em;
+}
+:where(h1, h2, h3) { font-family: var(--rococo-font-title); letter-spacing: .04em; }
+:where(time, .rc-tabular) { font-variant-numeric: tabular-nums; }
+
+/* Anchors land below the fixed header (spec D1). */
+main [id] { scroll-margin-top: calc(var(--rococo-header-h) + 8px); }
+
+/* One focus treatment everywhere (spec C1). */
+:where(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--rococo-focus);
+  outline-offset: 3px;
+}
+
+/* Shared components for pages adopting the system (phases 2–4). */
+.rc-btn {
+  min-height: 44px;
+  padding: 11px 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--rococo-btn-secondary-border);
+  border-radius: var(--rococo-radius-control);
+  background: var(--rococo-btn-secondary-bg);
+  color: var(--rococo-btn-secondary-text);
+  font: 500 15px/1.4 var(--rococo-font-body);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color .18s ease, filter .18s ease, transform .18s ease;
+}
+.rc-btn--primary {
+  border-color: var(--rococo-btn-primary-border);
+  background: var(--rococo-btn-primary-bg);
+  color: var(--rococo-btn-primary-text);
+}
+.rc-btn--pill { border-radius: 999px; }
+.rc-btn--text {
+  min-height: 44px;
+  padding: 8px 4px;
+  border: 0;
+  background: none;
+  color: var(--rococo-btn-secondary-text);
+  text-decoration: underline;
+  text-decoration-color: var(--rococo-border);
+  text-underline-offset: 4px;
+}
+.rc-btn:hover { filter: brightness(1.03); }
+@media (hover: hover) { .rc-btn:not(.rc-btn--text):hover { transform: translateY(-1px); } }
+.rc-btn--text:hover, .rc-btn--text:focus-visible { text-decoration-color: currentColor; }
+.rc-btn:disabled { cursor: default; opacity: .72; }
+
+.rc-card {
+  padding: 22px;
+  border: 1px solid var(--rococo-border);
+  border-radius: var(--rococo-radius-card);
+  background: var(--rococo-surface);
+  color: var(--rococo-text);
+  box-shadow: var(--rococo-shadow-card);
+}
+
+.rc-eyebrow {
+  margin: 0;
+  color: var(--rococo-gold-text);
+  font: 400 12px/1.6 var(--rococo-font-latin);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  white-space: normal;
+}
+
+.rc-divider {
+  position: relative;
+  width: min(260px, 70%);
+  height: 1px;
+  margin: 32px auto;
+  border: 0;
+  background: linear-gradient(90deg, transparent, var(--rococo-gold), transparent);
+}
+.rc-divider::after {
+  content: "✦";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0 6px;
+  background: var(--rococo-bg);
+  color: var(--rococo-gold);
+  font-size: 12px;
+  line-height: 1;
+}
+@media (max-width: 600px) { .rc-divider { width: min(180px, 60%); margin: 24px auto; } }
+
+.rc-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--rococo-tag-bg);
+  color: var(--rococo-tag-text);
+  font: 600 12px/1.2 var(--rococo-font-body);
+  letter-spacing: .04em;
+}
+
+.rc-ornament { pointer-events: none; user-select: none; }
+
+/* ---------- Global header (spec D1) ---------- */
+.global-site-header {
+  height: var(--rococo-header-h);
+  border-bottom: 1px solid var(--rococo-border);
+  background: rgba(255, 250, 242, .94);
+}
+.global-brand { color: var(--rococo-text); font-family: var(--rococo-font-latin); }
+.global-brand span { color: var(--rococo-gold-text); }
+.global-menu-trigger,
+.global-account-link {
+  min-height: 44px;
+  border: 1px solid var(--rococo-btn-secondary-border);
+  background: var(--rococo-btn-secondary-bg);
+  color: var(--rococo-btn-secondary-text);
+  box-shadow: none;
+  font-family: var(--rococo-font-body);
+  font-weight: 500;
+}
+.global-menu-trigger:hover,
+.global-account-link:hover { background: var(--rococo-surface-muted); }
+.global-function-menu {
+  border: 1px solid var(--rococo-border);
+  background: var(--rococo-surface);
+  box-shadow: 0 24px 60px rgba(73, 52, 59, .16);
+}
+.global-menu-heading { border-bottom-color: var(--rococo-border); }
+.global-menu-heading small { color: var(--rococo-gold-text); font-size: 11px; }
+.global-menu-heading h2 { color: var(--rococo-text); }
+.global-menu-heading > button {
+  width: 44px;
+  height: 44px;
+  border-color: var(--rococo-btn-secondary-border);
+  background: var(--rococo-btn-secondary-bg);
+  color: var(--rococo-btn-secondary-text);
+}
+.global-menu-groups h3 { color: var(--rococo-gold-text); font-size: 11px; }
+.global-menu-groups a { min-height: 56px; color: var(--rococo-text); border-bottom-color: rgba(216, 190, 150, .45); }
+.global-menu-groups a small { color: var(--rococo-text-muted); }
+.global-menu-groups a:hover,
+.global-menu-groups a:focus-visible { background: var(--rococo-surface-muted); transform: none; }
+.font-tier-row,
+.global-account-panel { border-color: var(--rococo-border); background: var(--rococo-bg); }
+.font-tier-row > span small,
+.global-account-panel small { color: var(--rococo-text-muted); font-size: 12px; }
+.font-tier-row > button {
+  min-width: 44px;
+  height: 44px;
+  border-color: var(--rococo-btn-secondary-border);
+  background: var(--rococo-btn-secondary-bg);
+  color: var(--rococo-btn-secondary-text);
+}
+.font-tier-row > button.active {
+  border-color: var(--rococo-btn-primary-border);
+  background: var(--rococo-btn-primary-bg);
+  color: var(--rococo-btn-primary-text);
+  font-weight: 600;
+}
+.global-account-panel a,
+.global-admin-link { color: var(--rococo-btn-secondary-text); }
+.global-admin-link { min-height: 32px; display: flex; align-items: center; justify-content: flex-end; font-size: 13px; }
+@media (max-width: 760px) {
+  .global-site-header { padding: 0 12px; }
+  .global-menu-trigger, .global-account-link { min-height: 44px; }
+  .global-admin-link { justify-content: flex-start; }
+}
+@media (max-width: 359px) {
+  .global-account-link { width: 44px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .rc-btn, .rc-ornament { transition: none !important; animation: none !important; transform: none !important; }
+}
