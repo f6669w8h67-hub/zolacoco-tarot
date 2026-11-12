@@ -1949,8 +1949,6 @@ html[data-font-tier="small"] main button:not(.image-start-hitbox){font-size:13px
 .tarot-consult{margin:34px auto 10px;max-width:640px;padding:22px clamp(16px,4vw,28px);border:1px solid rgba(188,145,84,.5);border-radius:22px;background:rgba(255,249,242,.82);text-align:center}
 .tarot-consult h3{margin:0;color:#5a3d45;font:500 20px/1.4 Georgia,"Noto Serif TC",serif}
 .tarot-consult>p{margin:8px 0 0;color:#7c5f62;font-size:13px;line-height:1.8}
-.tarot-consult-actions{margin-top:16px;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
-.tarot-consult-actions :is(a,button){min-height:48px}
 .tarot-consult .tarot-consult-note{max-width:500px;margin:12px auto 0;color:#9b7774;font-size:12px}
 .tarot-consult-note a{color:#99596a;text-underline-offset:3px}
 .tarot-consult-preview{max-width:500px;margin:10px auto 0;text-align:left;font-size:12px;color:#795d60}
@@ -1985,3 +1983,6 @@ html[data-font-tier="small"] main button:not(.image-start-hitbox){font-size:13px
 .archive-card-thumbs img{width:84px;height:140px;object-fit:cover;border-radius:8px;border:1px solid #d7b986;background:#152b67}
 .archive-card-thumbs figcaption{display:grid;gap:1px;color:#8a6963;font-size:10px;line-height:1.4}
 .archive-card-thumbs figcaption b{color:#5f4341;font-size:12px}
+.tarot-consult-steps{margin:16px 0 0;padding:0;list-style:none;display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.tarot-consult-steps :is(a,button){min-height:48px}
+.tarot-consult-steps button:disabled{cursor:wait;opacity:.75}

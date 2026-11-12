@@ -157,7 +157,7 @@ export default function Home() {
   const [soundOpen, setSoundOpen] = useState(false);
   const [soundBlocked, setSoundBlocked] = useState(false);
   const [memberBanner, setMemberBanner] = useState<{ active: boolean; expires: string | null } | null>(null);
-  const [consultCopy, setConsultCopy] = useState<"idle" | "done" | "failed">("idle");
+  const [consultCopy, setConsultCopy] = useState<"idle" | "copying" | "done" | "failed">("idle");
   const [revealed, setRevealed] = useState(false);
   const [shuffling, setShuffling] = useState(false);
   const [seed, setSeed] = useState(0);
@@ -222,7 +222,7 @@ export default function Home() {
         if (pendingSoundscape.current === nextSoundscape && !loadedSoundscapes.current.has(nextSoundscape)) setSoundBlocked(true);
       }, 8000);
       // The new iframe starts itself (autoplay=1) and onLoad repeats the play command.
-      setMountedSoundscapes((current) => [...current, nextSoundscape]);
+      setMountedSoundscapes([nextSoundscape]);
       return;
     }
     const play = () => {
@@ -309,11 +309,19 @@ export default function Home() {
     }, 2600);
   }
 
+  // Every way of starting over goes through here, so a new reading never inherits the
+  // previous one's 已儲存 / 已複製 state (PR #10 review).
+  function clearReading() {
+    setSelected([]);
+    setRevealed(false);
+    setSpreadCards([]);
+    setTarotSaveState("idle");
+    setConsultCopy("idle");
+  }
+
   function shuffleDeck() {
     if (shuffling) return;
-    setRevealed(false);
-    setSelected([]);
-    setSpreadCards([]);
+    clearReading();
     setShuffling(true);
     setSeed((s) => s + 1);
     window.setTimeout(() => {
@@ -335,11 +343,7 @@ export default function Home() {
   }
 
   function reset() {
-    setSelected([]);
-    setRevealed(false);
-    setSpreadCards([]);
-    setTarotSaveState("idle");
-    setConsultCopy("idle");
+    clearReading();
     document.getElementById("draw")?.scrollIntoView({ behavior: "smooth" });
   }
 
@@ -362,6 +366,7 @@ export default function Home() {
   });
 
   async function copyConsult() {
+    setConsultCopy("copying");
     try {
       await navigator.clipboard.writeText(consultText);
       setConsultCopy("done");
@@ -371,12 +376,12 @@ export default function Home() {
   }
 
   function changeTopic(item: string) {
-    setTopic(item); setSelected([]); setSpreadCards([]); setRevealed(false);
+    setTopic(item); clearReading();
     setSpreadId((current) => spreadAfterTopicChange(item, current, spreadChosen));
   }
 
   function changeSpread(item: SpreadId) {
-    setSpreadId(item); setSpreadChosen(true); setSelected([]); setSpreadCards([]); setRevealed(false);
+    setSpreadId(item); setSpreadChosen(true); clearReading();
   }
 
   function answerArchetype(answer: number) {
@@ -561,13 +566,21 @@ export default function Home() {
               <section className="tarot-consult" aria-labelledby="tarot-consult-title">
                 <h3 id="tarot-consult-title">想把這次的牌看得更完整？</h3>
                 <p>帶著這次的問題與牌卡，預約更完整的一對一解讀。</p>
-                <div className="tarot-consult-actions">
-                  <a className="flow-button primary-flow" href={lineMessageUrl(consultText)} target="_blank" rel="noreferrer" onClick={() => void copyConsult()}>讓 Zola 幫我深入解讀 ✨</a>
-                  <button type="button" className="flow-button secondary-flow" onClick={() => void copyConsult()}>{consultCopy === "done" ? "已複製抽牌內容" : "複製抽牌內容"}</button>
-                </div>
+                <ol className="tarot-consult-steps">
+                  <li>
+                    <button type="button" className={`flow-button ${consultCopy === "done" ? "secondary-flow" : "primary-flow"}`} disabled={consultCopy === "copying"} onClick={() => void copyConsult()}>
+                      {consultCopy === "copying" ? "正在複製…" : consultCopy === "done" ? "已複製抽牌內容 ✓" : "讓 Zola 幫我深入解讀 ✨"}
+                    </button>
+                  </li>
+                  {consultCopy === "done" || consultCopy === "failed" ? <li>
+                    <a className="flow-button primary-flow" href={lineMessageUrl(consultText)} target="_blank" rel="noreferrer">開啟 Zola 的官方 LINE</a>
+                  </li> : null}
+                </ol>
                 <p className="tarot-consult-note" aria-live="polite">{consultCopy === "failed"
-                  ? "這個瀏覽器無法自動複製，請展開下方內容後手動選取。"
-                  : <>按下後會先複製抽牌內容，再開啟 Zola 的官方 LINE；內容會提供給 LINE 中的諮詢對象 Zola。若 LINE 沒有自動帶入，貼上即可。電腦沒有 LINE 時，也可以到 <a href={ZOLA_LINE_URL} target="_blank" rel="noreferrer">官方 LINE</a> 貼上。</>}</p>
+                  ? "這個瀏覽器無法自動複製，請展開下方內容手動選取，再開啟 LINE 貼上。"
+                  : consultCopy === "done"
+                    ? <>抽牌內容已複製。接著開啟 LINE，若訊息沒有自動帶入，貼上後送出即可。電腦沒有 LINE 時，也可以到 <a href={ZOLA_LINE_URL} target="_blank" rel="noreferrer">官方 LINE</a> 貼上。</>
+                    : "第一步會複製這次的抽牌內容，第二步開啟 Zola 的官方 LINE；內容會提供給 LINE 中的諮詢對象 Zola。"}</p>
                 <details className="tarot-consult-preview" open={consultCopy === "failed" || undefined}><summary>查看抽牌內容</summary><pre>{consultText}</pre></details>
               </section>
               <div className="reading-actions">
