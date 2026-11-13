@@ -549,6 +549,21 @@
   cursor: pointer;
 }
 .site-notice button:focus-visible { outline: 2px solid #77552e; outline-offset: 2px; }
+/* Phones (ChatGPT, PR #31): a fixed notice sat on the first buttons (iPhone SE: 開始免費抽牌), so on phones
+   it joins the page flow right under the 64px header instead. The -56px bottom margin lets each page's own
+   header clearance begin just under the notice, so nothing is covered and nothing waits for a close tap.
+   Desktop keeps the small fixed card at the bottom. */
+@media (max-width: 760px) {
+  .site-notice {
+    position: relative;
+    z-index: 1;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    width: auto;
+    margin: 72px 12px -56px;
+  }
+}
 
 /* ---------- Draw section without shadows (owner request 2026-11-13) ---------- */
 #draw, #draw *:not(:focus-visible), #draw *::before, #draw *::after {

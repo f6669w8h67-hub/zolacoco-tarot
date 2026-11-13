@@ -26,8 +26,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Zolacoco Tarot｜抽一張屬於你的牌",
-  description: "由 Zola 陪你透過塔羅看清此刻的感情、工作、人際與今日指引。",
+  title: "Zolacoco Tarot｜抽一張屬於妳的牌",
+  description: "由 Zola 陪妳透過塔羅看清此刻的感情、工作、人際與今日指引。",
   other: {
     "codex-preview": "development",
   },
