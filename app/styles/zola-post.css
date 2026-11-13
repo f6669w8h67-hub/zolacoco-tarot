@@ -345,3 +345,96 @@ html body main.astro-dice-page :is(.ad-intro, .ad-ritual, .ad-result, .ad-histor
 html body main.astro-page :is(.astro-result, .astro-records, .astro-questions, .astro-step),
 html body main.healing-room :is(.heal-lobby, .heal-sheet, .records-page, .heal-opening) { background: transparent !important; }
 html body :is(.astro-dice-page, .astro-page, .healing-room) :is(h1, h2):not(.post-never) { color: var(--post-wine) !important; }
+
+/* ===== ChatGPT design review on PR #15 (2026-11-13): one ornate frame per chapter, plain cards
+   inside, post-scale typography, lighter mobile frame. These rules come last on purpose. ===== */
+@media (max-width: 760px) { :root { --post-frame-w: 34px; --post-frame-inset: 4px; } }
+@media (max-width: 760px) {
+  :is(#draw, #cat-story, #explore, #consult, #about, #membership.premium-room, .pendulum-page .divination-centre) {
+    padding-left: 52px !important;
+    padding-right: 52px !important;
+    padding-top: 88px !important;
+    padding-bottom: 72px !important;
+  }
+}
+@media (max-width: 360px) {
+  :is(#draw, #cat-story, #explore, #consult, #about, #membership.premium-room, .pendulum-page .divination-centre) { padding-left: 44px !important; padding-right: 44px !important; }
+}
+
+/* cards and controls inside a chapter: a single 1px gold line, 8px radius, soft shadow */
+:is(#draw .topics button, #draw .spread-options button, #explore .tool-tabs button, #explore :is(.answer-list, .feeling-list, .teaching-options) button, #explore .day-picker button, .cat-profile, .consult-card, .synthesis, .tarot-consult, .reading-sequence .card-reading-unit, .explore .tool-stage, .explore .learning-bridge, .visitor-status, .member-status, :is(#top, #draw, #explore, #consult) :is(.reshuffle, .flow-button.secondary-flow, .learning-bridge a:not(:first-child))) {
+  border: 1px solid var(--post-gold) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 5px 18px rgba(62, 39, 22, .07) !important;
+}
+:is(#draw .topics button, #draw .spread-options button, #explore .tool-tabs button, #explore :is(.answer-list, .feeling-list, .teaching-options) button, #explore .day-picker button) {
+  background: rgba(249, 240, 222, .55) !important;
+}
+:is(.cat-profile, .consult-card, .synthesis, .tarot-consult, .reading-sequence .card-reading-unit, .explore .tool-stage, .explore .learning-bridge) {
+  background: rgba(249, 240, 222, .6) !important;
+}
+/* selected: pale rose with a wine edge (gold alone is 2.7:1 and cannot carry the state) */
+:is(#draw .topics button.active, #draw .spread-options button.active, #explore .tool-tabs button.active, #explore .feeling-list button.active, #explore .day-picker button.active) {
+  border: 1px solid var(--post-wine) !important;
+  background: #f0dccb !important;
+  box-shadow: inset 0 0 0 1px var(--post-wine), 0 5px 18px rgba(62, 39, 22, .07) !important;
+}
+#draw .spread-options button.active { padding: 15px !important; }
+/* primary buttons: wine plate, thin warm-gold edge, no inner double rule */
+:is(#top, #draw, #explore, #consult) :is(.primary, .draw-button, .flow-button.primary-flow, .tool-primary, .learning-bridge a:first-child, .consult-card a, .archetype-result button),
+.pendulum-page :is(a.primary, .pendulum-cta, .piano-button),
+#membership .premium-actions a:first-child,
+:is(.astro-dice-page .ad-cast, .astro-page .astro-primary, .healing-room button.gold) {
+  min-height: 48px;
+  border: 1px solid #d4af75 !important;
+  border-radius: 8px !important;
+  background: var(--post-wine) !important;
+  box-shadow: 0 6px 16px rgba(62, 39, 22, .16) !important;
+  color: #fff8ec !important;
+}
+/* the background-sound row: one quiet line */
+#draw .tarot-soundscape { padding: 6px 0 !important; border-top: 0 !important; border-bottom: 0 !important; }
+#draw .tarot-soundscape :is(b, strong) { font-weight: 500 !important; color: var(--post-ink-2) !important; }
+
+/* typography at post scale */
+:is(.eyebrow, .rc-eyebrow, .section-heading > p, .explore-heading .eyebrow, .reading-label, .heal-eyebrow, .ad-eyebrow, .tool-progress span, .archetype-result > p, .portrait-caption > span, .ad-die-label, .astro-result-label, .explore .learning-bridge > span) {
+  font-size: 18px !important;
+  letter-spacing: .06em !important;
+}
+@media (min-width: 761px) {
+  :is(.eyebrow, .section-heading > p, .explore-heading .eyebrow, .reading-label, .heal-eyebrow, .ad-eyebrow) { font-size: 22px !important; }
+}
+main :is(h1, h2):not(.rc-card-face__name),
+.section-heading h2, .explore-heading h2, .cat-story h2, .consult h2, .about h2, .result-intro h2 {
+  font-size: clamp(32px, 8.6vw, 36px) !important;
+  line-height: 1.4 !important;
+  letter-spacing: .035em !important;
+}
+@media (min-width: 761px) {
+  main :is(h1, h2):not(.rc-card-face__name),
+  .section-heading h2, .explore-heading h2, .cat-story h2, .consult h2, .about h2, .result-intro h2 { font-size: clamp(46px, 4.2vw, 56px) !important; }
+}
+:is(.section-heading, .explore-heading) h2::after, .about h2::after { width: 72px; height: 2px; margin-top: 18px; }
+:is(.deck-note, .explore-heading > p:last-child, .hero .intro, .ritual) {
+  font-size: clamp(17px, 4.6vw, 19px) !important;
+  font-weight: 600 !important;
+  letter-spacing: .035em !important;
+  color: var(--post-gold-text) !important;
+}
+@media (min-width: 761px) { :is(.deck-note, .explore-heading > p:last-child, .hero .intro, .ritual) { font-size: 21px !important; } }
+:is(.position-reading, .synthesis p, .cat-story > p, .cat-profile p, .about > p:not(.eyebrow), .consult-copy p) {
+  color: var(--post-ink) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  line-height: 1.95 !important;
+  letter-spacing: .035em !important;
+}
+@media (min-width: 761px) { :is(.position-reading, .synthesis p, .cat-story > p, .cat-profile p, .about > p:not(.eyebrow), .consult-copy p) { font-size: 17px !important; } }
+/* centred post-style intros stay narrow; long readings and forms stay left-aligned */
+:is(.section-heading, .explore-heading, .about) { text-align: center; }
+:is(.section-heading, .explore-heading) > p:last-child, .about > p:not(.eyebrow) { max-width: 600px; margin-left: auto !important; margin-right: auto !important; }
+
+/* result: a quiet "your reading" label, single-layer panels, 20px rhythm on phones */
+.result-intro .reading-label::before { content: "your reading · "; }
+@media (max-width: 760px) { .reading-sequence { gap: 20px !important; } }
+@media (prefers-reduced-motion: reduce) { :is(#draw, #cat-story, #explore, #consult, #about)::before { animation: none !important; } }
