@@ -7,6 +7,7 @@ import DrawFan from "./draw-fan";
 import { MOTION } from "@/lib/draw-fan-math";
 import "./styles/draw-pearl.css";
 import "./styles/draw-fan.css";
+import "./styles/home-pearl.css";
 import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
 import { loadMemberProfile } from "@/lib/member-client";
 import {
@@ -16,13 +17,25 @@ import {
 import { type CardReading, othersLine, speaksForOthers, synthesisOpening, synthesisParts, topicReading } from "@/lib/tarot-synthesis";
 
 
-const exploreTools = [
-  { id: "archetype", number: "01", title: "此刻的內在原型", en: "INNER ARCHETYPE", desc: "從幾個直覺選擇，看見此刻最靠近你的大牌能量。" },
-  { id: "intuition", number: "02", title: "牌面直覺練習室", en: "INTUITIVE READING", desc: "先不看標準牌義，練習相信自己從畫面讀到的訊息。" },
-  { id: "journal", number: "03", title: "七日塔羅內在筆記", en: "SEVEN-DAY JOURNAL", desc: "每天一個提問，慢慢整理情緒、關係與真正的需要。" },
-  { id: "pendulum", number: "04", title: "靈擺直覺問答", en: "PENDULUM GUIDANCE", desc: "把問題整理成是非題，透過擺動停下來聽見此刻的直覺。" },
-  { id: "astro-dice", number: "05", title: "星骰此刻指引", en: "ASTRO DICE", desc: "擲出行星、星座與宮位，拆解此刻的能量、表現方式與生活領域。" },
-];
+// Explore v2 (2026-11-13): the three practices that open right here are tabs above their panel;
+// the pendulum and the astro dice have pages of their own, so they are picture cards that link there.
+const practiceTools = [
+  { id: "archetype", number: "01", title: "此刻的內在原型", short: "內在原型", desc: "從幾個直覺選擇，看見此刻最靠近你的大牌能量。" },
+  { id: "intuition", number: "02", title: "牌面直覺練習室", short: "直覺練習", desc: "先不看標準牌義，練習相信自己從畫面讀到的訊息。" },
+  { id: "journal", number: "03", title: "七日塔羅內在筆記", short: "七日筆記", desc: "每天一個提問，慢慢整理情緒、關係與真正的需要。" },
+] as const;
+const pageTools = [
+  { href: "/pendulum", number: "04", title: "靈擺直覺問答", desc: "把問題整理成是非題，透過擺動停下來聽見此刻的直覺。", room: "/pendulum/hero-desktop.webp", charm: ["/pendulum/metal.webp", "/pendulum/crystal.webp"] },
+  { href: "/astro-dice", number: "05", title: "星骰此刻指引", desc: "擲出行星、星座與宮位，拆解此刻的能量、表現方式與生活領域。", room: "/astro-dice/hero-desktop.webp", charm: ["/astro-dice/die.webp"] },
+] as const;
+
+/** Thin gold line icons for the three practice tabs. */
+function PracticeIcon({ id }: { id: string }) {
+  const common = { width: 28, height: 28, viewBox: "0 0 28 28", fill: "none", stroke: "currentColor", strokeWidth: 1.3, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+  if (id === "intuition") return <svg {...common}><path d="M3 14c3-5 7-7.5 11-7.5S22 9 25 14c-3 5-7 7.5-11 7.5S6 19 3 14Z" /><circle cx="14" cy="14" r="3.6" /><path d="M14 3v1.6M6.5 5.5l1 1.2M21.5 5.5l-1 1.2" /></svg>;
+  if (id === "journal") return <svg {...common}><path d="M6 4.5h13.5a2 2 0 0 1 2 2v17H8a2 2 0 0 1-2-2v-17Z" /><path d="M6 21.5a2 2 0 0 1 2-2h13.5M10 9h7M10 12.5h5" /><path d="M23.5 3.5 17 10" /></svg>;
+  return <svg {...common}><circle cx="14" cy="14" r="9.5" /><path d="M14 7.5 15.6 12.4 20.5 14l-4.9 1.6L14 20.5l-1.6-4.9L7.5 14l4.9-1.6Z" /></svg>;
+}
 
 type Soundscape = "forest" | "cafe" | "meditation";
 
@@ -657,9 +670,10 @@ export default function Home() {
       </section>
 
       <section className="cat-story" id="cat-story">
+        <span className="pearl-corners" aria-hidden="true" />
         <div className="cat-story-heading">
           <p className="eyebrow">THE HEARTS BEHIND THE DECK</p>
-          <h2>抽完牌，再認識陪你讀牌的牠們</h2>
+          <h2>抽完牌，<span className="keep-line">再認識陪你讀牌的牠們</span></h2>
           <p>這套 78 張貓咪塔羅，以萊恩與蝦蝦為原型。牠們有不同的個性，也把不同的情緒與生命經驗帶進每一張牌裡。</p>
         </div>
         <div className="cat-profiles">
@@ -676,20 +690,32 @@ export default function Home() {
       </section>
 
       <section className="explore" id="explore">
+        <span className="pearl-corners" aria-hidden="true" />
         <div className="explore-heading">
           <p className="eyebrow">TAROT AS A MIRROR</p>
-          <h2>用塔羅，更靠近內在的自己</h2>
+          <h2>用塔羅，<span className="keep-line">更靠近內在的自己</span></h2>
           <p>塔羅不只是預測結果，也是一種整理感受、理解模式的語言。你不需要會背牌義，先從此刻最有感覺的練習開始。</p>
         </div>
 
-        <div className="explore-layout">
-          <nav className="tool-tabs" aria-label="選擇內在探索工具">
-            {exploreTools.map((tool) => <button key={tool.id} className={exploreTool === tool.id ? "active" : ""} onClick={() => tool.id === "pendulum" ? window.location.assign("/pendulum") : tool.id === "astro-dice" ? window.location.assign("/astro-dice") : setExploreTool(tool.id)}>
-              <i>{tool.number}</i><span><small>{tool.en}</small><b>{tool.title}</b><em>{tool.desc}</em></span>
+        <div className="explore-layout ex-layout">
+          <p className="ex-group-label">在這裡就能練習</p>
+          <div className="ex-tabs" role="tablist" aria-label="選擇內在探索練習" onKeyDown={(event) => {
+            const index = practiceTools.findIndex((tool) => tool.id === exploreTool);
+            const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+            if (!step) return;
+            event.preventDefault();
+            const next = practiceTools[(Math.max(0, index) + step + practiceTools.length) % practiceTools.length];
+            setExploreTool(next.id);
+            document.getElementById(`ex-tab-${next.id}`)?.focus();
+          }}>
+            {practiceTools.map((tool) => <button key={tool.id} id={`ex-tab-${tool.id}`} type="button" role="tab" aria-selected={exploreTool === tool.id} aria-controls="ex-panel"
+              tabIndex={exploreTool === tool.id ? 0 : -1} className={exploreTool === tool.id ? "ex-tab active" : "ex-tab"} onClick={() => setExploreTool(tool.id)}>
+              <PracticeIcon id={tool.id} /><i>{tool.number}</i><b>{tool.short}</b>
             </button>)}
-          </nav>
+          </div>
+          <p className="ex-desc"><b>{practiceTools.find((tool) => tool.id === exploreTool)?.title}</b>{practiceTools.find((tool) => tool.id === exploreTool)?.desc}</p>
 
-          <div className="tool-stage">
+          <div className="tool-stage" id="ex-panel" role="tabpanel" aria-labelledby={`ex-tab-${exploreTool}`}>
             {exploreTool === "archetype" && <div className="archetype-tool">
               {archetypeResult === null ? <>
                 <div className="tool-progress"><span>INNER ARCHETYPE</span><b>{archetypeStep + 1} / {archetypeQuestions.length}</b></div>
@@ -756,6 +782,16 @@ export default function Home() {
               </div>}
               <p className="privacy-note">線上靈擺以隨機擺動提供直覺與自我探索提示，不是科學測量或絕對預言；健康、法律、投資與安全決策請以專業資訊為準。</p>
             </div>}
+          </div>
+
+          <div className="ex-more">
+            <p className="ex-group-label">更多獨立工具</p>
+            <div className="ex-more-grid">
+              {pageTools.map((tool) => <a key={tool.href} className="ex-more-card" href={tool.href}>
+                <span className="ex-more-art" aria-hidden="true"><img src={tool.room} alt="" loading="lazy" /><span className="ex-more-charm">{tool.charm.map((src) => <img key={src} src={src} alt="" loading="lazy" />)}</span></span>
+                <span className="ex-more-copy"><i>{tool.number}</i><b>{tool.title}</b><em>{tool.desc}</em><strong>前往 <span aria-hidden="true">→</span></strong></span>
+              </a>)}
+            </div>
           </div>
         </div>
 
