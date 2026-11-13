@@ -13,6 +13,7 @@ import {
   QUESTION_LIMIT, SPREADS, TAROT_TOPICS, type SpreadId, cleanQuestion, consultMessage,
   memberExpiryLabel, recommendedSpread, relationshipLens, spreadAfterTopicChange, spreadForTopic, spreadsForTopic, tarotRecord,
 } from "@/lib/tarot-reading";
+import { type CardReading, speaksForOthers, synthesisOpening, synthesisParts, topicReading } from "@/lib/tarot-synthesis";
 
 
 const exploreTools = [
@@ -170,6 +171,16 @@ export default function Home() {
   const [seed, setSeed] = useState(0);
   const [spreadCards, setSpreadCards] = useState<TarotCard[]>([]);
   const [fanReady, setFanReady] = useState(false);
+  // Reading v4: the written readings (about 60,000 characters) load only once she starts a draw.
+  const [readings, setReadings] = useState<ReadonlyMap<string, CardReading> | null>(null);
+  const readingsLoading = useRef(false);
+  function loadReadings() {
+    if (readings || readingsLoading.current) return;
+    readingsLoading.current = true;
+    import("./tarot-readings")
+      .then((module) => setReadings(module.readingsById))
+      .catch(() => { readingsLoading.current = false; });
+  }
   // Draw-flow timeouts are tracked so starting over cancels them (spec v3 §1.6): an old
   // shuffle or pick can never update a newer reading.
   const drawTimers = useRef<number[]>([]);
@@ -209,6 +220,10 @@ export default function Home() {
   const positions = [-12, -6, 0, 6, 12];
   // Same spread ids for every topic; the relationship spread names its positions per topic.
   const activeSpread = spreadForTopic(spreadId, topic);
+  const synthesisReadings = selected.map((card) => ({ name: card.name, reading: readings?.get(card.id) }));
+  const synthesisCards = synthesisReadings.every((item) => item.reading)
+    ? synthesisReadings.map((item) => ({ name: item.name, reading: item.reading as CardReading }))
+    : null;
   const offeredSpreads = spreadsForTopic(topic).map((item) => spreadForTopic(item.id, topic));
   const recommendedId = recommendedSpread(topic);
   const intuitionCard = tarotCards[intuitionCardIndex] ?? tarotCards[0];
@@ -348,6 +363,7 @@ export default function Home() {
   function shuffleDeck() {
     if (shuffling) return;
     clearReading();
+    loadReadings();
     const still = prefersReducedMotion();
     setShuffling(true);
     setSeed((s) => s + 1);
@@ -553,7 +569,13 @@ export default function Home() {
                 <p className="reading-label">「{topic}」・{activeSpread.name}</p>
                 <h2>妳的塔羅指引</h2>
                 {cleanQuestion(question) ? <p className="reading-question"><b>妳這次的提問：</b>{cleanQuestion(question)}</p> : null}
-                {selected.length > 0 && <div className="synthesis core-message"><span>{selected.length > 1 ? "整體訊息" : "此刻的核心提醒"}</span><p>{synthesis(selected, spreadId, topic, activeSpread.positions)}</p></div>}
+                {selected.length > 1 && synthesisCards ? <div className="synthesis core-message synthesis-v4">
+                  <span>三張牌的整體解讀</span>
+                  <p className="synthesis-opening">{synthesisOpening(topic, spreadId)}</p>
+                  <ol className="synthesis-parts">{synthesisParts(synthesisCards, spreadId, topic, activeSpread.positions).map((part, i) => <li key={`${part.card}-${i}`}>
+                    <b>{String(i + 1).padStart(2, "0")}・{part.label}｜{part.card}</b><p>{part.text}</p>
+                  </li>)}</ol>
+                </div> : selected.length > 0 ? <div className="synthesis core-message"><span>{selected.length > 1 ? "整體訊息" : "此刻的核心提醒"}</span><p>{synthesis(selected, spreadId, topic, activeSpread.positions)}</p></div> : null}
               </div>
               <div className={`spread-board spread-board--${spreadId}`} role="list" aria-label={`${activeSpread.name}的牌卡位置`}>
                 {selected.map((card, i) => <figure className={`spread-slot spread-slot--${i + 1}`} role="listitem" key={`${card.id}-slot`} style={{ "--slot": i } as React.CSSProperties}>
@@ -561,30 +583,43 @@ export default function Home() {
                   <div className={`tarot-card suit-${card.suit} ${revealed ? "revealed" : ""}`}><div className="tarot-inner"><TarotCardBack className="tarot-back" /><TarotCardFace card={card} className="tarot-front" /></div></div>
                 </figure>)}
               </div>
-              {/* Reading v3 (ChatGPT spec, PR #15): core message → cards → each card's point →
-                  what to do next → the full meaning folded away. Existing fields only. */}
+              {/* Reading v4 (ChatGPT spec, 2026-11-13): each card's written reading for the topic stays
+                  open; one card also shows its energy, blind spot and first step; the scene and the
+                  position notes fold away. Until the readings load, the v3 lines stand in. */}
               <div className={`reading-sequence count-${selected.length}`}>
-                {selected.map((card, i) => <section className="card-reading-unit" key={`${card.id}-reading`} aria-labelledby={`reading-${card.id}`} style={{ "--slot": i } as React.CSSProperties}>
-                  <header className="reading-unit-head">
-                    <span>{String(i + 1).padStart(2, "0")}・{activeSpread.positions[i]}</span>
-                    <h3 id={`reading-${card.id}`}>{card.name}</h3>
-                    <p>{card.keywords}</p>
-                  </header>
-                  <div className="position-reading">
-                    {selected.length > 1 ? <div className="reading-point"><b>這張牌的重點</b><p>{card.truth}</p></div> : null}
-                    {selected.length === 1 ? <div className="reading-point blind"><b>需要留意</b><p>{card.blindSpot}</p></div> : null}
-                    {selected.length === 1 ? <div className="reading-point next"><b>妳可以先這樣做</b><p>{card.action}</p></div> : null}
-                    <details className="reading-more">
-                      <summary>{selected.length > 1 ? "查看這張牌的完整解析" : "查看完整牌義與位置解析"}</summary>
-                      <div className="reading-more__body">
-                        <div className="reading-point"><b>這張牌畫了什麼</b><p>{card.scene}</p></div>
-                        <div className="reading-point"><b>和「{topic}」的關聯</b><p>{topicLens[topic][card.suit]}</p></div>
-                        <div className="reading-point"><b>這個位置怎麼理解</b><p>{spreadId === "relationship" ? relationshipLens(topic, i) : positionLens[spreadId][i]}</p></div>
-                        {selected.length > 1 ? <div className="reading-point blind"><b>需要留意</b><p>{card.blindSpot}</p></div> : null}
-                      </div>
-                    </details>
-                  </div>
-                </section>)}
+                {selected.map((card, i) => {
+                  const reading = readings?.get(card.id);
+                  const single = selected.length === 1;
+                  const blind = <div className="reading-point blind"><b>需要留意</b><p>{card.blindSpot}</p></div>;
+                  const energy = reading ? <div className="reading-point energy"><b>這張牌給妳的力量</b><p>{reading.energy}</p></div> : null;
+                  return <section className="card-reading-unit" key={`${card.id}-reading`} aria-labelledby={`reading-${card.id}`} style={{ "--slot": i } as React.CSSProperties}>
+                    <header className="reading-unit-head">
+                      <span>{String(i + 1).padStart(2, "0")}・{activeSpread.positions[i]}</span>
+                      <h3 id={`reading-${card.id}`}>{card.name}</h3>
+                      <p>{card.keywords}</p>
+                    </header>
+                    <div className="position-reading">
+                      {reading ? (speaksForOthers(spreadId, i)
+                        ? <div className="reading-point lead"><b>這張牌呈現的狀態</b><p>{reading.outward}</p></div>
+                        : <div className="reading-point lead"><b>放在「{topic}」裡看</b><p>{topicReading(reading, topic)}</p></div>)
+                        : !single ? <div className="reading-point"><b>這張牌的重點</b><p>{card.truth}</p></div> : null}
+                      {single ? energy : null}
+                      {single ? blind : null}
+                      {single ? <div className="reading-point next"><b>妳可以先這樣做</b><p>{card.action}</p></div> : null}
+                      <details className="reading-more">
+                        <summary>{single ? "查看牌面與位置解析" : reading ? "查看能量提醒與完整牌義" : "查看這張牌的完整解析"}</summary>
+                        <div className="reading-more__body">
+                          {!single ? energy : null}
+                          {!single && reading ? <div className="reading-point"><b>這張牌的重點</b><p>{card.truth}</p></div> : null}
+                          {!single ? blind : null}
+                          <div className="reading-point"><b>這張牌畫了什麼</b><p>{card.scene}</p></div>
+                          <div className="reading-point"><b>和「{topic}」的關聯</b><p>{topicLens[topic][card.suit]}</p></div>
+                          <div className="reading-point"><b>這個位置怎麼理解</b><p>{spreadId === "relationship" ? relationshipLens(topic, i) : positionLens[spreadId][i]}</p></div>
+                        </div>
+                      </details>
+                    </div>
+                  </section>;
+                })}
               </div>
               {selected.length > 1 ? <section className="reading-actions-list" aria-labelledby="reading-actions-title">
                 <h3 id="reading-actions-title">接下來可以怎麼做</h3>
