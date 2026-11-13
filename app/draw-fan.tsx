@@ -114,9 +114,9 @@ export default function DrawFan({ cards, positions, pickedCount, ready, deal, on
       cardEls.current.get(cards[nextActive].id)?.focus({ preventScroll: true });
     }
     if (removed && !reducedMotion()) {
+      // the next pick waits until the others have closed the gap (PR #25 review)
       setMotion("settling");
-      busy.current = false;
-      const done = window.setTimeout(() => setMotion(""), 300);
+      const done = window.setTimeout(() => { setMotion(""); busy.current = false; }, MOTION.settleMs);
       layout();
       return () => window.clearTimeout(done);
     }
@@ -168,12 +168,21 @@ export default function DrawFan({ cards, positions, pickedCount, ready, deal, on
     const d = drag.current;
     drag.current = null;
     if (!d || d.id !== event.pointerId || !d.moving) return;
+    // the click that ends this swipe is not a pick; nothing after it is swallowed
     swallowClick.current = true;
+    window.setTimeout(() => { swallowClick.current = false; }, 0);
     const last = d.samples[d.samples.length - 1];
     const first = d.samples.find((sample) => last.t - sample.t <= 90) ?? d.samples[0];
     const velocity = last.t > first.t ? (last.x - first.x) / (last.t - first.t) : 0;
     const target = flingTarget(centre.current, velocity, count);
     glideTo(target, MOTION.snapMs + Math.min(MOTION.momentumMs, Math.abs(target - centre.current) * 45));
+  }
+  // an interrupted swipe settles on the nearest card, without a fling
+  function onPointerCancel(event: PointerEvent<HTMLDivElement>) {
+    const d = drag.current;
+    drag.current = null;
+    if (!d || d.id !== event.pointerId || !d.moving) return;
+    glideTo(Math.round(centre.current));
   }
 
   // ---------- desktop: lift and tilt under the mouse ----------
@@ -273,7 +282,7 @@ export default function DrawFan({ cards, positions, pickedCount, ready, deal, on
       </li>)}
     </ol>
     <div ref={stageRef} className="fan4-stage" role="group" aria-roledescription="牌扇" aria-label={`展開的牌，共 ${count} 張。${hint}。也可以用左右方向鍵瀏覽，按 Enter 選定。`}
-      aria-busy={!ready} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp} onKeyDown={onKeyDown}>
+      aria-busy={!ready} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerCancel} onKeyDown={onKeyDown}>
       {cards.map((card, index) => <button key={card.id} type="button" className="fan4-card" data-rank={openRank(index, count)}
         style={{ "--rank": openRank(index, count) } as React.CSSProperties}
         ref={(el) => { if (el) cardEls.current.set(card.id, el); else cardEls.current.delete(card.id); }}

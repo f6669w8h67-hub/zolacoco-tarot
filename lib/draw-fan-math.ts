@@ -13,6 +13,7 @@ export const MOTION = {
   snapMs: 220,
   flightMs: 420,
   flightEase: "cubic-bezier(.25,.8,.25,1)",
+  settleMs: 300, // the others close the gap (280ms); the next pick waits for it
   lastPickPauseMs: 240,
   shuffleMs: 840,
   openStaggerMs: 35,

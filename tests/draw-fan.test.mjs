@@ -70,6 +70,14 @@ test("the picked card flies into its slot; reduced motion skips the flight and e
   assert.match(css, /touch-action: pan-y/, "vertical page scrolling still works over the fan");
 });
 
+test("no double picks: the next pick waits for the flight and for the gap to close (PR #25 review)", () => {
+  assert.equal(MOTION.settleMs, 300);
+  assert.match(fan, /setMotion\("settling"\);\s*const done = window\.setTimeout\(\(\) => \{ setMotion\(""\); busy\.current = false; \}, MOTION\.settleMs\);/);
+  assert.match(fan, /if \(!card \|\| !el \|\| !slot \|\| busy\.current \|\| filled >= positions\.length\) return;\s*busy\.current = true;/);
+  assert.match(fan, /onPointerCancel=\{onPointerCancel\}/, "a cancelled swipe settles without a fling");
+  assert.match(fan, /swallowClick\.current = true;\s*window\.setTimeout\(\(\) => \{ swallowClick\.current = false; \}, 0\);/, "only the click that ends a swipe is swallowed");
+});
+
 test("the fan uses the two-cat back, never the old lattice back-frame", () => {
   assert.ok(!fan.includes('"back-frame"'));
   assert.match(css, /\.fan4-back \{[^}]*url\("\/textures\/card-back\.webp"\)/);
