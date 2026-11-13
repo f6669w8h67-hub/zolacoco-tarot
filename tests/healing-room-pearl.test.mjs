@@ -35,7 +35,7 @@ test("copy works at any time of day, and addresses her as 妳; the bedtime room 
 
 test("records keep their storage key and fields; sounds stop when she leaves, restarts, saves or the page closes", () => {
   assert.match(page, /const STORE = "zolacoco-healing-records-v1";/);
-  assert.match(page, /function go\(next:Room\)\{stopAudio\(\);/);
+  assert.match(page, /function go\(next:Room\)\{advancer\.newFlow\(\);stopAudio\(\);/);
   assert.match(page, /onClick=\{\(\)=>\{stopAudio\(\);setDuration\(n\)\}\}/, "changing the length clears the old timer");
   assert.match(page, /return\(\)=>\{clearTimeout\(load\);if\(audio\.current\)\{/, "unmount releases the audio");
   assert.match(page, /aria-pressed=\{playing===s\}/);
