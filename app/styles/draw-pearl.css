@@ -259,3 +259,18 @@ html body #draw .position-reading > .reading-point:first-child { margin-top: 0 !
 html body #draw :is(.result, .reading, .result-intro, .spread-board, .reading-sequence) { background: transparent !important; box-shadow: none !important; }
 /* the outer cards of the phone fan keep a few px of air at 320px */
 html body #draw summary { min-height: 44px; display: flex; align-items: center; }
+
+/* ===== reading v4 (2026-11-13): longer written readings, one column, calm spacing ===== */
+html body #draw .synthesis-v4 .synthesis-opening { margin: 0 0 4px !important; }
+html body #draw .synthesis-parts { margin: 0; padding: 0; list-style: none; }
+html body #draw .synthesis-parts li { margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(197, 164, 111, .4); }
+html body #draw .synthesis-parts b { display: block; margin-bottom: 4px; color: var(--dp-title); font: 600 14px/1.55 "Noto Serif TC", serif; letter-spacing: .04em; }
+html body #draw .synthesis-parts p { margin: 0; }
+html body #draw .reading-sequence.count-3 { grid-template-columns: minmax(0, 1fr) !important; max-width: 720px; margin-inline: auto; gap: 22px !important; }
+html body #draw .reading-sequence.count-1 { max-width: 680px; margin-inline: auto; }
+html body #draw .position-reading .reading-point { margin-top: 20px !important; }
+html body #draw .position-reading > .reading-point:first-child,
+html body #draw .reading-more__body > .reading-point:first-child { margin-top: 0 !important; }
+html body #draw .position-reading .reading-point p,
+html body #draw .reading-more__body .reading-point p { font-size: 16px !important; line-height: 1.9 !important; }
+html body #draw .position-reading .reading-point.energy b::before { content: "✦ "; color: var(--dp-gold); }
