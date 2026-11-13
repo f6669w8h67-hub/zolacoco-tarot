@@ -513,3 +513,44 @@
   #draw .tarot-consult-steps :is(a, button),
   #top .primary { min-height: 50px; }
 }
+
+/* ---------- Maintenance notice (owner request 2026-11-13) ---------- */
+.site-notice {
+  position: fixed;
+  z-index: 990;
+  left: 50%;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 24px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 10px 12px 18px;
+  border: 1px solid #c69a61;
+  border-radius: 12px;
+  background: #fffdf9;
+  color: #49343b;
+  box-shadow: 0 8px 24px rgba(73, 52, 59, .14);
+}
+.site-notice p { margin: 0; flex: 1; font-size: 14px; line-height: 1.6; }
+.site-notice b { display: block; color: #744750; font: 600 15px/1.5 "Noto Serif TC", "Songti TC", serif; }
+.site-notice button {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #77552e;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.site-notice button:focus-visible { outline: 2px solid #77552e; outline-offset: 2px; }
+
+/* ---------- Draw section without shadows (owner request 2026-11-13) ---------- */
+#draw, #draw *:not(:focus-visible), #draw *::before, #draw *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+#draw :is(.card-back, .pick-card, .tarot-card, .tarot-inner, .rc-card-face, .deck-stage, .deck-stack) { filter: none !important; }

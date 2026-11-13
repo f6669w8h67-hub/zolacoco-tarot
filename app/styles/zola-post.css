@@ -605,3 +605,10 @@ html body .hero {
   }
 }
 html body main .hero .hero-copy { width: auto !important; }
+
+/* maintenance notice and shadow-free draw section in the post palette */
+.site-notice { border-color: var(--post-gold) !important; background: #fffaf1 !important; color: var(--post-ink) !important; }
+.site-notice b { color: var(--post-wine) !important; font-family: var(--post-title-font) !important; font-weight: 900 !important; }
+.site-notice button { color: var(--post-gold-text) !important; }
+html body #draw, html body #draw *:not(:focus-visible) { box-shadow: none !important; text-shadow: none !important; }
+html body #draw :is(.rc-card-face, .card-back, .pick-card, .tarot-back, .tarot-front) { box-shadow: 0 0 0 1px rgba(176, 138, 90, .55) !important; }
