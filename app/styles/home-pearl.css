@@ -2,9 +2,14 @@
    Zola: 「這樣也幫我美編一下，風格延續，貓咪照片不換」「這一排功能你覺得可以怎麼改」.
    Same pearl ground as the draw section (draw-pearl.css): ivory, blush and pale blue light over
    the damask tile, gold hairlines, rose titles, never dark and never earth-toned.
-   Scoped to #cat-story and #explore. */
+   Scoped to the home page sections: #top, #cat-story, #explore, #consult, #about and the footer;
+   the draw section has its own file. The header and the notice come from pearl-page.css. */
 
-html body :is(#cat-story, #explore) {
+html body main.home-pearl {
+  --hp-ink: #263449; --hp-muted: #33445f; --hp-title: #843450; --hp-gold: #c5a46f; --hp-gold-light: #d8be8a;
+  --hp-line: #e4d6e0; --hp-blush: #fce9f1; --hp-selected: #f4dfe9;
+}
+html body :is(#top, #cat-story, #explore, #consult) {
   --hp-ink: #263449;
   --hp-muted: #33445f;
   --hp-title: #843450;
@@ -26,39 +31,39 @@ html body :is(#cat-story, #explore) {
   background-size: auto, auto, auto, 320px 320px !important;
   background-repeat: no-repeat, no-repeat, no-repeat, repeat !important;
 }
-@media (max-width: 760px) { html body :is(#cat-story, #explore) { background-size: auto, auto, auto, 240px 240px !important; } }
+@media (max-width: 760px) { html body :is(#top, #cat-story, #explore, #consult) { background-size: auto, auto, auto, 240px 240px !important; } }
 /* the old sections drew big beige rings; the pearl sections have rose corners instead */
-html body :is(#cat-story, #explore)::before,
-html body :is(#cat-story, #explore)::after {
+html body :is(#top, #cat-story, #explore, #consult)::before,
+html body :is(#top, #cat-story, #explore, #consult)::after {
   content: "" !important; display: block !important; position: absolute !important; z-index: 0 !important;
   top: 10px !important; width: 40px !important; height: 40px !important; inset-inline: auto !important;
   border: 0 !important; border-radius: 0 !important; box-shadow: none !important; opacity: .75 !important;
   background: url("/pendulum/rose-corner.webp") center / contain no-repeat !important;
   pointer-events: none !important; animation: none !important; transform: none !important;
 }
-html body :is(#cat-story, #explore)::before { left: 6px !important; }
-html body :is(#cat-story, #explore)::after { right: 6px !important; transform: scaleX(-1) !important; }
+html body :is(#top, #cat-story, #explore, #consult)::before { left: 6px !important; }
+html body :is(#top, #cat-story, #explore, #consult)::after { right: 6px !important; transform: scaleX(-1) !important; }
 @media (min-width: 900px) {
-  html body :is(#cat-story, #explore)::before, html body :is(#cat-story, #explore)::after { top: 16px !important; width: 80px !important; height: 80px !important; }
-  html body :is(#cat-story, #explore)::before { left: 10px !important; }
-  html body :is(#cat-story, #explore)::after { right: 10px !important; }
+  html body :is(#top, #cat-story, #explore, #consult)::before, html body :is(#top, #cat-story, #explore, #consult)::after { top: 16px !important; width: 80px !important; height: 80px !important; }
+  html body :is(#top, #cat-story, #explore, #consult)::before { left: 10px !important; }
+  html body :is(#top, #cat-story, #explore, #consult)::after { right: 10px !important; }
 }
 /* and the two lower corners, mirrored, on their own layer so nothing above them moves */
-html body :is(#cat-story, #explore) > .pearl-corners { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
-html body :is(#cat-story, #explore) > .pearl-corners::before,
-html body :is(#cat-story, #explore) > .pearl-corners::after {
+html body :is(#top, #cat-story, #explore, #consult) > .pearl-corners { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+html body :is(#top, #cat-story, #explore, #consult) > .pearl-corners::before,
+html body :is(#top, #cat-story, #explore, #consult) > .pearl-corners::after {
   content: ""; position: absolute; bottom: 10px; width: 40px; height: 40px; opacity: .75; pointer-events: none;
   background: url("/pendulum/rose-corner.webp") center / contain no-repeat;
 }
-html body :is(#cat-story, #explore) > .pearl-corners::before { left: 6px; transform: scaleY(-1); }
-html body :is(#cat-story, #explore) > .pearl-corners::after { right: 6px; transform: scale(-1, -1); }
+html body :is(#top, #cat-story, #explore, #consult) > .pearl-corners::before { left: 6px; transform: scaleY(-1); }
+html body :is(#top, #cat-story, #explore, #consult) > .pearl-corners::after { right: 6px; transform: scale(-1, -1); }
 @media (min-width: 900px) {
-  html body :is(#cat-story, #explore) > .pearl-corners::before,
-  html body :is(#cat-story, #explore) > .pearl-corners::after { bottom: 16px; width: 80px; height: 80px; }
-  html body :is(#cat-story, #explore) > .pearl-corners::before { left: 10px; }
-  html body :is(#cat-story, #explore) > .pearl-corners::after { right: 10px; }
+  html body :is(#top, #cat-story, #explore, #consult) > .pearl-corners::before,
+  html body :is(#top, #cat-story, #explore, #consult) > .pearl-corners::after { bottom: 16px; width: 80px; height: 80px; }
+  html body :is(#top, #cat-story, #explore, #consult) > .pearl-corners::before { left: 10px; }
+  html body :is(#top, #cat-story, #explore, #consult) > .pearl-corners::after { right: 10px; }
 }
-html body :is(#cat-story, #explore) > :not(.pearl-corners) { position: relative; z-index: 1; }
+html body :is(#top, #cat-story, #explore, #consult) > :not(.pearl-corners) { position: relative; z-index: 1; }
 
 /* ---------- headings ---------- */
 html body :is(#cat-story .cat-story-heading, #explore .explore-heading) .eyebrow {
@@ -249,3 +254,135 @@ html body #explore .learning-bridge p { color: var(--hp-muted) !important; font-
 @media (prefers-reduced-motion: reduce) {
   html body #explore :is(.ex-tab, .ex-more-card) { transition: none !important; }
 }
+
+/* ======================= 首屏 Hero (2026-11-14, 第 2 步) ======================= */
+html body main.home-pearl #top {
+  min-height: 0 !important; padding: 128px 6vw 96px !important; gap: 5vw !important; align-items: center !important;
+}
+html body main.home-pearl #top .hero-copy { max-width: 600px !important; }
+html body main.home-pearl #top .eyebrow {
+  color: var(--hp-title) !important; font: italic 600 18px/1.4 "Cormorant Garamond", "Noto Serif TC", serif !important;
+  letter-spacing: .06em !important; text-transform: lowercase;
+}
+html body main.home-pearl #top h1 { margin: 18px 0 22px !important; font-family: "Noto Serif TC", serif !important; letter-spacing: .03em !important; }
+html body main.home-pearl #top h1 span { color: var(--hp-ink) !important; font-weight: 600 !important; }
+html body main.home-pearl #top h1 em { color: var(--hp-title) !important; font-style: normal !important; font-weight: 700 !important; }
+/* a gold swash under the title */
+html body main.home-pearl #top h1::after {
+  content: ""; display: block; width: 170px; height: 46px; margin: 14px 0 0;
+  background: url("/pendulum/shell-crest.webp") left center / contain no-repeat;
+}
+html body main.home-pearl #top .intro { color: var(--hp-muted) !important; font-size: 16px !important; line-height: 1.95 !important; }
+html body main.home-pearl #top .visitor-status {
+  border: 1px solid var(--hp-gold) !important; border-radius: 16px !important; background: rgba(255, 255, 255, .9) !important;
+  box-shadow: 0 8px 22px rgba(132, 52, 80, .06) !important; color: var(--hp-muted) !important; backdrop-filter: none !important;
+}
+html body main.home-pearl #top .visitor-status > span { background: var(--hp-title) !important; box-shadow: 0 0 0 4px var(--hp-blush) !important; }
+html body main.home-pearl #top .visitor-status :is(p, small) { color: var(--hp-muted) !important; font-size: 13px !important; line-height: 1.7 !important; }
+html body main.home-pearl #top .visitor-status b { color: var(--hp-title) !important; }
+html body main.home-pearl #top .visitor-status a { display: inline-flex !important; align-items: center; min-height: 44px; color: var(--hp-title) !important; font-weight: 600 !important; font-size: 13px !important; }
+html body main.home-pearl #top .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+html body main.home-pearl #top .hero-actions .primary { margin: 0 !important; }
+html body main.home-pearl #top a.primary,
+html body main.home-pearl #consult .consult-card a {
+  min-height: 50px !important; padding: 0 26px !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; gap: 10px;
+  border: 1px solid var(--hp-gold) !important; border-radius: 12px !important;
+  background: linear-gradient(180deg, #fff2f8 0%, #f4dfe9 100%) !important;
+  outline: 1px solid rgba(255, 255, 255, .9) !important; outline-offset: -5px !important; box-shadow: none !important;
+  color: var(--hp-title) !important; font: 700 15px/1.3 "Noto Serif TC", serif !important; letter-spacing: .06em !important;
+}
+html body main.home-pearl #top a.primary span { margin: 0 !important; }
+html body main.home-pearl #top a.hero-secondary {
+  min-height: 50px; padding: 0 24px; display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid #b78ead; border-radius: 12px; background: #ffffff; color: var(--hp-title);
+  font: 600 15px/1.3 "Noto Serif TC", serif; letter-spacing: .06em; text-decoration: none;
+}
+@media (hover: hover) {
+  html body main.home-pearl #top a.primary:hover:not(.x), html body main.home-pearl #consult .consult-card a:hover:not(.x) { background: #eecfdd !important; }
+  html body main.home-pearl #top a.hero-secondary:hover { background: #fff7fb; }
+}
+html body main.home-pearl :is(#top, #consult) a:focus-visible { outline: 2px solid var(--hp-title) !important; outline-offset: 3px !important; }
+html body main.home-pearl #top .ritual { color: var(--hp-muted) !important; font-size: 13px !important; letter-spacing: .06em !important; }
+
+/* the portrait: a white mat, a gold line, an arched top like a salon mirror; the photo is unchanged */
+html body main.home-pearl #top .hero-portrait {
+  min-height: 0 !important; margin: 0 !important; padding: 0 !important; overflow: visible !important;
+  border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important;
+}
+html body main.home-pearl #top .hero-portrait::before { content: none !important; }
+html body main.home-pearl #top .hero-portrait img {
+  width: 100% !important; height: auto !important; min-height: 0 !important; aspect-ratio: 4 / 5; object-fit: cover !important; object-position: 64% 30% !important;
+  padding: 8px; background: #ffffff; border-radius: 999px 999px 20px 20px !important; filter: none !important;
+  box-shadow: 0 0 0 1px var(--hp-gold), 0 22px 46px rgba(132, 52, 80, .14) !important;
+}
+html body main.home-pearl #top .portrait-caption {
+  position: relative !important; inset: auto !important; margin: 18px 0 0 !important; padding: 20px 22px 22px !important;
+  border: 1px solid var(--hp-gold) !important; border-radius: 18px !important; background: rgba(255, 255, 255, .96) !important;
+  outline: 1px solid rgba(255, 255, 255, .95); outline-offset: -6px; box-shadow: 0 16px 34px rgba(132, 52, 80, .1) !important;
+  backdrop-filter: none !important; color: var(--hp-ink) !important; text-align: left !important;
+}
+html body main.home-pearl #top .portrait-caption span { color: var(--hp-title) !important; font: italic 600 15px/1.3 "Cormorant Garamond", "Noto Serif TC", serif !important; letter-spacing: .08em !important; text-transform: lowercase; }
+html body main.home-pearl #top .portrait-caption strong { color: var(--hp-title) !important; font: italic 600 34px/1.2 "Cormorant Garamond", serif !important; letter-spacing: .04em !important; margin: 2px 0 2px !important; }
+html body main.home-pearl #top .portrait-caption small { color: var(--hp-muted) !important; font-size: 13px !important; }
+html body main.home-pearl #top .portrait-caption p { border-top: 1px solid var(--hp-line) !important; color: var(--hp-muted) !important; font-size: 14px !important; line-height: 1.85 !important; }
+@media (min-width: 851px) {
+  html body main.home-pearl #top { grid-template-columns: minmax(0, 1fr) minmax(360px, 460px) !important; justify-content: center !important; max-width: none; }
+}
+@media (max-width: 850px) {
+  html body main.home-pearl #top { padding: 104px 18px 72px !important; gap: 40px !important; }
+  html body main.home-pearl #top h1::after { margin: 12px auto 0; background-position: center; }
+  html body main.home-pearl #top .hero-actions { justify-content: center; }
+  html body main.home-pearl #top .hero-portrait { width: min(100%, 420px) !important; margin: 0 auto !important; }
+}
+@media (max-width: 480px) {
+  html body main.home-pearl #top .hero-actions { flex-direction: column; align-items: stretch; }
+  html body main.home-pearl #top .hero-actions a { width: 100%; }
+  html body main.home-pearl #top .portrait-caption { padding: 18px 18px 20px !important; }
+}
+
+/* ======================= 預約諮詢 #consult ======================= */
+html body main.home-pearl #consult { padding: 104px 8vw !important; gap: 6vw !important; }
+html body main.home-pearl #consult .eyebrow { color: var(--hp-title) !important; font: italic 600 17px/1.4 "Cormorant Garamond", "Noto Serif TC", serif !important; letter-spacing: .06em !important; text-transform: lowercase; }
+html body main.home-pearl #consult .consult-copy h2 { color: var(--hp-title) !important; font-family: "Noto Serif TC", serif !important; font-weight: 700 !important; font-size: clamp(30px, 3.6vw, 46px) !important; line-height: 1.5 !important; }
+html body main.home-pearl #consult .consult-copy > p:last-child { color: var(--hp-muted) !important; }
+html body main.home-pearl #consult .consult-card {
+  padding: 34px 32px !important; border: 1px solid var(--hp-gold) !important; border-radius: 22px !important;
+  background: rgba(255, 255, 255, .96) !important; outline: 1px solid rgba(255, 255, 255, .95); outline-offset: -7px;
+  box-shadow: 0 18px 44px rgba(132, 52, 80, .09) !important;
+}
+html body main.home-pearl #consult .consult-card > span { color: var(--hp-title) !important; font: 700 16px/1.6 "Noto Serif TC", serif !important; letter-spacing: .06em !important; }
+html body main.home-pearl #consult .consult-card ul { list-style: none !important; padding: 0 !important; margin: 18px 0 26px !important; }
+html body main.home-pearl #consult .consult-card li { position: relative; padding-left: 24px; color: var(--hp-ink) !important; font-size: 15px; line-height: 1.7 !important; }
+html body main.home-pearl #consult .consult-card li::before { content: "✦"; position: absolute; left: 0; top: 0; color: var(--hp-gold); font-size: 13px; }
+html body main.home-pearl #consult .consult-card a { display: flex !important; width: 100%; justify-content: space-between !important; }
+html body main.home-pearl #consult .consult-card small { color: var(--hp-muted) !important; font-size: 13px !important; }
+@media (max-width: 850px) {
+  html body main.home-pearl #consult { grid-template-columns: 1fr !important; padding: 80px 18px !important; gap: 30px !important; }
+  html body main.home-pearl #consult .consult-copy { text-align: center; }
+  html body main.home-pearl #consult .consult-copy h2 { font-size: clamp(22px, 6.6vw, 28px) !important; }
+  html body main.home-pearl #consult .consult-card { padding: 26px 20px !important; }
+}
+
+/* ======================= 關於 #about：白色沙龍內頁 ======================= */
+html body main.home-pearl #about {
+  position: relative; padding: 104px 22px !important; color: var(--hp-ink) !important;
+  background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(232, 242, 252, .9) 0%, rgba(232, 242, 252, 0) 70%), #ffffff !important;
+  border-top: 1px solid var(--hp-line); border-bottom: 1px solid var(--hp-line);
+}
+html body main.home-pearl #about::before {
+  content: ""; display: block; width: 150px; height: 48px; margin: 0 auto 10px;
+  background: url("/pendulum/shell-crest.webp") center / contain no-repeat;
+}
+html body main.home-pearl #about .eyebrow { color: var(--hp-title) !important; font: italic 600 17px/1.4 "Cormorant Garamond", "Noto Serif TC", serif !important; letter-spacing: .06em !important; text-transform: lowercase; }
+html body main.home-pearl #about h2 { color: var(--hp-title) !important; font-family: "Noto Serif TC", serif !important; font-weight: 700 !important; font-size: clamp(28px, 3.6vw, 44px) !important; }
+html body main.home-pearl #about > p:not(.eyebrow) { max-width: 720px !important; color: var(--hp-muted) !important; font-size: 16px !important; line-height: 1.95 !important; }
+
+/* ======================= 頁尾 ======================= */
+html body main.home-pearl > footer {
+  padding: 56px 20px 64px !important; text-align: center;
+  background: linear-gradient(180deg, #f3f7fd 0%, #f8f7ff 100%) !important; border-top: 1px solid var(--hp-gold, #c5a46f);
+}
+html body main.home-pearl > footer .brand { color: #843450 !important; }
+html body main.home-pearl > footer .brand span { color: #33445f !important; }
+html body main.home-pearl > footer p { color: #33445f !important; font-size: 15px !important; }
+html body main.home-pearl > footer small { color: #5d6a80 !important; font-size: 12px !important; }

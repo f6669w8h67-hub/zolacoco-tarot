@@ -7,6 +7,7 @@ import DrawFan from "./draw-fan";
 import { MOTION } from "@/lib/draw-fan-math";
 import "./styles/draw-pearl.css";
 import "./styles/draw-fan.css";
+import "./styles/pearl-page.css";
 import "./styles/home-pearl.css";
 import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
 import { loadMemberProfile } from "@/lib/member-client";
@@ -45,13 +46,6 @@ const soundscapes: Record<Soundscape, { icon: string; label: string; en: string;
   meditation: { icon: "◇", label: "冥想淨化", en: "HEALING FREQUENCY · MEDITATION", videoId: "kqo9Z5Br63c" },
 };
 
-const pendulumMeanings = {
-  yes: { label: "是", en: "YES", message: "目前的能量比較靠近肯定。先別急著把它當成保證，想想看：如果答案真的是『是』，你願意踏出的第一小步是什麼？" },
-  no: { label: "否", en: "NO", message: "目前的能量比較靠近否定或暫緩。這不一定是永遠不行，也可能是在提醒你重新檢查時機、界線與真正的需要。" },
-  unclear: { label: "目前不明確", en: "UNCLEAR", message: "現在的訊息還不夠清楚。可能是問題太複雜、心裡已有強烈期待，或需要更多現實資訊；先把問題縮小，再回來詢問。" },
-} as const;
-type PendulumResult = keyof typeof pendulumMeanings;
-
 const archetypeQuestionSets = [
   [
     { q: "最近的你，更接近哪一種狀態？", a: ["想安靜整理自己", "想突破停滯往前走", "想被理解與好好照顧"] },
@@ -89,7 +83,6 @@ const ARCHETYPE_LOGIN_SET_KEY = "zolacoco-archetype-login-set";
 const ARCHETYPE_LAST_SET_KEY = "zolacoco-archetype-last-set";
 const JOURNAL_STORAGE_KEY = "zolacoco-journal-notes-v1";
 const TAROT_STORAGE_KEY = "zolacoco-tarot-records-v1";
-const PENDULUM_STORAGE_KEY = "zolacoco-pendulum-records-v1";
 
 const archetypeResults = [
   { name: "女祭司", en: "THE HIGH PRIESTESS", text: "你不是沒有答案，而是外界的聲音暫時蓋過了自己的感受。此刻適合慢一點，留意那些還說不清楚、但心裡其實已經知道的事。" },
@@ -217,10 +210,6 @@ export default function Home() {
   const [journalNotes, setJournalNotes] = useState<Record<number, string>>({});
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [tarotSaveState, setTarotSaveState] = useState<"idle" | "saved" | "error">("idle");
-  const [pendulumQuestion, setPendulumQuestion] = useState("");
-  const [pendulumResult, setPendulumResult] = useState<PendulumResult | null>(null);
-  const [pendulumMoving, setPendulumMoving] = useState(false);
-  const [pendulumSaveState, setPendulumSaveState] = useState<"idle" | "saved" | "error">("idle");
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [soundscape, setSoundscape] = useState<Soundscape>("forest");
   const audioFrames = useRef<Partial<Record<Soundscape, HTMLIFrameElement | null>>>({});
@@ -335,28 +324,6 @@ export default function Home() {
     } catch { setSaveState("error"); }
   }
 
-  async function askPendulum() {
-    const question = pendulumQuestion.trim();
-    if (!question || pendulumMoving) return;
-    setPendulumResult(null);
-    setPendulumSaveState("idle");
-    setPendulumMoving(true);
-    const choices: PendulumResult[] = ["yes", "no", "unclear"];
-    const result = choices[Math.floor(Math.random() * choices.length)];
-    window.setTimeout(async () => {
-      setPendulumResult(result);
-      setPendulumMoving(false);
-      try {
-        const history = JSON.parse(localStorage.getItem(PENDULUM_STORAGE_KEY) ?? "[]") as unknown[];
-        history.unshift({ id: Date.now(), question, result, result_label: pendulumMeanings[result].label, category: "首頁靈擺", note: "", created_at: new Date().toISOString() });
-        localStorage.setItem(PENDULUM_STORAGE_KEY, JSON.stringify(history.slice(0, 80)));
-        setPendulumSaveState("saved");
-      } catch {
-        setPendulumSaveState("error");
-      }
-    }, 2600);
-  }
-
   // Every way of starting over goes through here, so a new reading never inherits the
   // previous one's 已儲存 / 已複製 state (PR #10 review).
   function clearReading() {
@@ -467,10 +434,10 @@ export default function Home() {
   }
 
   return (
-    <main>
+    <main className="home-pearl pearl-page">
 
       <section className="hero" id="top">
-        <div className="orb orb-one" /><div className="orb orb-two" />
+        <span className="pearl-corners" aria-hidden="true" />
         <div className="hero-copy">
           <p className="eyebrow">A MESSAGE FOR YOUR PRESENT MOMENT</p>
           <h1><span>把問題放在心裡</span><em>抽一張屬於你的牌</em></h1>
@@ -484,7 +451,10 @@ export default function Home() {
             </p>
             <a href="/admin">我的占卜紀錄 →</a>
           </div>
-          <a className="primary" href="#draw">開始抽牌 <span>↓</span></a>
+          <div className="hero-actions">
+            <a className="primary" href="#draw">開始免費抽牌 <span aria-hidden="true">↓</span></a>
+            <a className="hero-secondary" href="#consult">預約一對一諮詢</a>
+          </div>
           <p className="ritual">深呼吸三次，想著一個你最近最在意的問題</p>
         </div>
         <div className="hero-portrait" aria-label="Zolacoco Tarot 主理人形象照">
@@ -759,29 +729,6 @@ export default function Home() {
               <button className="tool-primary journal-save" disabled={saveState === "saving" || !(journalNotes[journalDay] ?? "").trim()} onClick={saveJournal}>{saveState === "saving" ? "儲存中…" : saveState === "saved" ? "已儲存 ✓" : saveState === "error" ? "存檔失敗，請再試一次" : "儲存今天的筆記"}</button>
               <p className="privacy-note">筆記會保存在目前使用的手機或電腦瀏覽器中，重新開啟網站仍可繼續查看，不會公開顯示。</p>
             </div>}
-
-            {exploreTool === "pendulum" && <div className="pendulum-tool">
-              <div className="tool-progress"><span>PENDULUM GUIDANCE</span><b>只問一個能用是／否回答的問題</b></div>
-              <div className={`pendulum-stage ${pendulumMoving ? "is-moving" : ""} ${pendulumResult ? `result-${pendulumResult}` : ""}`} aria-live="polite">
-                <div className="pendulum-arch" aria-hidden="true"><span>YES</span><i>✦</i><span>NO</span></div>
-                <div className="pendulum-chain" aria-hidden="true"><span /><b>✦</b></div>
-                <div className="pendulum-shadow" aria-hidden="true" />
-              </div>
-              <h3>{pendulumMoving ? "讓靈擺慢慢回應……" : pendulumResult ? pendulumMeanings[pendulumResult].label : "把問題放在心裡，再寫下來"}</h3>
-              {!pendulumResult && <>
-                <p className="tool-hint">適合：「我現在適合主動聯絡嗎？」不適合：「他到底在想什麼？」一次只放一個核心問題。</p>
-                <textarea className="pendulum-question" maxLength={180} value={pendulumQuestion} disabled={pendulumMoving} onChange={(event) => setPendulumQuestion(event.target.value)} placeholder="例如：我現在適合先把注意力放回自己嗎？" aria-label="輸入要詢問靈擺的是非題" />
-                <button className="tool-primary pendulum-button" disabled={!pendulumQuestion.trim() || pendulumMoving} onClick={askPendulum}>{pendulumMoving ? "靈擺回應中…" : "開始靈擺問答"}</button>
-              </>}
-              {pendulumResult && <div className="pendulum-answer practice-reveal">
-                <span>{pendulumMeanings[pendulumResult].en}</span>
-                <blockquote>{pendulumMeanings[pendulumResult].message}</blockquote>
-                <p className="pendulum-asked">你的問題：{pendulumQuestion.trim()}</p>
-                <small>{pendulumSaveState === "saved" ? "這次問答已存到目前裝置的「我的存檔」。" : pendulumSaveState === "error" ? "這次結果未能儲存，請確認瀏覽器允許網站儲存資料。" : "正在儲存這次問答…"}</small>
-                <div className="flow-actions"><button className="flow-button secondary-flow" onClick={() => { setPendulumQuestion(""); setPendulumResult(null); setPendulumSaveState("idle"); }}>再問一題</button><a className="flow-button primary-flow" href="/admin">查看我的存檔 <b>→</b></a></div>
-              </div>}
-              <p className="privacy-note">線上靈擺以隨機擺動提供直覺與自我探索提示，不是科學測量或絕對預言；健康、法律、投資與安全決策請以專業資訊為準。</p>
-            </div>}
           </div>
 
           <div className="ex-more">
@@ -804,6 +751,7 @@ export default function Home() {
       </section>
 
       <section className="consult" id="consult">
+        <span className="pearl-corners" aria-hidden="true" />
         <div className="consult-copy"><p className="eyebrow">ONE-ON-ONE TAROT READING</p><h2>一張牌可以安放此刻<br />完整諮詢陪你看清整段脈絡</h2><p>如果你正卡在反覆拉扯的感情、工作選擇或一個遲遲做不了的決定，我會從你的真實處境整理問題，陪你看見盲點、關係動態與下一步，而不是只告訴你一個結果。</p></div>
         <div className="consult-card"><span>適合現在的你，如果——</span><ul><li>同一個問題已經反覆困擾很久</li><li>知道要放下，情緒卻一直被拉回去</li><li>需要的不只是答案，而是具體方向</li></ul><a href={ZOLA_LINE_URL} target="_blank" rel="noreferrer">前往官方 LINE 預約 <b>↗</b></a><small>由 Zola 親自回覆，依你的實際狀況整理適合的諮詢方式</small></div>
       </section>
