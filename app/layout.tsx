@@ -5,6 +5,7 @@ import "./globals.css";
 import "./rococo-membership.css";
 import "./styles/rococo-tokens.css";
 import "./styles/rococo-tarot.css";
+import "./styles/zola-post.css";
 import MembershipGate, { UnconfiguredMembershipGate } from "./membership-gate";
 import { allowsMembershipPreview, isClerkConfigured } from "@/lib/membership-access";
 import { clerkLocalization } from "@/lib/clerk-localization";
@@ -51,6 +52,12 @@ export default function RootLayout({
 
   return (
     <html lang="zh-Hant">
+      <head>
+        {/* Post theme typefaces: heavy serif titles and italic English labels (Issue #12). */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Noto+Serif+TC:wght@500;700;900&display=swap" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

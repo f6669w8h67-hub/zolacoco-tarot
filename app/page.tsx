@@ -123,6 +123,18 @@ function shuffledDeck() {
 
 // Desktop fans every card on one arc (--offset). Phones split the deck into two rows
 // (--m-row / --m-offset) so every card stays on screen with a 44px tap strip.
+// Spread-in order (spec v3 §1.3): the centre card first, then alternating left and right,
+// 55ms apart, so the fan opens from the middle instead of queueing left to right.
+function fanOrder(index: number, total: number) {
+  const offset = index - (total - 1) / 2;
+  const rank = Math.round(Math.abs(offset) * 2);
+  return offset < 0 ? Math.max(0, rank - 1) : rank;
+}
+
+function prefersReducedMotion() {
+  return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 function mobileFanStyle(index: number, total: number) {
   const firstRow = Math.ceil(total / 2);
   const row = index < firstRow ? 0 : 1;
@@ -133,6 +145,9 @@ function mobileFanStyle(index: number, total: number) {
     "--offset": index - (total - 1) / 2,
     "--m-row": row,
     "--m-offset": inRow - (rowSize - 1) / 2,
+    "--order": fanOrder(index, total),
+    // phones lay the fan out in two rows: open each row from its own centre, rows interleaved
+    "--m-order": fanOrder(inRow, rowSize) * 2 + row,
   } as React.CSSProperties;
 }
 
@@ -163,6 +178,17 @@ export default function Home() {
   const [seed, setSeed] = useState(0);
   const [spreadCards, setSpreadCards] = useState<TarotCard[]>([]);
   const [exitingCardId, setExitingCardId] = useState<string | null>(null);
+  const [fanReady, setFanReady] = useState(false);
+  // Draw-flow timeouts are tracked so starting over cancels them (spec v3 §1.6): an old
+  // shuffle or pick can never update a newer reading.
+  const drawTimers = useRef<number[]>([]);
+  function later(run: () => void, ms: number) {
+    const id = window.setTimeout(() => {
+      drawTimers.current = drawTimers.current.filter((timer) => timer !== id);
+      run();
+    }, ms);
+    drawTimers.current.push(id);
+  }
   const [exploreTool, setExploreTool] = useState("archetype");
   const [archetypeStep, setArchetypeStep] = useState(0);
   const [archetypeScores, setArchetypeScores] = useState([0, 0, 0]);
@@ -315,6 +341,11 @@ export default function Home() {
   // Every way of starting over goes through here, so a new reading never inherits the
   // previous one's 已儲存 / 已複製 state (PR #10 review).
   function clearReading() {
+    drawTimers.current.forEach((timer) => window.clearTimeout(timer));
+    drawTimers.current = [];
+    setExitingCardId(null);
+    setFanReady(false);
+    setShuffling(false);
     setSelected([]);
     setRevealed(false);
     setSpreadCards([]);
@@ -322,27 +353,36 @@ export default function Home() {
     setConsultCopy("idle");
   }
 
+  // Shuffle 1000ms + 100ms settle, then the fan opens card by card (about 960ms) and only
+  // then accepts a pick (spec v3 §1.1–1.3). Reduced motion: no waiting, no movement.
   function shuffleDeck() {
     if (shuffling) return;
     clearReading();
+    const still = prefersReducedMotion();
     setShuffling(true);
     setSeed((s) => s + 1);
-    window.setTimeout(() => {
+    later(() => {
       setSpreadCards(shuffledDeck().slice(0, 13));
       setShuffling(false);
-    }, 900);
+      later(() => setFanReady(true), still ? 0 : 980);
+    }, still ? 80 : 1100);
   }
 
+  // Pick (spec v3 §1.4): the card lifts 26px and fades (180 + 220ms), leaves the deck, the
+  // rest close the gap over 280ms, and only then can the next card be picked.
   function chooseCard(card: TarotCard) {
-    if (exitingCardId) return;
+    if (exitingCardId || !fanReady) return;
     const next = [...selected, card];
+    const still = prefersReducedMotion();
     setExitingCardId(card.id);
-    window.setTimeout(() => {
+    later(() => {
       setSelected(next);
       setSpreadCards((current) => current.filter((item) => item.id !== card.id));
-      setExitingCardId(null);
-      if (next.length === activeSpread.positions.length) window.setTimeout(() => setRevealed(true), 460);
-    }, 300);
+      later(() => {
+        setExitingCardId(null);
+        if (next.length === activeSpread.positions.length) setRevealed(true);
+      }, still ? 0 : 280);
+    }, still ? 0 : 400);
   }
 
   function reset() {
@@ -517,8 +557,8 @@ export default function Home() {
                   <div>{selected[index] ? <><span>✓</span><small>已選取</small></> : <b>{index + 1}</b>}</div><p>{position}</p>
                 </div>)}
               </div>}
-              <div className="spread-deck" role="group" aria-label="從展開的牌組中選擇一張牌">
-                {spreadCards.map((card, i) => <button key={card.id} className={`pick-card ${exitingCardId === card.id ? "is-selected" : ""}`} disabled={Boolean(exitingCardId)} onClick={() => chooseCard(card)} aria-label={`選擇第 ${i + 1} 張牌，選取後牌會移出牌組`} style={mobileFanStyle(i, spreadCards.length)}><div className="back-frame" /></button>)}
+              <div className={`spread-deck ${fanReady ? "is-ready" : "is-opening"}`} role="group" aria-label="從展開的牌組中選擇一張牌" aria-busy={!fanReady}>
+                {spreadCards.map((card, i) => <button key={card.id} className={`pick-card ${exitingCardId === card.id ? "is-picked" : ""}`} disabled={Boolean(exitingCardId) || !fanReady} onClick={() => chooseCard(card)} aria-label={`選擇第 ${i + 1} 張牌，選取後牌會移出牌組`} style={mobileFanStyle(i, spreadCards.length)}><div className="back-frame" /></button>)}
               </div>
               <button className="reshuffle" onClick={shuffleDeck}>重新洗牌</button>
             </>}
@@ -530,24 +570,43 @@ export default function Home() {
                 <p className="reading-label">「{topic}」・{activeSpread.name}</p>
                 <h2>妳的塔羅指引</h2>
                 {cleanQuestion(question) ? <p className="reading-question"><b>妳這次的提問：</b>{cleanQuestion(question)}</p> : null}
-                {selected.length > 1 && <div className="synthesis"><span>整體訊息</span><p>{synthesis(selected, spreadId, topic, activeSpread.positions)}</p></div>}
+                {selected.length > 0 && <div className="synthesis core-message"><span>{selected.length > 1 ? "整體訊息" : "此刻的核心提醒"}</span><p>{synthesis(selected, spreadId, topic, activeSpread.positions)}</p></div>}
               </div>
               <div className={`spread-board spread-board--${spreadId}`} role="list" aria-label={`${activeSpread.name}的牌卡位置`}>
-                {selected.map((card, i) => <figure className={`spread-slot spread-slot--${i + 1}`} role="listitem" key={`${card.id}-slot`}>
+                {selected.map((card, i) => <figure className={`spread-slot spread-slot--${i + 1}`} role="listitem" key={`${card.id}-slot`} style={{ "--slot": i } as React.CSSProperties}>
                   <figcaption className="spread-slot__position"><b>{String(i + 1).padStart(2, "0")}</b>{activeSpread.positions[i]}</figcaption>
                   <div className={`tarot-card suit-${card.suit} ${revealed ? "revealed" : ""}`}><div className="tarot-inner"><TarotCardBack className="tarot-back" /><TarotCardFace card={card} className="tarot-front" /></div></div>
                 </figure>)}
               </div>
+              {/* Reading v3 (ChatGPT spec, PR #15): core message → cards → each card's point →
+                  what to do next → the full meaning folded away. Existing fields only. */}
               <div className={`reading-sequence count-${selected.length}`}>
-                {selected.map((card, i) => <section className="card-reading-unit" key={`${card.id}-reading`} aria-labelledby={`reading-${card.id}`}>
+                {selected.map((card, i) => <section className="card-reading-unit" key={`${card.id}-reading`} aria-labelledby={`reading-${card.id}`} style={{ "--slot": i } as React.CSSProperties}>
                   <header className="reading-unit-head">
                     <span>{String(i + 1).padStart(2, "0")}・{activeSpread.positions[i]}</span>
                     <h3 id={`reading-${card.id}`}>{card.name}</h3>
                     <p>{card.keywords}</p>
                   </header>
-                  <div className="position-reading"><p className="scene-note">牌面｜{card.scene}</p><div className="reading-point"><b>這個主題正在提醒妳</b><p>{topicLens[topic][card.suit]}</p></div><div className="reading-point"><b>這張牌所在的位置</b><p>{spreadId === "relationship" ? relationshipLens(topic, i) : positionLens[spreadId][i]}</p></div><div className="reading-point"><b>牌卡想帶給妳的提醒</b><p>{card.truth}</p></div><div className="reading-point blind"><b>需要留意的地方</b><p>{card.blindSpot}</p></div><div className="reading-point next"><b>妳可以先這樣做</b><p>{card.action}</p></div></div>
+                  <div className="position-reading">
+                    {selected.length > 1 ? <div className="reading-point"><b>這張牌的重點</b><p>{card.truth}</p></div> : null}
+                    {selected.length === 1 ? <div className="reading-point blind"><b>需要留意</b><p>{card.blindSpot}</p></div> : null}
+                    {selected.length === 1 ? <div className="reading-point next"><b>妳可以先這樣做</b><p>{card.action}</p></div> : null}
+                    <details className="reading-more">
+                      <summary>{selected.length > 1 ? "查看這張牌的完整解析" : "查看完整牌義與位置解析"}</summary>
+                      <div className="reading-more__body">
+                        <div className="reading-point"><b>這張牌畫了什麼</b><p>{card.scene}</p></div>
+                        <div className="reading-point"><b>和「{topic}」的關聯</b><p>{topicLens[topic][card.suit]}</p></div>
+                        <div className="reading-point"><b>這個位置怎麼理解</b><p>{spreadId === "relationship" ? relationshipLens(topic, i) : positionLens[spreadId][i]}</p></div>
+                        {selected.length > 1 ? <div className="reading-point blind"><b>需要留意</b><p>{card.blindSpot}</p></div> : null}
+                      </div>
+                    </details>
+                  </div>
                 </section>)}
               </div>
+              {selected.length > 1 ? <section className="reading-actions-list" aria-labelledby="reading-actions-title">
+                <h3 id="reading-actions-title">接下來可以怎麼做</h3>
+                <ol>{selected.map((card, i) => <li key={`${card.id}-action`}><b>{String(i + 1).padStart(2, "0")}・{activeSpread.positions[i]}｜{card.name}</b><p>{card.action}</p></li>)}</ol>
+              </section> : null}
               <section className="tarot-consult" aria-labelledby="tarot-consult-title">
                 <h3 id="tarot-consult-title">想把這次的牌看得更完整？</h3>
                 <p>帶著這次的問題與牌卡，預約更完整的一對一解讀。</p>
