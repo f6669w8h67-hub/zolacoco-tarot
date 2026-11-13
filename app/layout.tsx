@@ -10,6 +10,7 @@ import "./styles/serif-all.css";
 import MembershipGate, { UnconfiguredMembershipGate } from "./membership-gate";
 import { allowsMembershipPreview, isClerkConfigured } from "@/lib/membership-access";
 import { clerkLocalization } from "@/lib/clerk-localization";
+import { clerkPearlAppearance } from "@/lib/clerk-pearl-appearance";
 import SiteHeader from "./site-header";
 import SiteNotice from "./site-notice";
 import PearlFonts from "./pearl-fonts";
@@ -58,7 +59,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {authConfigured ? <ClerkProvider localization={clerkLocalization}>{content}</ClerkProvider> : content}
+        {authConfigured ? <ClerkProvider localization={clerkLocalization} appearance={clerkPearlAppearance}>{content}</ClerkProvider> : content}
       </body>
     </html>
   );

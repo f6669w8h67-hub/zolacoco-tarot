@@ -124,6 +124,7 @@ const uiMocks = (pathname) => ({
   "@clerk/nextjs": { SignInButton: () => null, useAuth: () => { throw new Error("Clerk must not be used without keys"); } },
   "next/navigation": { usePathname: () => pathname },
   "next/link": { default: ({ children, ...props }) => React.createElement("a", props, children) },
+  "./styles/pearl-page.css": {},
 });
 
 test("unconfigured layout fallback hides VIP children but renders public pages without Clerk hooks", async () => {
@@ -138,7 +139,7 @@ test("sign-in/sign-up render setup screens when only the public key exists", asy
   for (const page of ["sign-in", "sign-up"]) {
     const mod = await loadTypescript(`app/${page}/[[...${page}]]/page.tsx`, {
       env: { NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk" },
-      mocks: { "react/jsx-runtime": jsx, "@clerk/nextjs": {
+      mocks: { "react/jsx-runtime": jsx, "../../styles/pearl-page.css": {}, "@clerk/nextjs": {
         SignIn: () => { throw new Error("missing provider"); }, SignUp: () => { throw new Error("missing provider"); },
       } },
     });
