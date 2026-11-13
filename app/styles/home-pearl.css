@@ -386,3 +386,9 @@ html body main.home-pearl > footer .brand { color: #843450 !important; }
 html body main.home-pearl > footer .brand span { color: #33445f !important; }
 html body main.home-pearl > footer p { color: #33445f !important; font-size: 15px !important; }
 html body main.home-pearl > footer small { color: #5d6a80 !important; font-size: 12px !important; }
+
+/* ---------- step 6 (iPhone check): reading text no smaller than 12–13px ---------- */
+html body main.home-pearl .draw-section .deck-note { font-size: 13px !important; line-height: 1.6 !important; }
+html body main.home-pearl .tarot-question small { font-size: 12px !important; }
+html body main.home-pearl #explore .journal-card-row .journal-date span { font-size: 12px !important; line-height: 1.4 !important; }
+html body main.home-pearl #explore .journal-lenses span { font-size: 12px !important; }

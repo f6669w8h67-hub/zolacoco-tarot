@@ -414,6 +414,8 @@
 .admin-page .admin-empty { padding: 18px 8px 6px !important; display: grid; justify-items: center; gap: 8px; color: #8a6f77; }
 .admin-page .admin-empty p { margin: 0; color: #8a6f77; }
 .admin-page .admin-empty a { color: #744750; font-weight: 500; text-decoration: none; border-bottom: 1px solid #d8be96; }
+.admin-page .admin-empty a { min-height: 44px; display: inline-flex; align-items: center; } /* 44px tap target (step 6) */
+.admin-page .admin-top a { min-height: 44px; }
 .admin-page .archive-list article { border-color: #e6d3b5 !important; background: #fffaf2 !important; }
 .admin-page .archive-list b { color: #49343b; font-weight: 600; }
 .admin-page .archive-list small { color: #77552e !important; }
