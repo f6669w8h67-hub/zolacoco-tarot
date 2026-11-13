@@ -77,6 +77,8 @@ test("post theme: parchment texture, border-image frame, no deep purple surfaces
     const found = ((await read(file)).match(/#[0-9a-fA-F]{6}\b/g) || []).filter(deep);
     assert.deepEqual(found, [], file);
   }
+});
+
 test("maintenance notice is on every page and can be dismissed; the draw section has no shadows", async () => {
   const layout = await read("app/layout.tsx");
   const notice = await read("app/site-notice.tsx");
