@@ -8,6 +8,7 @@ import "./styles/rococo-tarot.css";
 import MembershipGate, { UnconfiguredMembershipGate } from "./membership-gate";
 import { allowsMembershipPreview, isClerkConfigured } from "@/lib/membership-access";
 import SiteHeader from "./site-header";
+import SiteNotice from "./site-notice";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,6 +40,7 @@ export default function RootLayout({
   const authConfigured = isClerkConfigured(process.env);
   const content = <>
     <SiteHeader />
+    <SiteNotice />
     {authConfigured ? (
       <MembershipGate>{children}</MembershipGate>
     ) : allowsMembershipPreview(process.env) ? children : (
