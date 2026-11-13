@@ -87,7 +87,7 @@ const siteWording: Strings = {
     form_password_matches_identifier: "密碼不能和 Email、電話號碼或使用者名稱相同，請換一組密碼。",
     form_email_address_blocked: "這個 Email 目前無法使用，請換一個 Email。",
     form_username_invalid_character: "使用者名稱含有不能使用的字元。",
-    not_allowed_access: "這個 Email 目前無法登入，如有疑問請聯絡 Zola。",
+    not_allowed_access: "目前無法使用這個帳號登入，如有疑問請聯絡 Zola。",
     external_account_not_found: "找不到這個帳號，請先註冊，或改用其他帳號登入。",
     oauth_access_denied: "妳沒有同意授權，所以還沒有登入，可以再試一次。",
     action_blocked: "目前無法完成這個動作，請稍後再試；如果一直發生，請聯絡 Zola。",
