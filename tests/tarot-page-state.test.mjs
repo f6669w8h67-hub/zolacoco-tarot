@@ -42,3 +42,26 @@ test("only one soundscape player exists and an unmounted one is not treated as l
   assert.match(source, /if \(!node\) loadedSoundscapes\.current\.delete\(item\);/);
   assert.equal(source.includes("setMountedSoundscapes((current) => [...current"), false);
 });
+
+test("draw motion v3: timers are cancelled on every restart and a pick waits for the fan", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  const clear = page.slice(page.indexOf("function clearReading()"), page.indexOf("function shuffleDeck()"));
+  assert.ok(clear.includes("drawTimers.current.forEach((timer) => window.clearTimeout(timer));"));
+  assert.ok(clear.includes("setFanReady(false);") && clear.includes("setExitingCardId(null);"));
+  const choose = page.slice(page.indexOf("function chooseCard("), page.indexOf("function reset()"));
+  assert.ok(choose.includes("if (exitingCardId || !fanReady) return;"));
+  assert.equal(/window\.setTimeout/.test(page.slice(page.indexOf("function shuffleDeck()"), page.indexOf("function reset()"))), false, "draw flow uses the cancellable later()");
+  assert.ok(page.includes('"--order": fanOrder(index, total)'));
+});
+
+test("reading v3: one core message, each card's point, actions together, details folded", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
+  assert.ok(page.includes('className="synthesis core-message"'));
+  assert.ok(page.includes('<details className="reading-more">'));
+  assert.ok(page.includes('className="reading-actions-list"'));
+  // a three-card reading no longer prints six headed paragraphs per card up front
+  const unit = page.slice(page.indexOf('<div className="position-reading">'), page.indexOf('<details className="reading-more">'));
+  assert.equal((unit.match(/reading-point/g) || []).length, 3);
+});

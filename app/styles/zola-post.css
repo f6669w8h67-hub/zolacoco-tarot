@@ -632,3 +632,196 @@ html body :is(.card-back, .pick-card, .tarot-back, .practice-tarot-back, .card-b
 }
 html body .back-frame::before,
 html body .back-frame::after { display: none !important; content: none !important; }
+
+/* ===== Draw motion v3 (ChatGPT spec, PR #15 §1): transform/opacity only, no shadows ===== */
+/* shuffle: one 1000ms pass of small staggered moves (≤3deg), then the deck settles */
+html body #draw .deck-stage.shuffling .card-back { animation: rcShuffle 1000ms cubic-bezier(.42, 0, .25, 1) both !important; }
+html body #draw .deck-stage.shuffling .card-back:nth-child(2n) { animation-name: rcShuffleAlt !important; }
+html body #draw .deck-stage.shuffling .card-back:nth-child(3n) { animation-delay: 60ms !important; }
+@keyframes rcShuffle { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: -8px 0; rotate: -2deg; } 62% { translate: 9px 0; rotate: 2deg; } 86% { translate: -5px 0; rotate: -1deg; } 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes rcShuffleAlt { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 8px 0; rotate: 2deg; } 62% { translate: -9px 0; rotate: -2deg; } 86% { translate: 5px 0; rotate: 1deg; } 100% { translate: 0 0; rotate: 0deg; } }
+
+/* fan: each card rises 18px into its resting place, centre first, 55ms apart, 300ms each */
+html body #draw .spread-deck.is-opening .pick-card {
+  animation: rcFanIn 300ms cubic-bezier(.22, 1, .36, 1) both !important;
+  animation-delay: calc(var(--order, 0) * 55ms) !important;
+  will-change: transform, opacity;
+}
+html body #draw .spread-deck.is-ready .pick-card { animation: none !important; will-change: auto; }
+@keyframes rcFanIn { from { opacity: 0; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
+/* after a pick the remaining cards close the gap smoothly (their offsets are recomputed) */
+html body #draw .spread-deck .pick-card {
+  transition: transform 280ms cubic-bezier(.22, 1, .36, 1), translate 180ms cubic-bezier(.22, 1, .36, 1), opacity 220ms ease !important;
+}
+html body #draw .spread-deck .pick-card:active:not(:disabled) { translate: 0 -6px; transition-duration: 90ms !important; }
+/* the picked card lifts 26px, grows to 1.04, then fades away upward */
+html body #draw .spread-deck .pick-card.is-picked {
+  z-index: 30;
+  pointer-events: none;
+  animation: rcPick 400ms cubic-bezier(.22, 1, .36, 1) both !important;
+}
+@keyframes rcPick { 0% { translate: 0 0; scale: 1; opacity: 1; } 45% { translate: 0 -26px; scale: 1.04; opacity: 1; } 100% { translate: 0 -48px; scale: 1.04; opacity: 0; } }
+/* phones: hover/press no longer jump or shrink the card; lift is a separate translate */
+@media (max-width: 600px) {
+  html body #draw .spread-deck .pick-card:is(:hover, :focus-visible, :active) { transform: translateX(calc(var(--m-offset) * var(--fan-step))) rotate(calc(var(--m-offset) * 2deg)) !important; }
+  html body #draw .spread-deck .pick-card:focus-visible { translate: 0 -10px; }
+}
+/* flip: Y axis 620ms, 120ms pause, cards 160ms apart in reading order; text follows the flip */
+html body #draw .spread-board .tarot-card .tarot-inner { transition: transform 620ms cubic-bezier(.4, 0, .2, 1) !important; transition-delay: calc(120ms + var(--slot, 0) * 160ms) !important; }
+html body #draw .spread-board .tarot-card { perspective: 1000px; }
+html body #draw .tarot-card :is(.tarot-back, .tarot-front) { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+html body #draw .reading-sequence .card-reading-unit { animation: rcReadIn 420ms ease both !important; animation-delay: calc(760ms + var(--slot, 0) * 160ms) !important; }
+@keyframes rcReadIn { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
+@media (prefers-reduced-motion: reduce) {
+  html body #draw .deck-stage.shuffling .card-back,
+  html body #draw .spread-deck .pick-card,
+  html body #draw .spread-deck .pick-card.is-picked,
+  html body #draw .reading-sequence .card-reading-unit { animation: none !important; transition: none !important; }
+  html body #draw .spread-board .tarot-card .tarot-inner { transition: none !important; }
+}
+
+/* ===== Rococo buttons v3 (spec §2): no shadows; frame, gradient, type and a pressed nudge ===== */
+html body :is(#top, #draw, #explore, #consult, .pendulum-page, .astro-dice-page, .astro-page, .healing-room, .admin-page, .account-page) :is(.primary, .draw-button, .flow-button.primary-flow, .tool-primary, .learning-bridge a:first-child, .consult-card a, .archetype-result button, a.primary, .pendulum-cta, .piano-button, .ad-cast, .astro-primary, button.gold),
+html body #membership .premium-actions a:first-child {
+  min-height: 50px;
+  padding: 12px 24px !important;
+  border: 1px solid #d4af75 !important;
+  border-radius: 8px !important;
+  background: linear-gradient(180deg, #87394b 0%, #74283a 100%) !important;
+  box-shadow: none !important;
+  outline: 1px solid rgba(244, 216, 167, .7);
+  outline-offset: -5px;
+  color: #fff8ea !important;
+  font: 700 16px/1.4 "Noto Serif TC", "Songti TC", serif !important;
+  letter-spacing: .06em !important;
+  text-shadow: none !important;
+  transition: background 180ms ease, translate 180ms ease, scale 110ms ease !important;
+}
+html body :is(#draw) .draw-button::after { content: " ✦"; font-size: 13px; }
+@media (hover: hover) {
+  html body :is(#top, #draw, #explore, #consult, .pendulum-page, .astro-dice-page, .astro-page, .healing-room, .admin-page, .account-page) :is(.primary, .draw-button, .flow-button.primary-flow, .tool-primary, .learning-bridge a:first-child, .consult-card a, .archetype-result button, a.primary, .pendulum-cta, .piano-button, .ad-cast, .astro-primary, button.gold):hover:not(:disabled) {
+    background: linear-gradient(180deg, #934354 0%, #7d3042 100%) !important;
+    translate: 0 -1px;
+  }
+}
+html body :is(#top, #draw, #explore, #consult, .pendulum-page, .astro-dice-page, .astro-page, .healing-room, .admin-page, .account-page) :is(.primary, .draw-button, .flow-button.primary-flow, .tool-primary, .learning-bridge a:first-child, .consult-card a, .archetype-result button, a.primary, .pendulum-cta, .piano-button, .ad-cast, .astro-primary, button.gold):active:not(:disabled) {
+  background: #672234 !important;
+  translate: 0 1px;
+  scale: .99;
+  transition-duration: 110ms !important;
+}
+/* secondary: parchment plate, gold edge, no inner frame */
+html body :is(#top, #draw, #explore, #consult, .pendulum-page, .astro-dice-page, .astro-page, .healing-room, .admin-page, .account-page) :is(.reshuffle, .flow-button.secondary-flow, .learning-bridge a:not(:first-child), .ad-next-step, .astro-back, .records-link, .back-room, .archive-toolbar button),
+html body #membership .premium-actions a:last-child {
+  min-height: 48px;
+  padding: 10px 20px !important;
+  border: 1px solid #b08a5a !important;
+  border-radius: 8px !important;
+  background: #f8ebd6 !important;
+  box-shadow: none !important;
+  outline: 0 !important;
+  color: #74283a !important;
+  font: 600 15px/1.4 "Noto Serif TC", "Songti TC", serif !important;
+  letter-spacing: .04em !important;
+  transition: background 160ms ease, translate 110ms ease !important;
+}
+@media (hover: hover) { html body :is(#top, #draw, #explore, #consult) :is(.reshuffle, .flow-button.secondary-flow):hover:not(:disabled) { background: #f1dfc5 !important; } }
+html body :is(#top, #draw, #explore, #consult) :is(.reshuffle, .flow-button.secondary-flow):active:not(:disabled) { background: #e8d2b3 !important; translate: 0 1px; }
+/* chips and spread options: flat parchment, selected = rose + 2px wine edge */
+html body #draw .topics button {
+  min-height: 44px;
+  padding: 8px 14px !important;
+  border: 1px solid #b08a5a !important;
+  border-radius: 6px !important;
+  background: #f6ead3 !important;
+  box-shadow: none !important;
+  color: #3e2716 !important;
+  font: 600 15px/1.4 "Noto Serif TC", "Songti TC", serif !important;
+  letter-spacing: .04em !important;
+  transition: background 160ms ease, scale 100ms ease !important;
+}
+html body #draw .topics button.active { border: 2px solid #74283a !important; padding: 7px 13px !important; background: #edd3c0 !important; box-shadow: none !important; color: #74283a !important; }
+@media (hover: hover) { html body #draw .topics button:not(.active):hover { background: #f0dfc5 !important; } }
+html body #draw .topics button:active { scale: .98; }
+html body #draw .spread-options button { border-radius: 8px !important; background: #f8ebd6 !important; box-shadow: none !important; }
+html body #draw .spread-options button.active { border: 2px solid #74283a !important; padding: 15px !important; background: #edd3c0 !important; box-shadow: none !important; }
+/* text links */
+html body #draw :is(.tarot-saved-note a, .tarot-consult-note a), html body .member-status a {
+  color: #74283a !important;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid #b08a5a;
+  transition: border-color 160ms ease;
+}
+html body #draw :is(.tarot-saved-note a, .tarot-consult-note a):hover { border-bottom: 2px solid #74283a; }
+/* focus, disabled */
+html body main :is(button, a):focus-visible { outline: 2px solid #5c1f2c !important; outline-offset: 3px !important; }
+html body main :is(.primary, .draw-button, .flow-button, .reshuffle, .topics button):disabled {
+  background: #e0d4c0 !important;
+  border-color: #c9b89c !important;
+  outline-color: transparent !important;
+  color: #665b4f !important;
+  opacity: 1 !important;
+  translate: none !important;
+  scale: none !important;
+  cursor: default;
+}
+@media (prefers-reduced-motion: reduce) { html body main :is(button, a) { translate: none !important; scale: none !important; } }
+
+/* ===== Reading v3 (spec §3): core message → cards → points → actions → details ===== */
+html body #draw .core-message {
+  margin: 20px auto 0;
+  max-width: 600px;
+  padding: 18px 20px !important;
+  border: 1px solid #b08a5a !important;
+  border-radius: 8px !important;
+  background: #f8ebd6 !important;
+  box-shadow: none !important;
+  text-align: left;
+}
+html body #draw .core-message > span { display: block; margin-bottom: 6px; color: #6d4c1e !important; font: 600 14px/1.5 "Noto Serif TC", serif; letter-spacing: .08em; }
+html body #draw .core-message p { margin: 0; color: #3e2716 !important; font-size: 16px !important; font-weight: 600 !important; line-height: 1.9 !important; }
+html body #draw .reading-unit-head h3 { font-size: 21px !important; font-weight: 700 !important; line-height: 1.45 !important; }
+html body #draw .reading-unit-head p { font-size: 13px !important; font-weight: 500; line-height: 1.6; }
+html body #draw .position-reading .reading-point { margin: 12px 0 0; }
+html body #draw .position-reading .reading-point b { display: block; margin-bottom: 4px; color: #74283a; font: 700 15px/1.5 "Noto Serif TC", serif; }
+html body #draw .position-reading .reading-point p { margin: 0; color: #3e2716; font-size: 16px; font-weight: 500; line-height: 1.9; }
+html body #draw .reading-more { margin-top: 14px; border: 1px solid #c9a675; border-radius: 8px; background: rgba(248, 235, 214, .55); }
+html body #draw .reading-more summary {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px;
+  color: #74283a;
+  font: 600 15px/1.4 "Noto Serif TC", serif;
+  cursor: pointer;
+  list-style: none;
+}
+html body #draw .reading-more summary::-webkit-details-marker { display: none; }
+html body #draw .reading-more summary::after { content: "⌄"; font-size: 18px; transition: rotate 180ms ease; }
+html body #draw .reading-more[open] summary::after { rotate: 180deg; }
+html body #draw .reading-more__body { padding: 2px 18px 18px; }
+html body #draw .reading-more__body .reading-point:first-child { margin-top: 0; }
+html body #draw .reading-actions-list {
+  margin: 28px auto 0;
+  max-width: 900px;
+  padding: 22px 20px;
+  border: 1px solid #b08a5a;
+  border-radius: 8px;
+  background: #f8ebd6;
+}
+html body #draw .reading-actions-list h3 { margin: 0 0 12px; color: #74283a; font: 700 21px/1.45 "Noto Serif TC", serif; text-align: center; }
+html body #draw .reading-actions-list ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; }
+html body #draw .reading-actions-list li { padding-top: 14px; border-top: 1px solid #e3cfa8; }
+html body #draw .reading-actions-list li:first-child { padding-top: 0; border-top: 0; }
+html body #draw .reading-actions-list b { display: block; color: #6d4c1e; font: 600 14px/1.5 "Noto Serif TC", serif; letter-spacing: .04em; }
+html body #draw .reading-actions-list p { margin: 4px 0 0; color: #3e2716; font-size: 16px; font-weight: 500; line-height: 1.85; }
+@media (max-width: 600px) {
+  html body #draw .result-intro h2 { font-size: 30px !important; }
+  html body #draw .reading-sequence { gap: 28px !important; }
+  html body #draw .spread-board { margin-bottom: 24px !important; }
+}
+@media (min-width: 851px) { html body #draw .reading-sequence.count-3 { align-items: start; } }
+@media (max-width: 600px) { html body #draw .spread-deck.is-opening .pick-card { animation-delay: calc(var(--m-order, 0) * 55ms) !important; } }
