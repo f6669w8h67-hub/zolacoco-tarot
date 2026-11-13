@@ -57,15 +57,19 @@ test("draw v4: timers are cancelled on every restart and a pick waits for the fa
   for (const gone of ["chooseCard", "exitingCardId", "mobileFanStyle", "selection-progress", "pick-card"]) assert.ok(!page.includes(gone), `${gone} is gone`);
 });
 
-test("reading v3: one core message, each card's point, actions together, details folded", async () => {
+test("reading v4: written readings up front, the three-card message by position, details folded", async () => {
   const { readFile } = await import("node:fs/promises");
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
-  assert.ok(page.includes('className="synthesis core-message"'));
+  assert.ok(page.includes('className="synthesis core-message synthesis-v4"'));
+  assert.ok(page.includes("synthesisParts(synthesisCards, spreadId, topic, activeSpread.positions)"));
   assert.ok(page.includes('<details className="reading-more">'));
   assert.ok(page.includes('className="reading-actions-list"'));
-  // a three-card reading no longer prints six headed paragraphs per card up front
   const unit = page.slice(page.indexOf('<div className="position-reading">'), page.indexOf('<details className="reading-more">'));
-  assert.equal((unit.match(/reading-point/g) || []).length, 3);
+  assert.ok(unit.includes("topicReading(reading, topic)"), "the topic reading is open by default");
+  assert.ok(unit.includes("reading.outward"), "the card that stands for someone else shows only what can be seen");
+  assert.ok(unit.includes("{single ? energy : null}") && unit.includes("{single ? blind : null}"), "one card: energy and blind spot open");
+  const folded = page.slice(page.indexOf('<details className="reading-more">'), page.indexOf("</details>", page.indexOf('<details className="reading-more">')));
+  for (const part of ["{!single ? energy : null}", "{!single ? blind : null}", "card.scene", "topicLens[topic][card.suit]"]) assert.ok(folded.includes(part), `${part} is folded for three cards`);
 });
 
 test("the time-flow overall message names the topic and reads well with any keyword (reading check 2026-11-13)", async () => {
