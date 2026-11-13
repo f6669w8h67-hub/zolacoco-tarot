@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
 import React from "react";
 import * as jsx from "react/jsx-runtime";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -15,10 +16,12 @@ const protectedPaths = ["/", "/healing-room", "/zola-admin", "/api/journal", "/t
 
 async function boundary({ env = configured, userId = "user_1", member = active, databaseError = false } = {}) {
   let lookups = 0;
+  let middlewareOptions;
   const mod = await loadTypescript("proxy.ts", { env, mocks: {
-    "@clerk/nextjs/server": { clerkMiddleware: (callback) => (request) => callback(async () => ({
-      userId, redirectToSignIn: ({ returnBackUrl }) => Response.redirect(`https://site.test/sign-in?return=${encodeURIComponent(returnBackUrl)}`, 307),
-    }), request) },
+    "@clerk/nextjs/server": { clerkMiddleware: (callback, options) => { middlewareOptions = options; return (request) => callback(async () => ({
+      // Like Clerk: the configured signInUrl, or the hosted Account Portal when none is set.
+      userId, redirectToSignIn: ({ returnBackUrl }) => Response.redirect(`${new URL(options?.signInUrl ?? "https://accounts.example.dev/sign-in", "https://site.test")}?redirect_url=${encodeURIComponent(returnBackUrl)}`, 307),
+    }), request); } },
     "@neondatabase/serverless": { neon: () => async () => {
       lookups++;
       if (databaseError) throw new Error("database unavailable");
@@ -32,6 +35,7 @@ async function boundary({ env = configured, userId = "user_1", member = active, 
   return {
     request: (path) => mod.default({ url: `https://site.test${path}`, nextUrl: new URL(path, "https://site.test") }, {}),
     lookups: () => lookups,
+    options: () => middlewareOptions,
   };
 }
 const passes = (response) => assert.equal(response.headers.get("x-middleware-next"), "1");
@@ -226,4 +230,29 @@ test("subscription-exempt membership APIs retain their own server authorization"
     ...active, access_expires_at: "2000-01-01", status: "expired", effective_status: "expired",
   } });
   assert.equal((await selfService.GET()).status, 200);
+});
+
+test("signed-out visitors go to the site's own /sign-in with a way back, never Clerk's hosted page", async () => {
+  const gate = await boundary({ userId: null });
+  assert.equal(gate.options().signInUrl, "/sign-in");
+  assert.equal(gate.options().signUpUrl, "/sign-up");
+  for (const path of ["/healing-room", "/astrology-exploration", "/pendulum"]) {
+    const response = await gate.request(path);
+    assert.equal(response.status, 307, path);
+    const location = new URL(response.headers.get("location"));
+    assert.equal(location.origin + location.pathname, "https://site.test/sign-in", path);
+    assert.equal(location.searchParams.get("redirect_url"), `https://site.test${path}`);
+  }
+  const api = await gate.request("/api/journal");
+  assert.equal(api.status, 401, "APIs still answer 401 JSON, not a sign-in page");
+  assert.equal((await api.json()).error, "UNAUTHENTICATED");
+  assert.equal(gate.lookups(), 0);
+});
+
+test("sign-in and sign-up return her to where she was going, and fall back to /account", async () => {
+  for (const page of ["sign-in", "sign-up"]) {
+    const source = await readFile(new URL(`../app/${page}/[[...${page}]]/page.tsx`, import.meta.url), "utf8");
+    assert.match(source, /fallbackRedirectUrl="\/account"/, page);
+    assert.doesNotMatch(source, /forceRedirectUrl/, page);
+  }
 });

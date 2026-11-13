@@ -14,6 +14,6 @@ export default function SignUpPage() {
     <div className="rococo-divider" aria-hidden="true" />
     <h1 className="rococo-title">建立會員帳號</h1>
     <p className="rococo-description">加入 Zolacoco，開啟妳的專屬塔羅旅程</p>
-    <SignUp routing="path" path="/sign-up" signInUrl="/sign-in" forceRedirectUrl="/account" appearance={clerkPearlPageAppearance} />
+    <SignUp routing="path" path="/sign-up" signInUrl="/sign-in" fallbackRedirectUrl="/account" appearance={clerkPearlPageAppearance} />
   </section></main>;
 }
