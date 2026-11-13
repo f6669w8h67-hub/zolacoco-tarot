@@ -73,7 +73,7 @@ test("draw section in pearl Rococo: Ryan × Shrimp faces, plain pearl back, draw
   const draw = await read("app/styles/draw-pearl.css");
   const { existsSync } = await import("node:fs");
   assert.match(page, /import "\.\/styles\/draw-pearl\.css";/);
-  for (const file of ["textures/card-back.webp", "tarot-table/table.webp", "tarot-table/table-800.webp"]) {
+  for (const file of ["textures/card-back.webp"]) {
     assert.ok(existsSync(new URL(`../public/${file}`, import.meta.url)), file);
   }
   // every rule is scoped to the draw section

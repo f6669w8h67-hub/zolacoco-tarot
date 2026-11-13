@@ -43,16 +43,18 @@ test("only one soundscape player exists and an unmounted one is not treated as l
   assert.equal(source.includes("setMountedSoundscapes((current) => [...current"), false);
 });
 
-test("draw motion v3: timers are cancelled on every restart and a pick waits for the fan", async () => {
+test("draw v4: timers are cancelled on every restart and a pick waits for the fan", async () => {
   const { readFile } = await import("node:fs/promises");
   const page = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
   const clear = page.slice(page.indexOf("function clearReading()"), page.indexOf("function shuffleDeck()"));
   assert.ok(clear.includes("drawTimers.current.forEach((timer) => window.clearTimeout(timer));"));
-  assert.ok(clear.includes("setFanReady(false);") && clear.includes("setExitingCardId(null);"));
-  const choose = page.slice(page.indexOf("function chooseCard("), page.indexOf("function reset()"));
-  assert.ok(choose.includes("if (exitingCardId || !fanReady) return;"));
+  assert.ok(clear.includes("setFanReady(false);"));
+  const pick = page.slice(page.indexOf("function commitPick("), page.indexOf("function reset()"));
+  assert.ok(pick.includes("if (!fanReady || selected.length >= activeSpread.positions.length) return;"));
+  assert.ok(pick.includes("MOTION.lastPickPauseMs"), "the last card rests in its slot before the spread turns over");
   assert.equal(/window\.setTimeout/.test(page.slice(page.indexOf("function shuffleDeck()"), page.indexOf("function reset()"))), false, "draw flow uses the cancellable later()");
-  assert.ok(page.includes('"--order": fanOrder(index, total)'));
+  assert.ok(page.includes("<DrawFan key={seed} cards={spreadCards} positions={activeSpread.positions} pickedCount={selected.length} ready={fanReady} deal={seed} onPick={commitPick} />"));
+  for (const gone of ["chooseCard", "exitingCardId", "mobileFanStyle", "selection-progress", "pick-card"]) assert.ok(!page.includes(gone), `${gone} is gone`);
 });
 
 test("reading v3: one core message, each card's point, actions together, details folded", async () => {

@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { tarotCards, topicLens, type TarotCard } from "./tarot-data";
 import { TarotCardBack, TarotCardFace } from "./tarot-card";
+import DrawFan from "./draw-fan";
+import { MOTION } from "@/lib/draw-fan-math";
 import "./styles/draw-pearl.css";
+import "./styles/draw-fan.css";
 import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
 import { loadMemberProfile } from "@/lib/member-client";
 import {
@@ -126,30 +129,8 @@ function shuffledDeck() {
 // (--m-row / --m-offset) so every card stays on screen with a 44px tap strip.
 // Spread-in order (spec v3 §1.3): the centre card first, then alternating left and right,
 // 55ms apart, so the fan opens from the middle instead of queueing left to right.
-function fanOrder(index: number, total: number) {
-  const offset = index - (total - 1) / 2;
-  const rank = Math.round(Math.abs(offset) * 2);
-  return offset < 0 ? Math.max(0, rank - 1) : rank;
-}
-
 function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
-function mobileFanStyle(index: number, total: number) {
-  const firstRow = Math.ceil(total / 2);
-  const row = index < firstRow ? 0 : 1;
-  const inRow = row === 0 ? index : index - firstRow;
-  const rowSize = row === 0 ? firstRow : total - firstRow;
-  return {
-    "--i": index,
-    "--offset": index - (total - 1) / 2,
-    "--m-row": row,
-    "--m-offset": inRow - (rowSize - 1) / 2,
-    "--order": fanOrder(index, total),
-    // phones lay the fan out in two rows: open each row from its own centre, rows interleaved
-    "--m-order": fanOrder(inRow, rowSize) * 2 + row,
-  } as React.CSSProperties;
 }
 
 // The three-card time-flow message opens with the topic she chose (reading check, 2026-11-13).
@@ -188,7 +169,6 @@ export default function Home() {
   const [shuffling, setShuffling] = useState(false);
   const [seed, setSeed] = useState(0);
   const [spreadCards, setSpreadCards] = useState<TarotCard[]>([]);
-  const [exitingCardId, setExitingCardId] = useState<string | null>(null);
   const [fanReady, setFanReady] = useState(false);
   // Draw-flow timeouts are tracked so starting over cancels them (spec v3 §1.6): an old
   // shuffle or pick can never update a newer reading.
@@ -354,7 +334,6 @@ export default function Home() {
   function clearReading() {
     drawTimers.current.forEach((timer) => window.clearTimeout(timer));
     drawTimers.current = [];
-    setExitingCardId(null);
     setFanReady(false);
     setShuffling(false);
     setSelected([]);
@@ -364,8 +343,8 @@ export default function Home() {
     setConsultCopy("idle");
   }
 
-  // Shuffle 1000ms + 100ms settle, then the fan opens card by card (about 960ms) and only
-  // then accepts a pick (spec v3 §1.1–1.3). Reduced motion: no waiting, no movement.
+  // Draw v4 (ChatGPT spec, 2026-11-13): the deck is cut and merged (840ms), then the fan opens
+  // from the middle outwards and only then accepts a pick. Reduced motion: no waiting.
   function shuffleDeck() {
     if (shuffling) return;
     clearReading();
@@ -375,25 +354,25 @@ export default function Home() {
     later(() => {
       setSpreadCards(shuffledDeck().slice(0, 13));
       setShuffling(false);
-      later(() => setFanReady(true), still ? 0 : 980);
-    }, still ? 80 : 1100);
+      later(() => setFanReady(true), still ? 0 : MOTION.openMs + MOTION.openStaggerMs * 6);
+    }, still ? 80 : MOTION.shuffleMs + 60);
   }
 
-  // Pick (spec v3 §1.4): the card lifts 26px and fades (180 + 220ms), leaves the deck, the
-  // rest close the gap over 280ms, and only then can the next card be picked.
-  function chooseCard(card: TarotCard) {
-    if (exitingCardId || !fanReady) return;
+  // The fan has already flown the card into its slot. The last one rests there for a moment
+  // before the spread turns over.
+  function commitPick(card: TarotCard) {
+    if (!fanReady || selected.length >= activeSpread.positions.length) return;
     const next = [...selected, card];
     const still = prefersReducedMotion();
-    setExitingCardId(card.id);
-    later(() => {
+    const place = () => {
       setSelected(next);
       setSpreadCards((current) => current.filter((item) => item.id !== card.id));
-      later(() => {
-        setExitingCardId(null);
-        if (next.length === activeSpread.positions.length) setRevealed(true);
-      }, still ? 0 : 280);
-    }, still ? 0 : 400);
+    };
+    if (next.length < activeSpread.positions.length) { place(); return; }
+    later(() => {
+      place();
+      later(() => setRevealed(true), still ? 0 : 280);
+    }, still ? 0 : MOTION.lastPickPauseMs);
   }
 
   function reset() {
@@ -563,14 +542,7 @@ export default function Home() {
               <p>深呼吸三次，把注意力輕輕帶回自己</p>
             </> : <>
               <div className="choose-heading"><span>02 · FOLLOW YOUR INTUITION</span><h3>牌已展開，請親手選牌</h3><p>{activeSpread.positions.length === 1 ? "不用分析哪張比較好，第一眼停留的地方，就是此刻的訊息。" : `請依直覺選出第 ${selected.length + 1} 張｜${activeSpread.positions[selected.length]}`}</p></div>
-              {activeSpread.positions.length > 1 && <div className="selection-progress" aria-label="抽牌進度">
-                {activeSpread.positions.map((position, index) => <div className={`choice-slot ${selected[index] ? "filled" : ""}`} key={position}>
-                  <div>{selected[index] ? <><span>✓</span><small>已選取</small></> : <b>{index + 1}</b>}</div><p>{position}</p>
-                </div>)}
-              </div>}
-              <div className={`spread-deck ${fanReady ? "is-ready" : "is-opening"}`} role="group" aria-label="從展開的牌組中選擇一張牌" aria-busy={!fanReady}>
-                {spreadCards.map((card, i) => <button key={card.id} className={`pick-card ${exitingCardId === card.id ? "is-picked" : ""}`} disabled={Boolean(exitingCardId) || !fanReady} onClick={() => chooseCard(card)} aria-label={`選擇第 ${i + 1} 張牌，選取後牌會移出牌組`} style={mobileFanStyle(i, spreadCards.length)}><div className="back-frame" /></button>)}
-              </div>
+              <DrawFan key={seed} cards={spreadCards} positions={activeSpread.positions} pickedCount={selected.length} ready={fanReady} deal={seed} onPick={commitPick} />
               <button className="reshuffle" onClick={shuffleDeck}>重新洗牌</button>
             </>}
           </div>
