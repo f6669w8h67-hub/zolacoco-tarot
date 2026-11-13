@@ -7,6 +7,7 @@ import "./styles/rococo-tokens.css";
 import "./styles/rococo-tarot.css";
 import MembershipGate, { UnconfiguredMembershipGate } from "./membership-gate";
 import { allowsMembershipPreview, isClerkConfigured } from "@/lib/membership-access";
+import { clerkLocalization } from "@/lib/clerk-localization";
 import SiteHeader from "./site-header";
 import SiteNotice from "./site-notice";
 
@@ -53,7 +54,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {authConfigured ? <ClerkProvider>{content}</ClerkProvider> : content}
+        {authConfigured ? <ClerkProvider localization={clerkLocalization}>{content}</ClerkProvider> : content}
       </body>
     </html>
   );

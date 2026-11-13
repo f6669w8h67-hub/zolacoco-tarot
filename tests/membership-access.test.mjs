@@ -182,9 +182,12 @@ test("root layout selects a closed fallback in production and retains developmen
     [{ NODE_ENV: "development" }, "preview"],
   ]) {
     const wrapper = (label) => function TestGate({ children }) { return React.createElement("div", { "data-gate": label }, children); };
+    let providerProps = null;
+    const provider = (props) => { providerProps = props; return wrapper("provider")(props); };
     const mod = await loadTypescript("app/layout.tsx", { env, mocks: {
       "react/jsx-runtime": jsx,
-      "@clerk/nextjs": { ClerkProvider: wrapper("provider") },
+      "@clerk/nextjs": { ClerkProvider: provider },
+      "@clerk/localizations/zh-TW": { zhTW: { locale: "zh-TW", signIn: { password: { subtitle: "以繼續前往 {{applicationName}}" } } } },
       "next/font/google": { Geist: () => ({ variable: "sans" }), Geist_Mono: () => ({ variable: "mono" }) },
       "./globals.css": {},
       "./rococo-membership.css": {},
@@ -198,6 +201,11 @@ test("root layout selects a closed fallback in production and retains developmen
     if (expected === "preview") assert.doesNotMatch(html, /data-gate/);
     else assert.match(html, new RegExp(`data-gate="${expected}"`));
     assert.equal(html.includes('data-gate="provider"'), expected === "authenticated");
+    if (expected === "authenticated") {
+      // Clerk screens are in Traditional Chinese and name the site, not the Clerk app id.
+      assert.equal(providerProps.localization.locale, "zh-TW");
+      assert.equal(providerProps.localization.signIn.password.subtitle, "以繼續前往 Zolacoco Tarot");
+    }
   }
 });
 
