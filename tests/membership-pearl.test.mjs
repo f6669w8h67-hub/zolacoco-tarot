@@ -112,6 +112,11 @@ test("sign-in and sign-up: pearl arch, gold shell, one shared Clerk look that al
   assert.equal(elements.formButtonPrimary.minHeight, "48px");
   assert.match(elements.formButtonPrimary.background, /#fff2f8, #f4dfe9/);
   assert.equal(elements.socialButtonsBlockButton.minHeight, "48px");
+  // Clerk paints outlines with box-shadow in [data-variant] rules; ours must sit on the same selectors to show.
+  assert.equal(elements.formFieldInput['&[data-variant="default"], &[data-variant="default"]:hover'].boxShadow, "0 0 0 1px #c5a46f");
+  assert.match(elements.formFieldInput['&[data-variant="default"][data-feedback="error"], &[data-variant="default"][data-feedback="error"]:hover'].boxShadow, /#a3324f/, "errors stay red");
+  assert.match(elements.formButtonPrimary['&[data-variant="solid"][data-color="primary"]'].boxShadow, /^0 0 0 1px #c5a46f/);
+  assert.equal(elements.formButtonPrimary['&[data-variant="solid"]::after'].display, "none");
   assert.equal(clerkPearlPageAppearance.options.elevation, "flush");
   assert.equal("header" in clerkPearlPageAppearance.elements, false, "later steps keep Clerk's instructions");
   assert.match(css, /\.rococo-shell :is\(\.cl-signIn-start, \.cl-signUp-start\) \.cl-header \{ display: none; \}/);

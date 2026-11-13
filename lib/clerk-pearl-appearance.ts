@@ -16,7 +16,9 @@ const gold = "#c5a46f";
 const line = "#d8dce8";
 const serif = '"Noto Serif TC", "Songti TC", Georgia, serif';
 
-const focusRing = `0 0 0 3px rgba(132, 52, 80, .22)`;
+const danger = "#a3324f";
+const goldRing = `0 0 0 1px ${gold}`;
+const focusRing = "0 0 0 4px rgba(132, 52, 80, .18)";
 
 /** Used on <ClerkProvider>, so the modals get it too. */
 export const clerkPearlAppearance = {
@@ -31,7 +33,7 @@ export const clerkPearlAppearance = {
     colorBorder: line,
     colorNeutral: muted,
     colorRing: rose,
-    colorDanger: "#a3324f",
+    colorDanger: danger,
     colorModalBackdrop: "rgba(38, 52, 73, .32)",
     borderRadius: "12px",
     fontFamily: serif,
@@ -44,23 +46,29 @@ export const clerkPearlAppearance = {
     headerTitle: { color: rose, fontWeight: 700 },
     headerSubtitle: { color: muted },
     formFieldLabel: { color: ink, fontSize: "14px", fontWeight: 600 },
+    // Clerk draws outlines with box-shadow inside [data-variant] rules, so the outlines are set on the
+    // same selectors (checked against the live Clerk form, 2026-11-14). Error fields stay red.
     formFieldInput: {
-      minHeight: "48px", fontSize: "16px", color: ink, background: "#ffffff",
-      border: `1px solid ${gold}`, borderRadius: "12px", boxShadow: "none",
-      "&:focus": { borderColor: rose, boxShadow: focusRing },
+      minHeight: "48px", fontSize: "16px", color: ink, background: "#ffffff", borderRadius: "12px",
+      '&[data-variant="default"], &[data-variant="default"]:hover': { boxShadow: goldRing },
+      '&[data-variant="default"]:focus, &[data-variant="default"]:focus-within': { boxShadow: `0 0 0 1px ${rose}, ${focusRing}` },
+      '&[data-variant="default"][data-feedback="error"], &[data-variant="default"][data-feedback="error"]:hover': { boxShadow: `0 0 0 1px ${danger}` },
+      '&[data-variant="default"][data-feedback="error"]:focus-within': { boxShadow: `0 0 0 1px ${danger}, 0 0 0 4px rgba(163, 50, 79, .16)` },
     },
-    otpCodeFieldInput: { fontSize: "18px", color: ink, borderColor: gold },
+    otpCodeFieldInput: { fontSize: "18px", color: ink },
     formButtonPrimary: {
-      minHeight: "48px", fontSize: "15px", fontWeight: 700, color: rose, textTransform: "none",
-      background: "linear-gradient(180deg, #fff2f8, #f4dfe9)", border: `1px solid ${gold}`, borderRadius: "12px",
-      boxShadow: "0 8px 20px rgba(132, 52, 80, .10)",
-      "&:hover": { background: "#eecfdd", color: rose },
-      "&:focus-visible": { boxShadow: focusRing },
-      "&::after": { display: "none" },
+      minHeight: "48px", fontSize: "15px", fontWeight: 700, color: rose, textTransform: "none", borderRadius: "12px",
+      background: "linear-gradient(180deg, #fff2f8, #f4dfe9)",
+      '&[data-variant="solid"][data-color="primary"]': { boxShadow: `${goldRing}, 0 8px 20px rgba(132, 52, 80, .10)` },
+      '&[data-variant="solid"][data-color="primary"]:hover': { background: "#eecfdd", color: rose, boxShadow: `${goldRing}, 0 8px 20px rgba(132, 52, 80, .12)` },
+      '&[data-variant="solid"][data-color="primary"]:focus-visible': { boxShadow: `${goldRing}, 0 0 0 4px rgba(132, 52, 80, .22)` },
+      '&[data-variant="solid"]::after': { display: "none" }, // Clerk's sheen layer over the button
     },
     socialButtonsBlockButton: {
-      minHeight: "48px", color: ink, background: "#ffffff", border: `1px solid #b9c7d8`, borderRadius: "12px",
+      minHeight: "48px", color: ink, background: "#ffffff", borderRadius: "12px",
+      '&[data-variant="outline"], &[data-variant="bordered"]': { boxShadow: "0 0 0 1px #b9c7d8" },
       "&:hover": { background: "#f8f7ff" },
+      '&[data-variant="outline"]:focus-visible, &[data-variant="bordered"]:focus-visible': { boxShadow: `0 0 0 1px #b9c7d8, ${focusRing}` },
     },
     socialButtonsBlockButtonText: { color: ink, fontSize: "15px" },
     dividerLine: { background: "#e4d6e0" },
@@ -70,9 +78,9 @@ export const clerkPearlAppearance = {
     formFieldAction: { color: rose, textDecoration: "underline", textUnderlineOffset: "3px" },
     formResendCodeLink: { color: rose },
     identityPreviewEditButton: { color: rose },
-    formFieldErrorText: { color: "#a3324f", fontSize: "13px" },
+    formFieldErrorText: { color: danger, fontSize: "13px" },
     alert: { background: "#fff6fa", border: "1px solid #e9b8cb", borderRadius: "12px" },
-    alertText: { color: "#a3324f" },
+    alertText: { color: danger },
     footer: { background: "#fbf9ff" },
   },
 } satisfies ProviderAppearance;
