@@ -18,7 +18,7 @@ type Outcome = { resultKey:Result; result:string; label:string; en:string; detai
 const modes = [
   { key:"general" as const, icon:"✦", label:"一般模式", en:"GENERAL", description:"用清楚、中性的方式整理當下方向。" },
   { key:"higher" as const, icon:"☉", label:"高靈模式", en:"HIGHER SELF", description:"依個人信念，將答案視為一段儀式性訊息。" },
-  { key:"subconscious" as const, icon:"☾", label:"潛意識模式", en:"SUBCONSCIOUS", description:"觀察答案出現時，你最先浮現的真實反應。" },
+  { key:"subconscious" as const, icon:"☾", label:"潛意識模式", en:"SUBCONSCIOUS", description:"觀察答案出現時，妳最先浮現的真實反應。" },
 ];
 const PENDULUM_STORAGE_KEY = "zolacoco-pendulum-records-v1";
 
@@ -33,7 +33,7 @@ const categories = [
 const tools: Array<{key:ToolKey;icon:string;label:string;en:string;description:string;group:string}> = [
   {key:"yesno",icon:"↔",label:"Yes／No 快速占卜",en:"YES / NO",description:"六種回應，不只單純的是與否",group:"核心問答"},
   {key:"choices",icon:"Ⅲ",label:"多選一模式",en:"A — F",description:"輸入 2～6 個選項，讓靈擺停在其中一項",group:"核心問答"},
-  {key:"custom",icon:"✎",label:"自訂問題模式",en:"CUSTOM QUESTION",description:"寫下你真正想確認的一件事",group:"核心問答"},
+  {key:"custom",icon:"✎",label:"自訂問題模式",en:"CUSTOM QUESTION",description:"寫下妳真正想確認的一件事",group:"核心問答"},
   {key:"number",icon:"№",label:"數字靈擺",en:"1 — 100",description:"自訂 1～10、30 或 100 的範圍",group:"數字符號"},
   {key:"letter",icon:"A",label:"字母模式",en:"A — Z",description:"為名稱、地點或靈感抽一個字母",group:"數字符號"},
   {key:"percentage",icon:"%",label:"百分比模式",en:"PERCENTAGE",description:"用娛樂與覺察角度看此刻狀態",group:"數字符號"},
@@ -43,7 +43,7 @@ const tools: Array<{key:ToolKey;icon:string;label:string;en:string;description:s
   {key:"action",icon:"➝",label:"今日行動指引",en:"TODAY'S ACTION",description:"找出今天可以落地的一小步",group:"每日行動"},
   {key:"avoid",icon:"!",label:"今日避免事項",en:"PAUSE & NOTICE",description:"提醒今天適合放慢的地方",group:"每日行動"},
   {key:"meditation",icon:"☾",label:"今日冥想主題",en:"MEDITATION",description:"帶走一個今天適合練習的主題",group:"每日行動"},
-  {key:"message",icon:"❝",label:"每日一句訊息",en:"DAILY MESSAGE",description:"一句溫柔但不替你做決定的提醒",group:"每日行動"},
+  {key:"message",icon:"❝",label:"每日一句訊息",en:"DAILY MESSAGE",description:"一句溫柔但不替妳做決定的提醒",group:"每日行動"},
   {key:"direction",icon:"✥",label:"今日幸運方向",en:"DIRECTION",description:"抽一個可作為儀式感的方位",group:"每日幸運"},
   {key:"color",icon:"◐",label:"今日幸運色",en:"COLOR",description:"用一個色彩陪伴今天的狀態",group:"每日幸運"},
   {key:"luckyNumber",icon:"#",label:"今日幸運數字",en:"LUCKY NUMBER",description:"抽出今天的象徵數字",group:"每日幸運"},
@@ -104,11 +104,11 @@ const lifestylePools: Record<"food"|"drink"|"outfit"|"outing"|"home", Array<[str
   ],
   drink: [
     ["溫熱茶飲","WARM TEA","選一杯溫熱的茶，讓今天的節奏稍微慢下來。"],
-    ["咖啡香氣","COFFEE","今天適合用一杯咖啡陪你開始或完成一件事。"],
+    ["咖啡香氣","COFFEE","今天適合用一杯咖啡陪妳開始或完成一件事。"],
     ["清爽氣泡飲","SPARKLING","想要一點輕盈感，可以選無酒精氣泡飲或氣泡水。"],
     ["果香飲品","FRUIT DRINK","今天適合帶有自然果香、酸甜清爽的飲品。"],
     ["溫柔奶香","MILKY","選一杯奶茶、鮮奶或植物奶飲，給自己一點柔軟的照顧。"],
-    ["先喝一杯水","PURE WATER","身體也許只是在提醒你補充水分，先喝水，再決定還想喝什麼。"],
+    ["先喝一杯水","PURE WATER","身體也許只是在提醒妳補充水分，先喝水，再決定還想喝什麼。"],
   ],
   outfit: [
     ["奶杏柔光","CREAM & BEIGE","用奶油白、燕麥或杏色，穿出溫柔乾淨的氣氛。"],
@@ -137,12 +137,12 @@ const lifestylePools: Record<"food"|"drink"|"outfit"|"outing"|"home", Array<[str
 };
 
 const quickAnswers: Array<Outcome> = [
-  {resultKey:"yes",result:"yes",label:"是",en:"YES",detail:"此刻的方向比較靠近肯定，可以先從一個小而可驗證的行動開始。",reflection:"如果真的選擇前進，你願意先做哪一步？"},
-  {resultKey:"no",result:"no",label:"否",en:"NO",detail:"此刻更適合暫緩、調整或重新確認界線；這個否不代表永遠不行。",reflection:"你現在最需要保護的是時間、情緒，還是資源？"},
-  {resultKey:"unclear",result:"not-yet",label:"暫時不是時候",en:"NOT YET",detail:"先不用急著推動結果，讓資訊與情緒再沉澱一些。",reflection:"晚一點再決定，會讓你多看見什麼？"},
+  {resultKey:"yes",result:"yes",label:"是",en:"YES",detail:"此刻的方向比較靠近肯定，可以先從一個小而可驗證的行動開始。",reflection:"如果真的選擇前進，妳願意先做哪一步？"},
+  {resultKey:"no",result:"no",label:"否",en:"NO",detail:"此刻更適合暫緩、調整或重新確認界線；這個否不代表永遠不行。",reflection:"妳現在最需要保護的是時間、情緒，還是資源？"},
+  {resultKey:"unclear",result:"not-yet",label:"暫時不是時候",en:"NOT YET",detail:"先不用急著推動結果，讓資訊與情緒再沉澱一些。",reflection:"晚一點再決定，會讓妳多看見什麼？"},
   {resultKey:"unclear",result:"rephrase",label:"問題需要重新描述",en:"REPHRASE",detail:"問題裡可能同時放進了多個條件，縮小範圍後會更容易覺察。",reflection:"如果一次只問一件事，真正核心的是哪一件？"},
-  {resultKey:"no",result:"timing",label:"時機未到",en:"TIMING",detail:"方向未必錯，但現階段仍有條件尚未成熟。",reflection:"在行動前，你還缺哪一項現實資訊？"},
-  {resultKey:"unclear",result:"unknown",label:"不建議現在知道答案",en:"LET IT UNFOLD",detail:"有些答案需要透過經驗慢慢浮現，現在先回到可以掌握的部分。",reflection:"如果暫時沒有答案，你仍能照顧好自己的哪一部分？"},
+  {resultKey:"no",result:"timing",label:"時機未到",en:"TIMING",detail:"方向未必錯，但現階段仍有條件尚未成熟。",reflection:"在行動前，妳還缺哪一項現實資訊？"},
+  {resultKey:"unclear",result:"unknown",label:"不建議現在知道答案",en:"LET IT UNFOLD",detail:"有些答案需要透過經驗慢慢浮現，現在先回到可以掌握的部分。",reflection:"如果暫時沒有答案，妳仍能照顧好自己的哪一部分？"},
 ];
 
 const soundscapes: Record<Soundscape,{icon:string;label:string;en:string;videoId:string}> = {
@@ -240,24 +240,24 @@ export default function PendulumPage(){
     if(tool==="choices"){
       if(choiceList.length<2)return null;
       const chosen=pick(choiceList).replace(/^[A-Fa-f][\.、:\s-]*/,"");
-      return {resultKey:pick<Result>(["yes","no"]),result:"choice",label:chosen,en:"SELECTED",detail:`靈擺這次停在「${chosen}」。把它當成觀察偏好的入口，再用距離、預算與現實條件確認。`,reflection:"看到這個選項時，你是放鬆、期待，還是有一點抗拒？"};
+      return {resultKey:pick<Result>(["yes","no"]),result:"choice",label:chosen,en:"SELECTED",detail:`靈擺這次停在「${chosen}」。把它當成觀察偏好的入口，再用距離、預算與現實條件確認。`,reflection:"看到這個選項時，妳是放鬆、期待，還是有一點抗拒？"};
     }
     if(tool==="number"){
       const value=Math.floor(Math.random()*numberRange)+1;
-      return {resultKey:pick<Result>(["yes","no"]),result:"number",label:String(value),en:`1 — ${numberRange}`,detail:`今天抽到的象徵數字是 ${value}。它適合用於排序、遊戲或儀式感，不代表機率預測。`,reflection:"這個數字讓你聯想到什麼人、時間或下一步？"};
+      return {resultKey:pick<Result>(["yes","no"]),result:"number",label:String(value),en:`1 — ${numberRange}`,detail:`今天抽到的象徵數字是 ${value}。它適合用於排序、遊戲或儀式感，不代表機率預測。`,reflection:"這個數字讓妳聯想到什麼人、時間或下一步？"};
     }
     if(tool==="letter"){
       const letter=String.fromCharCode(65+Math.floor(Math.random()*26));
-      return {resultKey:pick<Result>(["yes","no"]),result:"letter",label:letter,en:"A — Z",detail:`這次停在字母 ${letter}。可作為名稱、地點、品牌或創作時的聯想起點。`,reflection:"先不要急著猜答案，這個字母最先讓你想到什麼？"};
+      return {resultKey:pick<Result>(["yes","no"]),result:"letter",label:letter,en:"A — Z",detail:`這次停在字母 ${letter}。可作為名稱、地點、品牌或創作時的聯想起點。`,reflection:"先不要急著猜答案，這個字母最先讓妳想到什麼？"};
     }
     if(tool==="percentage"){
       const value=Math.floor(Math.random()*61)+35;
-      return {resultKey:value>70?"yes":value<50?"no":"unclear",result:"percentage",label:`${value}%`,en:"REFLECTION SCALE",detail:"這是娛樂與自我覺察式的呈現，不是對事件、關係或能量的客觀測量。",reflection:"如果由你自己評分，直覺會給幾分？為什麼？"};
+      return {resultKey:value>70?"yes":value<50?"no":"unclear",result:"percentage",label:`${value}%`,en:"REFLECTION SCALE",detail:"這是娛樂與自我覺察式的呈現，不是對事件、關係或能量的客觀測量。",reflection:"如果由妳自己評分，直覺會給幾分？為什麼？"};
     }
     if(tool==="energy"){
       const mind=Math.floor(Math.random()*46)+50,body=Math.floor(Math.random()*46)+45,soul=Math.floor(Math.random()*46)+50;
       const average=(mind+body+soul)/3;
-      return {resultKey:average>75?"yes":average<58?"no":"unclear",result:"energy",label:average>75?"能量充足":average<58?"建議休息":"能量普通",en:`心 ${mind} · 身 ${body} · 靈 ${soul}`,detail:"數值只是一種覺察遊戲，不代表身心狀態的客觀檢測或健康判斷。",reflection:"三個數值中，你最想先照顧哪一項？"};
+      return {resultKey:average>75?"yes":average<58?"no":"unclear",result:"energy",label:average>75?"能量充足":average<58?"建議休息":"能量普通",en:`心 ${mind} · 身 ${body} · 靈 ${soul}`,detail:"數值只是一種覺察遊戲，不代表身心狀態的客觀檢測或健康判斷。",reflection:"三個數值中，妳最想先照顧哪一項？"};
     }
     if(tool==="chakra"){
       const item=pick(chakraData);
@@ -265,11 +265,11 @@ export default function PendulumPage(){
     }
     if(tool==="crystal"){
       const item=pick(crystalData);
-      return {resultKey:pick<Result>(["yes","unclear"]),result:"crystal",label:item[0],en:"CRYSTAL RITUAL",detail:`${item[1]}。用途依身心靈領域常見說法整理，不取代醫療或專業建議。`,reflection:"即使手邊沒有這顆水晶，你仍能如何實踐它象徵的提醒？"};
+      return {resultKey:pick<Result>(["yes","unclear"]),result:"crystal",label:item[0],en:"CRYSTAL RITUAL",detail:`${item[1]}。用途依身心靈領域常見說法整理，不取代醫療或專業建議。`,reflection:"即使手邊沒有這顆水晶，妳仍能如何實踐它象徵的提醒？"};
     }
     if(tool==="food"||tool==="drink"||tool==="outfit"||tool==="outing"||tool==="home"){
       const item=pick(lifestylePools[tool]);
-      const reflections={food:"看到這個答案時，你腦中第一個浮現的是哪一道料理？",drink:"這杯飲品符合你現在的身體感受與今天的天氣嗎？",outfit:"衣櫃裡哪一件單品最接近這個氣氛？",outing:"想到這個地方時，你是期待，還是其實更想休息？",home:"只花十分鐘，你最想先整理哪一小塊？"} as const;
+      const reflections={food:"看到這個答案時，妳腦中第一個浮現的是哪一道料理？",drink:"這杯飲品符合妳現在的身體感受與今天的天氣嗎？",outfit:"衣櫃裡哪一件單品最接近這個氣氛？",outing:"想到這個地方時，妳是期待，還是其實更想休息？",home:"只花十分鐘，妳最想先整理哪一小塊？"} as const;
       return {resultKey:pick<Result>(["yes","no","unclear"]),result:tool,label:item[0],en:item[1],detail:item[2],reflection:reflections[tool]};
     }
     const pools:Record<Exclude<ToolKey,"yesno"|"choices"|"number"|"letter"|"percentage"|"energy"|"chakra"|"crystal"|"custom"|"food"|"drink"|"outfit"|"outing"|"home">,Array<[string,string]>>={
@@ -280,11 +280,11 @@ export default function PendulumPage(){
       luckyNumber:[["3","表達、創意與新的組合"],["8","資源、責任與穩定累積"],["18","穿越不確定，保留觀察"],["22","帶著經驗重新出發"],["77","安靜辨認自己的直覺"]],
       element:[["花","讓美感與溫柔回到日常"],["水","允許情緒流動，也保持彈性"],["太陽","看見、行動與補充活力"],["月亮","休息、感受與內在節奏"],["森林","穩定、呼吸與長期累積"],["火","決心、轉化與勇敢開始"],["風","溝通、鬆動與新的想法"]],
       oil:[["薰衣草","適合搭配放鬆與睡前儀式"],["佛手柑","為沉重情緒加入一點明亮感"],["乳香","適合安靜、呼吸與冥想片刻"],["檸檬","為整理與開始增加清新感"],["茶樹","象徵清理、界線與俐落感"],["依蘭","練習柔軟、感受與慢下來"],["雪松","回到穩定、踏實與身體感"]],
-      meditation:[["放下","把不能控制的部分暫時放回原位"],["原諒","原諒不是合理化，而是停止反覆消耗自己"],["豐盛","先看見已經擁有與正在累積的部分"],["相信自己","把選擇權收回，完成一個可驗證的小決定"],["愛自己","用你對重要的人那樣，照顧今天的自己"],["感恩","記下三件具體而微小的好事"],["療癒","允許修復有自己的速度，不要求立刻變好"]],
-      message:[["今天請停止懷疑自己。","先完成一個小行動，答案會比想像更清楚。"],["相信你的直覺。","同時也用現實資訊替直覺找到落點。"],["事情正在慢慢靠近。","不催促結果，先整理自己能掌握的部分。"],["你比想像中勇敢。","勇敢不一定是衝出去，也可以是誠實地停下來。"]],
+      meditation:[["放下","把不能控制的部分暫時放回原位"],["原諒","原諒不是合理化，而是停止反覆消耗自己"],["豐盛","先看見已經擁有與正在累積的部分"],["相信自己","把選擇權收回，完成一個可驗證的小決定"],["愛自己","用妳對重要的人那樣，照顧今天的自己"],["感恩","記下三件具體而微小的好事"],["療癒","允許修復有自己的速度，不要求立刻變好"]],
+      message:[["今天請停止懷疑自己。","先完成一個小行動，答案會比想像更清楚。"],["相信妳的直覺。","同時也用現實資訊替直覺找到落點。"],["事情正在慢慢靠近。","不催促結果，先整理自己能掌握的部分。"],["妳比想像中勇敢。","勇敢不一定是衝出去，也可以是誠實地停下來。"]],
     };
     const item=pick(pools[tool as keyof typeof pools]);
-    return {resultKey:pick<Result>(["yes","no","unclear"]),result:tool,label:item[0],en:selectedTool.en,detail:item[1],reflection:"看到這個結果時，你第一個想採取的小行動是什麼？"};
+    return {resultKey:pick<Result>(["yes","no","unclear"]),result:tool,label:item[0],en:selectedTool.en,detail:item[1],reflection:"看到這個結果時，妳第一個想採取的小行動是什麼？"};
   }
 
   function stopActiveMotion(){

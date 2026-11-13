@@ -35,6 +35,7 @@ test("only an empty question is blocked; other questions get a hint, never a dea
 test("the ritual is one block: way to play, question, stage, result; calibration is optional", () => {
   assert.doesNotMatch(page, /premium-room|id="membership"|#membership|divination-centre/);
   assert.match(page, /role="group" aria-label="常用玩法"/);
+  assert.doesNotMatch(page, /你/, "the site speaks to members as 妳");
   assert.match(page, /全部 23 種玩法/);
   assert.match(page, /const startDisabled=moving\|\|calibrating\|\|\(needsQuestion&&!quality\.canAsk\)/);
   assert.doesNotMatch(page, /calibrated&&actionDisabled|calibrated\?ask:calibrate/);
