@@ -1,0 +1,538 @@
+/* ===== 靈擺互動 v1 (ChatGPT spec, 2026-11-13) =====
+   The ritual area is one block: way to play → question → stage → result.
+   New class names (pv-*) so none of the older stage layers in globals.css apply. */
+
+/* palette: one place to change (Rococo design system, owner 2026-11-13: 不要大地色) */
+.pendulum-page {
+  /* 珍珠粉藍洛可可 design system v1 (ChatGPT, 2026-11-13) */
+  --pv-ink: #263449;
+  --pv-muted: #33445f;
+  --pv-label: #33445f;
+  --pv-accent: #843450;
+  --pv-accent-deep: #6e2a43;
+  --pv-gold: #c5a46f;
+  --pv-line: #d8be8a;
+  --pv-line-soft: #d8dce8;
+  --pv-chip-border: #b9c7d8;
+  --pv-secondary-border: #b78ead;
+  --pv-selected: #f4dfe9;
+  --pv-selected-soft: #fce9f1;
+  --pv-surface: #ffffff;
+  --pv-field: #ffffff;
+  --pv-button-start: #fff2f8;
+  --pv-button-end: #f4dfe9;
+  --pv-hover-start: #eecfdd;
+  --pv-hover-end: #eecfdd;
+  --pv-active: #e5bed0;
+  --pv-good: #305947;
+  --pv-good-bg: #e6f7ed;
+  --pv-placeholder: #59657a;
+  --pv-stage-1: #ffffff;
+  --pv-stage-2: #fce9f1;
+  --pv-stage-3: #e8f2fc;
+  --pv-gold-soft: rgba(197, 164, 111, .6);
+  --pv-panel: #ffffff;
+  --pv-shadow: rgba(38, 52, 73, .14);
+  --pv-shadow-lg: rgba(38, 52, 73, .12);
+  --pv-page: #f8faff;
+}
+
+.pendulum-page .pv-ritual {
+  position: relative;
+  max-width: 1180px;
+  margin: 0 auto;
+  /* top padding keeps 20px between the rose corners and the text */
+  padding: 62px clamp(14px, 4vw, 40px) 8px;
+  scroll-margin-top: 88px;
+  color: var(--pv-ink);
+}
+.pendulum-page .pv-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "tool" "steps" "inputs" "stage" "result";
+  gap: 14px;
+}
+.pendulum-page .pv-tool { grid-area: tool; min-width: 0; }
+.pendulum-page .pv-steps { grid-area: steps; }
+.pendulum-page .pv-inputs { grid-area: inputs; }
+.pendulum-page .pv-stage-card { grid-area: stage; }
+.pendulum-page .pv-result { grid-area: result; }
+@media (min-width: 900px) {
+  .pendulum-page .pv-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    grid-template-rows: auto auto auto 1fr;
+    grid-template-areas: "tool stage" "steps stage" "inputs stage" "result stage";
+    column-gap: 44px;
+    align-items: start;
+  }
+  /* desktop: the stage stays on screen while she reads or scrolls the left column */
+  .pendulum-page .pv-stage-card { position: sticky; top: 88px; align-self: start; }
+}
+
+/* ---------- type ---------- */
+.pendulum-page .pv-kicker { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; margin: 0; }
+.pendulum-page .pv-kicker span { color: var(--pv-accent); font: 700 15px/1.5 "Noto Serif TC", serif; }
+.pendulum-page .pv-kicker small { color: var(--pv-label); font: 600 14px/1.5 "Cormorant Garamond", "Noto Serif TC", serif; letter-spacing: .06em; }
+.pendulum-page .pv-tool h2 {
+  display: flex; align-items: center; gap: 10px;
+  margin: 4px 0 2px;
+  color: var(--pv-accent) !important;
+  font: 700 clamp(26px, 6.4vw, 34px)/1.3 "Noto Serif TC", serif;
+  outline: none;
+}
+.pendulum-page .pv-tool h2:focus-visible { outline: 2px solid var(--pv-gold); outline-offset: 4px; }
+.pendulum-page .pv-tool h2 i { font-style: normal; font-size: .78em; color: var(--pv-gold); }
+.pendulum-page .pv-kicker small { font-style: italic; }
+.pendulum-page .pv-tool-desc { margin: 0 0 10px; color: var(--pv-ink); font-size: 15px; font-weight: 500; line-height: 1.7; }
+.pendulum-page .pv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- quick ways to play: one scrolling row on phones ---------- */
+.pendulum-page .pv-quick { display: flex; gap: 8px; margin: 0 -2px; padding: 2px 2px 6px; overflow-x: auto; scrollbar-width: none; }
+.pendulum-page .pv-quick::-webkit-scrollbar { display: none; }
+.pendulum-page .pv-quick button {
+  flex: 0 0 auto; min-height: 44px; padding: 9px 16px;
+  border: 1px solid var(--pv-chip-border); border-radius: 999px; background: var(--pv-surface);
+  color: var(--pv-ink); font: 600 15px/1.3 inherit; white-space: nowrap; cursor: pointer;
+}
+.pendulum-page .pv-quick button.selected { padding: 8px 15px; border: 2px solid var(--pv-accent); background: var(--pv-selected); color: var(--pv-accent); }
+.pendulum-page .pv-quick button.pv-all { border-style: dashed; background: transparent; color: var(--pv-accent); }
+.pendulum-page .pv-quick button:disabled { opacity: .55; cursor: not-allowed; }
+@media (min-width: 900px) { .pendulum-page .pv-quick { flex-wrap: wrap; overflow: visible; } }
+
+/* ---------- progress line: 選玩法 → 開始擺動 → 記錄感受 ---------- */
+.pendulum-page .pv-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin: 0; padding: 0; list-style: none; max-height: 44px; color: var(--pv-muted); font-size: 13px; line-height: 1.5; }
+.pendulum-page .pv-steps li { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.pendulum-page .pv-steps li + li::before { content: "→"; margin-right: 4px; color: var(--pv-gold); }
+.pendulum-page .pv-steps li.current { color: var(--pv-accent); font-weight: 700; }
+.pendulum-page .pv-steps li.done { color: var(--pv-label); }
+
+/* ---------- question, options, number range ---------- */
+.pendulum-page .pv-inputs { display: grid; gap: 8px; }
+.pendulum-page .pv-selects { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pendulum-page .pv-selects button {
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  min-height: 52px; padding: 6px 12px;
+  border: 1px solid var(--pv-chip-border); border-radius: 12px; background: var(--pv-surface);
+  color: var(--pv-ink); text-align: left; cursor: pointer;
+}
+.pendulum-page .pv-selects small { grid-column: 1; color: var(--pv-muted); font-size: 12px; line-height: 1.3; }
+.pendulum-page .pv-selects b { grid-column: 1; color: var(--pv-accent); font: 700 15px/1.4 "Noto Serif TC", serif; }
+.pendulum-page .pv-selects i { grid-column: 2; grid-row: 1 / span 2; color: var(--pv-gold); font-size: 18px; font-style: normal; }
+.pendulum-page .pv-label { margin-top: 2px; color: var(--pv-accent); font: 700 15px/1.5 "Noto Serif TC", serif; }
+.pendulum-page .pv-inputs textarea {
+  box-sizing: border-box; width: 100%; min-height: 92px; padding: 12px 14px;
+  border: 1px solid var(--pv-chip-border); border-radius: 12px; background: var(--pv-field);
+  color: var(--pv-ink); font: 500 16px/1.7 inherit; resize: vertical;
+}
+.pendulum-page .pv-inputs textarea::placeholder { color: var(--pv-placeholder); }
+.pendulum-page .pv-inputs textarea:focus { outline: 2px solid var(--pv-accent); outline-offset: 1px; }
+.pendulum-page .pv-quality { display: flex; gap: 6px; margin: 0; color: var(--pv-muted); font-size: 14px; font-weight: 500; line-height: 1.6; }
+.pendulum-page .pv-quality.good { color: var(--pv-good); }
+.pendulum-page .pv-quality.block { color: var(--pv-muted); }
+.pendulum-page .pv-quality.hint { color: var(--pv-accent); }
+.pendulum-page .pv-switch {
+  justify-self: start; min-height: 44px; padding: 8px 16px;
+  border: 1px solid var(--pv-secondary-border); border-radius: 999px; background: var(--pv-surface);
+  color: var(--pv-accent); font-weight: 600; cursor: pointer;
+}
+.pendulum-page .pv-range { display: flex; flex-wrap: wrap; gap: 8px; }
+.pendulum-page .pv-range button {
+  min-width: 88px; min-height: 44px; padding: 8px 14px;
+  border: 1px solid var(--pv-chip-border); border-radius: 12px; background: var(--pv-surface);
+  color: var(--pv-ink); font-weight: 600; cursor: pointer;
+}
+.pendulum-page .pv-range button.selected { border: 2px solid var(--pv-accent); background: var(--pv-selected); color: var(--pv-accent); }
+.pendulum-page .pv-ready { margin: 0; color: var(--pv-ink); font-size: 16px; font-weight: 500; line-height: 1.85; }
+
+/* ---------- the bright stage ---------- */
+.pendulum-page .pv-stage-card { display: grid; gap: 10px; width: min(100%, 560px); justify-self: center; }
+.pendulum-page .pv-stage {
+  position: relative; isolation: isolate; overflow: hidden;
+  width: 100%; aspect-ratio: 5 / 4;
+  border: 1px solid var(--pv-gold); border-radius: 12px; box-shadow: none;
+  /* ChatGPT stage art (2026-11-13): pearl salon, gold arch, roses; the gold ring at the top
+     centre is where the pendulum hangs */
+  background:
+    url('/pendulum/stage.webp') center / cover no-repeat,
+    radial-gradient(ellipse 60% 55% at 50% 42%, var(--pv-stage-1) 0%, var(--pv-stage-2) 55%, var(--pv-stage-3) 100%);
+  touch-action: pan-y;
+}
+@media (max-width: 600px) {
+  .pendulum-page .pv-stage { background-image: url('/pendulum/stage-800.webp'), radial-gradient(ellipse 60% 55% at 50% 42%, var(--pv-stage-1) 0%, var(--pv-stage-2) 55%, var(--pv-stage-3) 100%); }
+}
+.pendulum-page .pv-hook { display: none; }
+/* Rococo pendulum in two layers (ChatGPT art, 2026-11-13): the crystal takes the material
+   colour, the gold chain, cap and pearls never change. 96px hit area for fingers. */
+.pendulum-page .pv-pendulum {
+  position: absolute; z-index: 2; left: 50%; top: 10.5%;
+  width: 96px; height: 74%; margin-left: -48px;
+  transform-origin: 50% 0; transform: rotate(var(--manual-angle, 0deg));
+  cursor: grab; touch-action: none; will-change: transform;
+  filter: drop-shadow(0 10px 10px rgba(38, 52, 73, .14));
+}
+.pendulum-page .pv-stage.is-dragging .pv-pendulum { cursor: grabbing; }
+.pendulum-page .pv-pendulum img {
+  position: absolute; top: 0; left: 50%; height: 100%; width: auto;
+  transform: translateX(-50%);
+  pointer-events: none; user-select: none; -webkit-user-drag: none;
+}
+.pendulum-page .pv-crystal { filter: saturate(1.25); }
+.pendulum-page .material-teal .pv-crystal { filter: hue-rotate(-55deg) saturate(1.8); }
+.pendulum-page .material-clear .pv-crystal { filter: saturate(.12) brightness(1.06); }
+.pendulum-page .material-rose .pv-crystal { filter: hue-rotate(130deg) saturate(1.5); }
+.pendulum-page .material-amethyst .pv-crystal { filter: hue-rotate(70deg) saturate(1.3); }
+.pendulum-page .material-citrine .pv-crystal { filter: hue-rotate(-165deg) saturate(1.9) brightness(1.03); }
+.pendulum-page .material-moonstone .pv-crystal { filter: hue-rotate(20deg) saturate(.35) brightness(1.05); }
+.pendulum-page .material-labradorite .pv-crystal { filter: hue-rotate(-25deg) saturate(.9) contrast(1.1) brightness(.94); }
+.pendulum-page .material-obsidian .pv-crystal { filter: saturate(0) brightness(.62) contrast(1.25); }
+.pendulum-page .material-brass .pv-crystal { filter: hue-rotate(-165deg) saturate(.8); }
+.pendulum-page .material-brass .pv-metal { filter: sepia(.3) saturate(1.25) brightness(.96); }
+.pendulum-page .material-silver .pv-crystal { filter: saturate(.2) brightness(1.04); }
+.pendulum-page .material-silver .pv-metal { filter: grayscale(1) brightness(1.12) contrast(1.05); }
+.pendulum-page .material-wood .pv-crystal { filter: hue-rotate(-170deg) saturate(.7) brightness(.86); }
+.pendulum-page .material-wood .pv-metal { filter: sepia(.45) brightness(.86); }
+.pendulum-page .pv-glow {
+  position: absolute; z-index: 1; left: calc(50% + var(--shadow-offset, 0px)); bottom: 12%;
+  width: 92px; height: 14px; border-radius: 50%;
+  transform: translateX(-50%) scaleX(var(--shadow-scale, 1));
+  background: rgba(132, 52, 80, .16); opacity: var(--shadow-opacity, .6);
+  filter: blur(8px); pointer-events: none;
+}
+
+.pendulum-page .pv-stage-actions { display: grid; justify-items: center; gap: 4px; text-align: center; }
+.pendulum-page .pv-stage-actions .pv-start {
+  min-width: 190px; min-height: 50px; padding: 12px 24px;
+  border: 1px solid var(--pv-gold) !important; border-radius: 12px !important;
+  background: linear-gradient(180deg, var(--pv-button-start) 0%, var(--pv-button-end) 100%) !important;
+  outline: 1px solid rgba(255, 255, 255, .9); outline-offset: -5px;
+  box-shadow: none !important; color: var(--pv-accent) !important;
+  font: 700 17px/1.4 "Noto Serif TC", serif; letter-spacing: .08em; cursor: pointer;
+}
+@media (hover: hover) {
+  .pendulum-page .pv-stage-actions .pv-start:hover:not(:disabled) { background: linear-gradient(180deg, var(--pv-hover-start) 0%, var(--pv-hover-end) 100%) !important; color: var(--pv-accent-deep) !important; }
+}
+.pendulum-page .pv-stage-actions .pv-start:active:not(:disabled) { background: var(--pv-active) !important; }
+.pendulum-page .pv-stage-actions .pv-start:disabled { opacity: .72; cursor: not-allowed; }
+.pendulum-page .pv-stage-actions .pv-start:focus-visible { outline: 2px solid var(--pv-accent); outline-offset: 3px; }
+.pendulum-page .pv-stage-hint { min-height: 1.6em; margin: 2px 0 0; color: var(--pv-muted); font-size: 14px; font-weight: 500; line-height: 1.6; }
+.pendulum-page .pv-calibrate {
+  min-height: 44px; padding: 8px 12px; border: 0; background: none;
+  color: var(--pv-accent); font-size: 14px; font-weight: 600;
+  text-decoration: underline; text-underline-offset: 4px; cursor: pointer;
+}
+.pendulum-page .pv-calibrate:disabled { opacity: .6; cursor: wait; }
+
+/* ---------- result ---------- */
+.pendulum-page .pv-result { scroll-margin-top: 88px; }
+.pendulum-page .pv-result h2 { outline: none; }
+.pendulum-page .pv-result .result-actions button {
+  min-height: 48px; padding: 10px 18px;
+  border: 1px solid var(--pv-gold) !important; border-radius: 4px !important;
+  background: var(--pv-surface) !important; box-shadow: none !important;
+  color: var(--pv-accent) !important; font-weight: 700; cursor: pointer;
+}
+.pendulum-page .pv-result .result-actions .pv-save { background: linear-gradient(180deg, var(--pv-surface) 0%, var(--pv-button-end) 100%) !important; outline: 1px solid var(--pv-gold-soft); outline-offset: -5px; }
+.pendulum-page .pv-result .result-actions .pv-save:disabled { opacity: .72; cursor: default; }
+.pendulum-page .pv-saved { display: grid; justify-items: center; gap: 6px; margin-top: 12px; text-align: center; }
+.pendulum-page .pv-saved p { margin: 0; color: var(--pv-good); font-size: 15px; font-weight: 600; }
+.pendulum-page .pv-saved button {
+  min-height: 44px; padding: 8px 18px;
+  border: 1px solid var(--pv-accent); border-radius: 999px; background: var(--pv-selected);
+  color: var(--pv-accent); font-weight: 700; cursor: pointer;
+}
+.pendulum-page .pv-save-error { margin: 10px 0 0; color: var(--pv-accent); font-size: 14px; line-height: 1.6; text-align: center; }
+
+/* ---------- folded helpers: crystals, soundscape, records, guide ---------- */
+.pendulum-page .pv-extras { display: grid; gap: 10px; margin-top: 22px; }
+@media (min-width: 900px) { .pendulum-page .pv-extras { grid-template-columns: 1fr 1fr; align-items: start; } }
+.pendulum-page :is(.pv-history, .pv-guide) { max-width: 1180px; margin: 10px auto 0; padding: 0 clamp(14px, 4vw, 40px); scroll-margin-top: 88px; }
+.pendulum-page .pv-guide { margin-bottom: 40px; }
+.pendulum-page :is(.pv-fold, .pv-history details, .pv-guide details) { border: 1px solid var(--pv-line); border-radius: 8px; background: var(--pv-panel); }
+.pendulum-page :is(.pv-fold, .pv-history details, .pv-guide details) > summary {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 52px; padding: 0 16px; list-style: none; cursor: pointer;
+  color: var(--pv-accent); font: 700 16px/1.4 "Noto Serif TC", serif;
+}
+.pendulum-page :is(.pv-fold, .pv-history details, .pv-guide details) > summary::-webkit-details-marker { display: none; }
+.pendulum-page :is(.pv-fold, .pv-history details, .pv-guide details) > summary small { margin-left: auto; color: var(--pv-muted); font: 500 13px/1.4 inherit; text-align: right; }
+.pendulum-page :is(.pv-fold, .pv-history details, .pv-guide details) > summary::after { content: "＋"; color: var(--pv-gold); font-weight: 400; }
+.pendulum-page :is(.pv-fold, .pv-history details, .pv-guide details)[open] > summary::after { content: "－"; }
+.pendulum-page :is(.pv-fold, .pv-history details, .pv-guide details) > summary:focus-visible { outline: 2px solid var(--pv-accent); outline-offset: 2px; }
+.pendulum-page .pv-fold-note { margin: 0 16px 12px; color: var(--pv-muted); font-size: 14px; font-weight: 500; line-height: 1.7; }
+.pendulum-page .pv-crystals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 0 12px 14px; }
+@media (min-width: 600px) { .pendulum-page .pv-crystals { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.pendulum-page .pv-crystals button {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 76px; padding: 8px 10px;
+  border: 1px solid var(--pv-line-soft); border-radius: 8px; background: var(--pv-field);
+  text-align: left; cursor: pointer;
+}
+.pendulum-page .pv-crystals button.selected { border: 2px solid var(--pv-accent); background: var(--pv-selected); }
+.pendulum-page .pv-crystals button:disabled { opacity: .55; cursor: not-allowed; }
+.pendulum-page .pv-crystals .material-swatch { flex: 0 0 auto; width: 34px !important; height: 42px !important; }
+.pendulum-page .pv-crystals b { display: block; color: var(--pv-ink); font-size: 15px; }
+.pendulum-page .pv-crystals small { display: block; color: var(--pv-label); font-size: 11px; letter-spacing: .05em; }
+.pendulum-page .pv-sounds { display: grid; gap: 8px; padding: 0 12px 8px; }
+.pendulum-page .pv-sounds button {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 56px; padding: 8px 14px;
+  border: 1px solid var(--pv-line-soft); border-radius: 8px; background: var(--pv-field);
+  text-align: left; cursor: pointer;
+}
+.pendulum-page .pv-sounds button.selected { border: 2px solid var(--pv-accent); background: var(--pv-selected); }
+.pendulum-page .pv-sounds i { color: var(--pv-gold); font-size: 20px; font-style: normal; }
+.pendulum-page .pv-sounds b { display: block; color: var(--pv-ink); font-size: 15px; }
+.pendulum-page .pv-sounds small { display: block; color: var(--pv-label); font-size: 11px; letter-spacing: .05em; }
+.pendulum-page .pv-history .history-list { padding: 0 12px 14px; }
+.pendulum-page .pv-history article { scroll-margin-top: 96px; }
+.pendulum-page .pv-history article.is-new { outline: 2px solid var(--pv-accent); outline-offset: 2px; background: var(--pv-selected-soft) !important; }
+.pendulum-page .pv-guide .guide-grid { padding: 0 12px 14px; }
+
+/* ---------- the full library of 23 ways ---------- */
+.pendulum-page .pv-library {
+  position: relative; box-sizing: border-box;
+  width: min(640px, calc(100vw - 24px)); max-height: min(86vh, 760px); overflow: auto;
+  padding: 28px clamp(16px, 4vw, 32px) 22px;
+  border: 1px solid var(--pv-gold); border-radius: 12px; background: var(--pv-surface);
+  color: var(--pv-ink); box-shadow: 0 24px 60px var(--pv-shadow-lg);
+}
+.pendulum-page .pv-library h2 { margin: 2px 0 12px; color: var(--pv-accent) !important; font: 700 24px/1.4 "Noto Serif TC", serif; }
+.pendulum-page .pv-library .picker-close {
+  position: absolute; top: 10px; right: 10px; width: 44px; height: 44px;
+  border: 1px solid var(--pv-line); border-radius: 50%; background: var(--pv-field);
+  color: var(--pv-accent); font-size: 22px; line-height: 1; cursor: pointer;
+}
+.pendulum-page .pv-library-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.pendulum-page .pv-library-tabs button {
+  min-height: 44px; padding: 8px 14px;
+  border: 1px solid var(--pv-line); border-radius: 999px; background: var(--pv-field);
+  color: var(--pv-ink); font-weight: 600; cursor: pointer;
+}
+.pendulum-page .pv-library-tabs button small { margin-left: 6px; color: var(--pv-label); }
+.pendulum-page .pv-library-tabs button.selected { padding: 7px 13px; border: 2px solid var(--pv-accent); background: var(--pv-selected); color: var(--pv-accent); }
+.pendulum-page .pv-library-note { margin: 10px 0; color: var(--pv-muted); font-size: 14px; font-weight: 500; line-height: 1.6; }
+.pendulum-page .pv-library-list { display: grid; gap: 8px; }
+.pendulum-page .pv-library-list button {
+  display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  min-height: 64px; max-height: 76px; padding: 8px 14px;
+  border: 1px solid var(--pv-line-soft); border-radius: 8px; background: var(--pv-field);
+  text-align: left; cursor: pointer;
+}
+.pendulum-page .pv-library-list button.selected { padding: 7px 13px; border: 2px solid var(--pv-accent); background: var(--pv-selected); }
+.pendulum-page .pv-library-list i { color: var(--pv-gold); font-size: 20px; font-style: normal; text-align: center; }
+.pendulum-page .pv-library-list b { display: block; color: var(--pv-ink); font: 700 15px/1.4 inherit; }
+.pendulum-page .pv-library-list em { display: block; overflow: hidden; color: var(--pv-muted); font: 500 13px/1.5 inherit; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.pendulum-page .pv-library-list strong { color: var(--pv-accent); font-size: 13px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .pendulum-page .pv-pendulum { will-change: auto; }
+}
+
+/* ---------- pearl palette for the parts kept from the older page ---------- */
+html body main.pendulum-page { background: transparent !important; color: var(--pv-ink); }
+
+html body .pendulum-page .pv-result {
+  border: 1px solid var(--pv-line-soft) !important; background: var(--pv-surface) !important;
+  box-shadow: 0 6px 22px rgba(38, 52, 73, .05) !important; color: var(--pv-ink) !important;
+}
+html body .pendulum-page .pv-result > span { color: var(--pv-muted) !important; }
+html body .pendulum-page .pv-result :is(.result-crown, h2) {
+  border-color: var(--pv-line) !important; background: var(--pv-selected-soft) !important;
+  box-shadow: none !important; color: var(--pv-accent) !important;
+}
+html body .pendulum-page .pv-result :is(blockquote, .reflection-card) {
+  border: 0 !important; border-radius: 12px !important; box-shadow: none !important;
+}
+html body .pendulum-page .pv-result blockquote { background: var(--pv-stage-3) !important; }
+html body .pendulum-page .pv-result .reflection-card { background: var(--pv-selected-soft) !important; border-left: 3px solid var(--pv-gold) !important; }
+html body .pendulum-page .pv-result :is(blockquote small, .reflection-card small, .result-note-label) { color: var(--pv-accent) !important; }
+html body .pendulum-page .pv-result :is(blockquote p, .reflection-card p) { color: var(--pv-ink) !important; }
+html body .pendulum-page .pv-result textarea {
+  border: 1px solid var(--pv-chip-border) !important; border-radius: 12px !important;
+  background: var(--pv-field) !important; color: var(--pv-ink) !important;
+}
+html body .pendulum-page .pv-result::before, html body .pendulum-page .pv-result::after { color: var(--pv-gold) !important; }
+
+html body .pendulum-page .picker-backdrop { background: rgba(38, 52, 73, .28) !important; }
+html body .pendulum-page .picker-dialog {
+  border: 1px solid var(--pv-line-soft) !important; border-radius: 16px !important;
+  background: var(--pv-surface) !important; box-shadow: 0 24px 60px rgba(38, 52, 73, .16) !important; color: var(--pv-ink) !important;
+}
+html body .pendulum-page .picker-dialog :is(h2) { color: var(--pv-accent) !important; }
+html body .pendulum-page .picker-dialog > p { color: var(--pv-muted) !important; }
+html body .pendulum-page .picker-dialog .picker-grid button {
+  border: 1px solid var(--pv-chip-border) !important; border-radius: 12px !important;
+  background: var(--pv-surface) !important; box-shadow: none !important; color: var(--pv-ink) !important;
+}
+html body .pendulum-page .picker-dialog .picker-grid button.selected { border: 2px solid var(--pv-accent) !important; background: var(--pv-selected) !important; }
+html body .pendulum-page .picker-dialog .picker-grid :is(b, strong) { color: var(--pv-accent) !important; }
+html body .pendulum-page .picker-dialog .picker-grid :is(em, small) { color: var(--pv-muted) !important; }
+html body .pendulum-page .picker-dialog .picker-grid i { color: var(--pv-gold) !important; background: var(--pv-selected-soft) !important; border-color: var(--pv-line) !important; }
+html body .pendulum-page .picker-dialog .picker-close { border-color: var(--pv-chip-border) !important; background: var(--pv-surface) !important; color: var(--pv-accent) !important; }
+
+html body .pendulum-page .pv-history .history-list article {
+  border: 1px solid var(--pv-line-soft) !important; border-radius: 12px !important;
+  background: var(--pv-surface) !important; box-shadow: none !important;
+}
+html body .pendulum-page .pv-history .history-list article :is(span, time) { color: var(--pv-muted) !important; }
+html body .pendulum-page .pv-history .history-list article :is(h3, b) { color: var(--pv-accent) !important; }
+html body .pendulum-page .pv-history .history-list article p { color: var(--pv-ink) !important; }
+html body .pendulum-page .pv-history .history-list article.is-new { border: 2px solid var(--pv-accent) !important; background: var(--pv-selected-soft) !important; outline: 0 !important; }
+html body .pendulum-page .pv-guide .guide-grid article {
+  border: 1px solid var(--pv-line-soft) !important; border-radius: 12px !important;
+  background: var(--pv-surface) !important; box-shadow: none !important;
+}
+html body .pendulum-page .pv-guide .guide-grid b { color: var(--pv-accent) !important; }
+html body .pendulum-page .pv-guide .guide-grid p { color: var(--pv-ink) !important; }
+html body .pendulum-page > footer { background: transparent !important; color: var(--pv-muted) !important; }
+html body .pendulum-page > footer :is(.brand, a) { color: var(--pv-accent) !important; }
+
+
+/* ===== background v2 (ChatGPT, 2026-11-13; owner: 背景很素) ===== */
+/* hero: a bright court-salon painting with a pearl text panel; 360–440px on phones */
+.pendulum-page .pv-hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: flex; align-items: flex-end;
+  height: clamp(380px, 58svh, 440px); margin-top: 64px; padding: 20px;
+}
+.pendulum-page .pv-hero-art { position: absolute; inset: 0; z-index: -1; }
+.pendulum-page .pv-hero-art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 70% 40%; }
+.pendulum-page .pv-hero-panel {
+  position: relative; box-sizing: border-box; width: 100%; max-width: 460px;
+  padding: 26px 20px 20px; border: 1px solid var(--pv-line-soft); border-radius: 16px;
+  background: rgba(255, 255, 255, .92); color: var(--pv-ink);
+}
+.pendulum-page .pv-hero-crest {
+  position: absolute; left: 50%; top: -30px; width: 184px; height: 58px; transform: translateX(-50%);
+  background: url('/pendulum/shell-crest.webp') center / contain no-repeat; pointer-events: none;
+}
+.pendulum-page .pv-hero-kicker { margin: 0; color: var(--pv-accent); font: italic 600 17px/1.4 "Cormorant Garamond", "Noto Serif TC", serif; letter-spacing: .06em; }
+.pendulum-page .pv-hero h1 { margin: 4px 0 6px; color: var(--pv-accent) !important; font: 900 32px/1.3 "Noto Serif TC", serif; letter-spacing: .035em; }
+.pendulum-page .pv-hero-panel > p:not(.pv-hero-kicker) { margin: 0 0 14px; color: var(--pv-muted); font-size: 15px; font-weight: 500; line-height: 1.7; }
+.pendulum-page .pv-hero-cta {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 50px; padding: 0 24px; box-sizing: border-box;
+  border: 1px solid var(--pv-gold); border-radius: 12px;
+  background: linear-gradient(180deg, var(--pv-button-start) 0%, var(--pv-button-end) 100%);
+  outline: 1px solid rgba(255, 255, 255, .9); outline-offset: -5px;
+  color: var(--pv-accent); font: 700 16px/1.3 "Noto Serif TC", serif; letter-spacing: .06em; text-decoration: none;
+}
+@media (hover: hover) { .pendulum-page .pv-hero-cta:hover { background: var(--pv-hover-start); } }
+.pendulum-page .pv-hero-cta:focus-visible { outline: 2px solid var(--pv-accent); outline-offset: 3px; }
+@media (min-width: 900px) {
+  .pendulum-page .pv-hero { height: clamp(580px, 64vh, 680px); margin-top: 72px; align-items: center; padding: 48px clamp(28px, 7vw, 110px); }
+  .pendulum-page .pv-hero-panel { padding: 34px 32px 28px; }
+  .pendulum-page .pv-hero-crest { top: -40px; width: 260px; height: 82px; }
+  .pendulum-page .pv-hero h1 { font-size: 46px; }
+  .pendulum-page .pv-hero-panel > p:not(.pv-hero-kicker) { font-size: 16px; }
+}
+
+/* ritual: rose corners on every width, gold side scrolls where there is room */
+.pendulum-page .pv-ritual::before,
+.pendulum-page .pv-ritual::after {
+  content: ""; position: absolute; top: 6px; width: 34px; height: 34px;
+  background: url('/pendulum/rose-corner.webp') center / contain no-repeat;
+  opacity: .7; pointer-events: none;
+}
+.pendulum-page .pv-ritual::before { left: 4px; }
+.pendulum-page .pv-ritual::after { right: 4px; transform: scaleX(-1); }
+.pendulum-page .pv-scroll { display: none; }
+@media (min-width: 900px) {
+  .pendulum-page .pv-ritual { padding-top: 108px; }
+  .pendulum-page .pv-ritual::before, .pendulum-page .pv-ritual::after { top: 10px; width: 76px; height: 76px; }
+  .pendulum-page .pv-ritual::before { left: 0; }
+  .pendulum-page .pv-ritual::after { right: 0; }
+}
+@media (min-width: 1400px) {
+  .pendulum-page .pv-scroll {
+    display: block; position: absolute; top: 110px; width: 72px; height: 480px;
+    background: url('/pendulum/gold-scroll.webp') center / contain no-repeat; opacity: .6; pointer-events: none;
+  }
+  .pendulum-page .pv-scroll.left { left: -92px; }
+  .pendulum-page .pv-scroll.right { right: -92px; transform: scaleX(-1); }
+}
+
+/* result: a fine double gold frame with a small shell on top */
+html body .pendulum-page .pv-result {
+  border: 1.5px solid var(--pv-gold) !important;
+  outline: .75px solid var(--pv-line); outline-offset: -8px;
+}
+html body .pendulum-page .pv-result .result-crown {
+  border: 0 !important; background: url('/pendulum/shell-crest.webp') center / contain no-repeat !important;
+  width: 132px !important; height: 42px !important; color: transparent !important; font-size: 0 !important;
+}
+/* the theme's large h2 size must not reach the way-to-play title */
+html body .pendulum-page .pv-tool h2 { font-size: clamp(26px, 6.4vw, 34px) !important; line-height: 1.3 !important; }
+
+/* ===== page ground, header and notice for this page only =====
+   The pearl Rococo look ships with the pendulum first (owner, 2026-11-13: 「靈擺可以先上線」);
+   the rest of the site keeps its current look until its own restyle is approved. */
+:root {
+  --pearl-ink: #263449; --pearl-muted: #33445f; --pearl-title: #843450; --pearl-gold: #c5a46f;
+  --pearl-surface: #ffffff; --pearl-blue: #e8f2fc; --pearl-border: #d8dce8; --pearl-chip-border: #b9c7d8;
+}
+html body:has(main.pendulum-page) {
+  background-color: #f8f7ff !important;
+  background-image: none !important;
+  color: var(--pearl-ink);
+}
+html body:has(main.pendulum-page)::before,
+html body:has(main.pendulum-page)::after {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+}
+html body:has(main.pendulum-page)::before {
+  background:
+    radial-gradient(ellipse 60% 45% at 85% 12%, rgba(252, 234, 243, .75) 0%, rgba(252, 234, 243, 0) 70%),
+    radial-gradient(ellipse 65% 50% at 8% 55%, rgba(234, 243, 255, .8) 0%, rgba(234, 243, 255, 0) 70%),
+    radial-gradient(ellipse 55% 45% at 70% 92%, rgba(248, 236, 250, .55) 0%, rgba(248, 236, 250, 0) 70%);
+}
+html body:has(main.pendulum-page)::after {
+  background-image: url('/pendulum/wallpaper-tile.webp');
+  background-size: 320px 320px;
+  background-repeat: repeat;
+}
+@media (max-width: 760px) { html body:has(main.pendulum-page)::after { background-size: 240px 240px; } }
+
+/* ---------- header and menu ---------- */
+html body:has(main.pendulum-page) .global-site-header {
+  border-bottom: 1px solid var(--pearl-border) !important;
+  background: rgba(255, 255, 255, .93) !important;
+  box-shadow: 0 6px 22px rgba(38, 52, 73, .05) !important;
+}
+html body:has(main.pendulum-page) .global-brand { color: var(--pearl-title) !important; }
+html body:has(main.pendulum-page) .global-brand span { color: var(--pearl-muted) !important; }
+html body:has(main.pendulum-page) :is(.global-menu-trigger, .global-account-link) {
+  border: 1px solid var(--pearl-chip-border) !important;
+  background: var(--pearl-surface) !important;
+  color: var(--pearl-ink) !important;
+}
+html body:has(main.pendulum-page) .global-function-menu {
+  border: 1px solid var(--pearl-border) !important;
+  background: var(--pearl-surface) !important;
+  box-shadow: 0 18px 44px rgba(38, 52, 73, .1) !important;
+  color: var(--pearl-ink) !important;
+}
+html body:has(main.pendulum-page) .global-menu-heading { border-bottom-color: var(--pearl-border) !important; }
+html body:has(main.pendulum-page) .global-menu-heading small, html body:has(main.pendulum-page) .global-menu-groups h3 { color: var(--pearl-muted) !important; }
+html body:has(main.pendulum-page) .global-menu-heading h2 { color: var(--pearl-title) !important; }
+html body:has(main.pendulum-page) .global-menu-groups a { border-color: var(--pearl-border) !important; color: var(--pearl-ink) !important; background: transparent !important; }
+html body:has(main.pendulum-page) .global-menu-groups a b { color: var(--pearl-ink) !important; }
+html body:has(main.pendulum-page) .global-menu-groups a small { color: var(--pearl-muted) !important; }
+html body:has(main.pendulum-page) .global-menu-groups a i { color: var(--pearl-gold) !important; }
+html body:has(main.pendulum-page) .global-menu-groups section { border-color: var(--pearl-border) !important; }
+html body:has(main.pendulum-page) .global-account-panel { border-color: var(--pearl-border) !important; background: var(--pearl-blue) !important; }
+html body:has(main.pendulum-page) .global-account-panel b, html body:has(main.pendulum-page) .global-account-panel a, html body:has(main.pendulum-page) .global-admin-link { color: var(--pearl-title) !important; }
+html body:has(main.pendulum-page) .global-account-panel small { color: var(--pearl-muted) !important; }
+
+/* ---------- maintenance notice ---------- */
+html body:has(main.pendulum-page) .site-notice {
+  border: 1px solid var(--pearl-border) !important;
+  background: var(--pearl-surface) !important;
+  box-shadow: 0 6px 22px rgba(38, 52, 73, .08) !important;
+  color: var(--pearl-ink) !important;
+}
+html body:has(main.pendulum-page) .site-notice b { color: var(--pearl-title) !important; }
+html body:has(main.pendulum-page) .site-notice button { color: var(--pearl-muted) !important; }
+html body:has(main.pendulum-page) .site-notice button:focus-visible { outline-color: var(--pearl-title) !important; }
+/* long answers (不建議現在知道答案) stay on one balanced line or break evenly */
+html body .pendulum-page .pv-result h2 { font-size: clamp(22px, 6.4vw, 34px) !important; line-height: 1.35 !important; text-wrap: balance; word-break: keep-all; }
