@@ -37,14 +37,31 @@
   --post-line: #d8dce8;
 }
 
-/* cool pearl ground with a barely-there French damask line (lilac at low opacity) */
+/* ===== background v2 (ChatGPT, 2026-11-13; owner: 「背景很素」) =====
+   pearl base, three large soft glows (pink, porcelain blue, lilac-grey) and, on top,
+   a low-contrast French damask wallpaper with gold vines and tiny roses. Both layers
+   are fixed behind the page so they also work on iPhone, and never sit inside cards. */
 html body {
-  background-color: var(--pearl-bg) !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='200' viewBox='0 0 160 200'%3E%3Cg fill='none' stroke='%23d6c5de' stroke-width='1.1' stroke-opacity='.4' stroke-linecap='round'%3E%3Cpath d='M80 22c13 16 13 38 0 54c-13-16-13-38 0-54z'/%3E%3Cpath d='M80 76c-9 10-25 13-37 7M80 76c9 10 25 13 37 7M80 76v18'/%3E%3Ccircle cx='80' cy='100' r='2.6'/%3E%3Cpath d='M0 122c13 16 13 38 0 54M160 122c-13 16-13 38 0 54'/%3E%3Cpath d='M0 176c9 10 25 13 37 7M160 176c-9 10-25 13-37 7'/%3E%3C/g%3E%3C/svg%3E") !important;
-  background-size: 160px 200px !important;
-  background-repeat: repeat !important;
+  background-color: #f8f7ff !important;
+  background-image: none !important;
   color: var(--pearl-ink);
 }
+html body::before,
+html body::after {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+}
+html body::before {
+  background:
+    radial-gradient(ellipse 60% 45% at 85% 12%, rgba(252, 234, 243, .75) 0%, rgba(252, 234, 243, 0) 70%),
+    radial-gradient(ellipse 65% 50% at 8% 55%, rgba(234, 243, 255, .8) 0%, rgba(234, 243, 255, 0) 70%),
+    radial-gradient(ellipse 55% 45% at 70% 92%, rgba(248, 236, 250, .55) 0%, rgba(248, 236, 250, 0) 70%);
+}
+html body::after {
+  background-image: url('/pendulum/wallpaper-tile.webp');
+  background-size: 320px 320px;
+  background-repeat: repeat;
+}
+@media (max-width: 760px) { html body::after { background-size: 240px 240px; } }
 
 /* ---------- header and menu ---------- */
 html body .global-site-header {

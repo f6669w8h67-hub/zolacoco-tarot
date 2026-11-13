@@ -57,7 +57,7 @@ test("the ritual is one block: way to play, question, stage, result; calibration
 });
 
 test("the Rococo pendulum hangs from the stage ring, crystal and gold in separate layers", () => {
-  for (const file of ["crystal.webp", "metal.webp", "stage.webp", "stage-800.webp", "hero.webp"]) {
+  for (const file of ["crystal.webp", "metal.webp", "stage.webp", "stage-800.webp", "hero-desktop.webp", "hero-mobile.webp", "shell-crest.webp", "rose-corner.webp", "gold-scroll.webp", "wallpaper-tile.webp"]) {
     assert.ok(existsSync(new URL(`../public/pendulum/${file}`, import.meta.url)), file);
   }
   assert.match(page, /const PENDULUM_TOP=\.105;/);
@@ -83,4 +83,19 @@ test("pearl palette: no browns, khaki or parchment in the pendulum styles", () =
   const found = (css.match(/#[0-9a-fA-F]{6}\b/g) || []).filter((hex) => !ornamentGold.has(hex.toLowerCase())).filter(earthy);
   assert.deepEqual(found, []);
   assert.doesNotMatch(css, /parchment/);
+});
+
+test("background v2: salon hero, damask wallpaper, ornaments only on hero, ritual and result", async () => {
+  const pearl = await read("app/styles/rococo-pearl.css");
+  assert.match(page, /<source media="\(max-width: 700px\)" srcSet="\/pendulum\/hero-mobile\.webp"\/><img src="\/pendulum\/hero-desktop\.webp" alt=""\/>/);
+  assert.match(css, /\.pendulum-page \.pv-hero \{[^}]*height: clamp\(380px, 58svh, 440px\);/);
+  assert.match(pearl, /background-image: url\('\/pendulum\/wallpaper-tile\.webp'\);/);
+  assert.match(pearl, /html body::after \{[^}]*\}/);
+  // the wallpaper never sits inside cards: cards keep a solid white surface
+  assert.match(css, /--pv-surface: #ffffff;/);
+  // ornaments are decoration only
+  assert.match(css, /\.pendulum-page \.pv-hero-crest \{\n[^}]*pointer-events: none;/);
+  assert.match(css, /\.pendulum-page \.pv-ritual::after \{\n[^}]*pointer-events: none;/);
+  assert.match(css, /display: block; position: absolute; top: 110px;[^}]*pointer-events: none;/);
+  assert.match(page, /<span className="pv-scroll left" aria-hidden="true"\/>/);
 });

@@ -41,7 +41,8 @@
   position: relative;
   max-width: 1180px;
   margin: 0 auto;
-  padding: clamp(28px, 6vw, 72px) clamp(14px, 4vw, 40px) 8px;
+  /* top padding keeps 20px between the rose corners and the text */
+  padding: 62px clamp(14px, 4vw, 40px) 8px;
   scroll-margin-top: 88px;
   color: var(--pv-ink);
 }
@@ -329,20 +330,6 @@
 
 /* ---------- pearl palette for the parts kept from the older page ---------- */
 html body main.pendulum-page { background: transparent !important; color: var(--pv-ink); }
-html body .pendulum-page .pendulum-hero-copy {
-  border: 1px solid var(--pv-line-soft) !important; border-radius: 16px !important;
-  background: rgba(255, 255, 255, .94) !important; box-shadow: 0 6px 22px rgba(38, 52, 73, .05) !important;
-}
-html body .pendulum-page .pendulum-hero-copy h1 { color: var(--pv-accent) !important; }
-html body .pendulum-page .pendulum-hero-copy h1 em { color: var(--pearl-lilac, #a482b0) !important; }
-html body .pendulum-page .pendulum-hero-copy p:not(.eyebrow) { color: var(--pv-ink) !important; }
-html body .pendulum-page .pendulum-hero-copy .eyebrow { color: var(--pv-accent) !important; }
-html body .pendulum-page .pendulum-hero a.primary {
-  border: 1px solid var(--pv-gold) !important; border-radius: 12px !important;
-  background: linear-gradient(180deg, var(--pv-button-start) 0%, var(--pv-button-end) 100%) !important;
-  outline: 1px solid rgba(255, 255, 255, .9) !important; outline-offset: -5px !important;
-  box-shadow: none !important; color: var(--pv-accent) !important;
-}
 
 html body .pendulum-page .pv-result {
   border: 1px solid var(--pv-line-soft) !important; background: var(--pv-surface) !important;
@@ -400,12 +387,77 @@ html body .pendulum-page .pv-guide .guide-grid p { color: var(--pv-ink) !importa
 html body .pendulum-page > footer { background: transparent !important; color: var(--pv-muted) !important; }
 html body .pendulum-page > footer :is(.brand, a) { color: var(--pv-accent) !important; }
 
-/* hero: pearl ground instead of the warm garden photograph */
-html body .pendulum-page .pendulum-hero {
-  background-image: radial-gradient(ellipse 70% 60% at 78% 38%, rgba(252, 233, 241, .9) 0%, rgba(252, 233, 241, 0) 70%),
-    radial-gradient(ellipse 60% 55% at 18% 70%, rgba(232, 242, 252, .95) 0%, rgba(232, 242, 252, 0) 70%),
-    linear-gradient(180deg, #ffffff 0%, #f8faff 100%) !important;
-  box-shadow: none !important;
+
+/* ===== background v2 (ChatGPT, 2026-11-13; owner: 背景很素) ===== */
+/* hero: a bright court-salon painting with a pearl text panel; 360–440px on phones */
+.pendulum-page .pv-hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: flex; align-items: flex-end;
+  height: clamp(380px, 58svh, 440px); margin-top: 64px; padding: 20px;
 }
-html body .pendulum-page .pendulum-hero::before { border-color: var(--pv-line) !important; box-shadow: inset 0 0 0 7px rgba(255, 255, 255, .5), inset 0 0 0 8px rgba(197, 164, 111, .25) !important; }
-html body .pendulum-page .pendulum-hero::after { color: var(--pv-gold) !important; }
+.pendulum-page .pv-hero-art { position: absolute; inset: 0; z-index: -1; }
+.pendulum-page .pv-hero-art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 70% 40%; }
+.pendulum-page .pv-hero-panel {
+  position: relative; box-sizing: border-box; width: 100%; max-width: 460px;
+  padding: 26px 20px 20px; border: 1px solid var(--pv-line-soft); border-radius: 16px;
+  background: rgba(255, 255, 255, .92); color: var(--pv-ink);
+}
+.pendulum-page .pv-hero-crest {
+  position: absolute; left: 50%; top: -30px; width: 184px; height: 58px; transform: translateX(-50%);
+  background: url('/pendulum/shell-crest.webp') center / contain no-repeat; pointer-events: none;
+}
+.pendulum-page .pv-hero-kicker { margin: 0; color: var(--pv-accent); font: italic 600 17px/1.4 "Cormorant Garamond", "Noto Serif TC", serif; letter-spacing: .06em; }
+.pendulum-page .pv-hero h1 { margin: 4px 0 6px; color: var(--pv-accent) !important; font: 900 32px/1.3 "Noto Serif TC", serif; letter-spacing: .035em; }
+.pendulum-page .pv-hero-panel > p:not(.pv-hero-kicker) { margin: 0 0 14px; color: var(--pv-muted); font-size: 15px; font-weight: 500; line-height: 1.7; }
+.pendulum-page .pv-hero-cta {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 50px; padding: 0 24px; box-sizing: border-box;
+  border: 1px solid var(--pv-gold); border-radius: 12px;
+  background: linear-gradient(180deg, var(--pv-button-start) 0%, var(--pv-button-end) 100%);
+  outline: 1px solid rgba(255, 255, 255, .9); outline-offset: -5px;
+  color: var(--pv-accent); font: 700 16px/1.3 "Noto Serif TC", serif; letter-spacing: .06em; text-decoration: none;
+}
+@media (hover: hover) { .pendulum-page .pv-hero-cta:hover { background: var(--pv-hover-start); } }
+.pendulum-page .pv-hero-cta:focus-visible { outline: 2px solid var(--pv-accent); outline-offset: 3px; }
+@media (min-width: 900px) {
+  .pendulum-page .pv-hero { height: clamp(580px, 64vh, 680px); margin-top: 72px; align-items: center; padding: 48px clamp(28px, 7vw, 110px); }
+  .pendulum-page .pv-hero-panel { padding: 34px 32px 28px; }
+  .pendulum-page .pv-hero-crest { top: -40px; width: 260px; height: 82px; }
+  .pendulum-page .pv-hero h1 { font-size: 46px; }
+  .pendulum-page .pv-hero-panel > p:not(.pv-hero-kicker) { font-size: 16px; }
+}
+
+/* ritual: rose corners on every width, gold side scrolls where there is room */
+.pendulum-page .pv-ritual::before,
+.pendulum-page .pv-ritual::after {
+  content: ""; position: absolute; top: 6px; width: 34px; height: 34px;
+  background: url('/pendulum/rose-corner.webp') center / contain no-repeat;
+  opacity: .7; pointer-events: none;
+}
+.pendulum-page .pv-ritual::before { left: 4px; }
+.pendulum-page .pv-ritual::after { right: 4px; transform: scaleX(-1); }
+.pendulum-page .pv-scroll { display: none; }
+@media (min-width: 900px) {
+  .pendulum-page .pv-ritual { padding-top: 108px; }
+  .pendulum-page .pv-ritual::before, .pendulum-page .pv-ritual::after { top: 10px; width: 76px; height: 76px; }
+  .pendulum-page .pv-ritual::before { left: 0; }
+  .pendulum-page .pv-ritual::after { right: 0; }
+}
+@media (min-width: 1400px) {
+  .pendulum-page .pv-scroll {
+    display: block; position: absolute; top: 110px; width: 72px; height: 480px;
+    background: url('/pendulum/gold-scroll.webp') center / contain no-repeat; opacity: .6; pointer-events: none;
+  }
+  .pendulum-page .pv-scroll.left { left: -92px; }
+  .pendulum-page .pv-scroll.right { right: -92px; transform: scaleX(-1); }
+}
+
+/* result: a fine double gold frame with a small shell on top */
+html body .pendulum-page .pv-result {
+  border: 1.5px solid var(--pv-gold) !important;
+  outline: .75px solid var(--pv-line); outline-offset: -8px;
+}
+html body .pendulum-page .pv-result .result-crown {
+  border: 0 !important; background: url('/pendulum/shell-crest.webp') center / contain no-repeat !important;
+  width: 132px !important; height: 42px !important; color: transparent !important; font-size: 0 !important;
+}

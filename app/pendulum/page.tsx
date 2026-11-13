@@ -426,12 +426,19 @@ export default function PendulumPage(){
 
   return <main className="pendulum-page">
     <nav className="pendulum-nav site-nav"><Link className="brand" href="/">ZOLACOCO <span>TAROT</span></Link><div className="pendulum-menu"><Link href="/#draw">塔羅抽牌</Link><Link href="/pendulum#ritual">占卜玩法</Link><Link className="login-link" href="/admin">我的存檔</Link></div></nav>
-    <header className="pendulum-hero">
-      <div className="pendulum-hero-copy"><p className="eyebrow">THE PENDULUM DIVINATION CENTRE</p><h1>靈擺占卜<br/><em>中心</em></h1><p>從 Yes／No、多選一到每日指引，用一場有儀式感的擺動整理直覺。答案是自我反思的入口，不是替妳決定人生的命令。</p><a href="#ritual" className="primary">開始靈擺占卜 <span>↓</span></a></div>
-      <div className="pendulum-hero-image"><img src="/pendulum/hero.webp" alt="珍珠粉藍光線裡的金色洛可可水晶靈擺"/><span>CRYSTAL · PEARL · INTUITION</span></div>
+    <header className="pv-hero">
+      <picture className="pv-hero-art" aria-hidden="true"><source media="(max-width: 700px)" srcSet="/pendulum/hero-mobile.webp"/><img src="/pendulum/hero-desktop.webp" alt=""/></picture>
+      <div className="pv-hero-panel">
+        <span className="pv-hero-crest" aria-hidden="true"/>
+        <p className="pv-hero-kicker">the pendulum divination centre</p>
+        <h1>靈擺占卜</h1>
+        <p>從 Yes／No、多選一到每日指引，用一場有儀式感的擺動整理直覺。答案是自我反思的入口，不是替妳決定人生的命令。</p>
+        <a href="#ritual" className="pv-hero-cta">開始靈擺占卜 <span aria-hidden="true">↓</span></a>
+      </div>
     </header>
 
     <section className="pv-ritual" id="ritual" ref={ritualRef} aria-labelledby="pv-tool-title">
+      <span className="pv-scroll left" aria-hidden="true"/><span className="pv-scroll right" aria-hidden="true"/>
       <div className="pv-layout">
         <header className="pv-tool">
           <p className="pv-kicker"><span>目前玩法</span><small>{selectedTool.group} · {selectedTool.en}</small></p>
