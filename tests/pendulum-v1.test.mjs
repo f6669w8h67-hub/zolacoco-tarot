@@ -103,3 +103,14 @@ test("background v2: salon hero, damask wallpaper, ornaments only on hero, ritua
   assert.match(css, /display: block; position: absolute; top: 110px;[^}]*pointer-events: none;/);
   assert.match(page, /<span className="pv-scroll left" aria-hidden="true"\/>/);
 });
+
+test("pearl pages load their own serif fonts (Noto Serif TC and Cormorant Garamond are not on iPhone)", async () => {
+  const fonts = await read("app/pearl-fonts.tsx");
+  assert.match(fonts, /family=Cormorant\+Garamond:ital,wght@1,500;1,600&family=Noto\+Serif\+TC:wght@500;600;700;900&display=swap/);
+  assert.match(fonts, /<link rel="stylesheet" href=\{PEARL_FONTS_HREF\} precedence="default" \/>/);
+  for (const file of ["app/pendulum/page.tsx", "app/astro-dice/page.tsx"]) {
+    const source = await read(file);
+    assert.match(source, /import PearlFonts from "\.\.\/pearl-fonts";/, file);
+    assert.match(source, /pearl-page">\n    <PearlFonts\/>/, file);
+  }
+});

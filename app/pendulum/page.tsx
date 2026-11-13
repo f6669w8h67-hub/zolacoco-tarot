@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import PearlFonts from "../pearl-fonts";
 import "../styles/pearl-page.css";
 import "./pendulum-v1.css";
 import { choicesFromQuestion, questionQuality } from "./question-quality";
@@ -426,6 +427,7 @@ export default function PendulumPage(){
   const inputsTitle=tool==="choices"?"輸入妳的選項":tool==="number"?"選擇數字範圍":tool==="custom"?"寫下妳想問的問題":needsQuestion?"寫下妳想問的是非題":"讓今天的訊息慢慢浮現";
 
   return <main className="pendulum-page pearl-page">
+    <PearlFonts/>
     <nav className="pendulum-nav site-nav"><Link className="brand" href="/">ZOLACOCO <span>TAROT</span></Link><div className="pendulum-menu"><Link href="/#draw">塔羅抽牌</Link><Link href="/pendulum#ritual">占卜玩法</Link><Link className="login-link" href="/admin">我的存檔</Link></div></nav>
     <header className="pv-hero">
       <picture className="pv-hero-art" aria-hidden="true"><source media="(max-width: 700px)" srcSet="/pendulum/hero-mobile.webp"/><img src="/pendulum/hero-desktop.webp" alt=""/></picture>
