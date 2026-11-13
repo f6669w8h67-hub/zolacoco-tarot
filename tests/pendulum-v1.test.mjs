@@ -88,9 +88,12 @@ test("pearl palette: no browns, khaki or parchment in the pendulum styles", () =
 test("background v2: salon hero, damask wallpaper, ornaments only on hero, ritual and result", async () => {
   assert.match(page, /<source media="\(max-width: 700px\)" srcSet="\/pendulum\/hero-mobile\.webp"\/><img src="\/pendulum\/hero-desktop\.webp" alt=""\/>/);
   assert.match(css, /\.pendulum-page \.pv-hero \{[^}]*height: clamp\(380px, 58svh, 440px\);/);
-  assert.match(css, /background-image: url\('\/pendulum\/wallpaper-tile\.webp'\);/);
-  // the pearl ground belongs to this page only until the rest of the site is restyled
-  assert.match(css, /html body:has\(main\.pendulum-page\)::after \{[^}]*\}/);
+  const ground = await read("app/styles/pearl-page.css");
+  assert.match(ground, /background-image: url\('\/pendulum\/wallpaper-tile\.webp'\);/);
+  // the pearl ground belongs to pages that opt in, until the rest of the site is restyled
+  assert.match(ground, /html body:has\(main\.pearl-page\)::after \{[^}]*\}/);
+  assert.doesNotMatch(ground, /^html body(::(before|after))? \{/m);
+  assert.match(page, /<main className="pendulum-page pearl-page">/);
   assert.doesNotMatch(css, /^html body(::(before|after))? \{/m);
   // the wallpaper never sits inside cards: cards keep a solid white surface
   assert.match(css, /--pv-surface: #ffffff;/);

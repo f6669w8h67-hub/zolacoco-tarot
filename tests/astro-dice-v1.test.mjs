@@ -1,0 +1,79 @@
+import assert from "node:assert/strict";
+import { existsSync, statSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import test from "node:test";
+
+// 星骰互動 v1 + 珍珠粉藍洛可可 (ChatGPT spec, 2026-11-13).
+const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
+const page = await read("app/astro-dice/page.tsx");
+const css = await read("app/astro-dice/astro-dice-v1.css");
+
+test("one block: topic, question, stage, cast; examples and records fold away", () => {
+  assert.match(page, /<main className="astro-dice-page ad2-page pearl-page">/);
+  assert.match(page, /import "\.\.\/styles\/pearl-page\.css";/);
+  assert.doesNotMatch(page, /import "\.\/astro-dice\.css"|ad-journey|ad-intro|ad-sky/);
+  assert.match(page, /<details className="ad2-ideas"/);
+  assert.match(page, /function chooseIdea\(idea:string\)\{setQuestion\(idea\);setIdeasOpen\(false\)/);
+  assert.match(page, /<details className="ad2-fold" id="astro-records"/);
+  assert.doesNotMatch(page, /你/, "the site speaks to members as 妳");
+});
+
+test("the stage comes on screen before the 1.2s roll; reduced motion shows the dice at once", () => {
+  assert.match(page, /const ROLL_MS=1200;/);
+  assert.match(page, /later\(show,reducedMotion\(\)\?200:ROLL_MS\)/);
+  assert.match(page, /const wait=fullyVisible\(stageRef\.current\)\?0:scrollToTop\(stageRef\.current\);/);
+  assert.match(css, /animation: ad2Tumble 1\.2s cubic-bezier\(\.22, 1, \.36, 1\) both; animation-delay: calc\(var\(--i, 0\) \* 80ms\);/);
+  assert.match(css, /25% \{ transform: translateY\(-18px\) rotate\(-18deg\); \}/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\n  \.ad2-page \.ad2-die\.is-rolling \.ad2-die-body, \.ad2-page \.ad2-die\.is-rolling \.ad2-symbol \{ animation: none; \}/);
+});
+
+test("result: summary, current, friction, action and reflection open; the full reading folds", () => {
+  const result = page.slice(page.indexOf('className="ad2-result"'));
+  const order = ["整體訊息", "目前狀況", "需要留意", "今天可以做什麼", "完整星骰解析", "給自己的覺察題"].map((text) => result.indexOf(text));
+  assert.ok(order.every((index) => index > 0), String(order));
+  assert.deepEqual([...order].sort((a, b) => a - b), order);
+  assert.match(result, /<details className="ad2-more">/);
+  assert.match(result, /\{item!\.meaning\}<\/p><b>\{item!\.prompt\}<\/b>/);
+  assert.match(result, /\{categoryLead\[category\]\}/);
+});
+
+test("save once, say so, and open the record; the storage format is unchanged", () => {
+  assert.match(page, /const ASTRO_STORAGE_KEY = "zolacoco-astro-dice-records-v1";/);
+  assert.match(page, /if\(!roll\|\|savedId!==null\)return;/);
+  assert.match(page, /\.slice\(0,80\)/);
+  assert.match(page, /這次星骰結果已保存 ✨/);
+  assert.match(page, /已儲存 ✓/);
+  assert.match(page, /查看我的星骰紀錄/);
+  assert.match(page, /id=\{`astro-entry-\$\{item\.id\}`\}/);
+  assert.match(page, /planet_name:roll\.planet\.name,sign_name:roll\.sign\.name,house_name:roll\.house\.name,note/);
+});
+
+test("porcelain dice art with the symbol drawn by the page; small symbol font; no overflow ring", () => {
+  for (const file of ["die.webp", "stage.webp", "stage-800.webp", "hero-desktop.webp", "hero-mobile.webp"]) {
+    assert.ok(existsSync(new URL(`../public/astro-dice/${file}`, import.meta.url)), file);
+  }
+  assert.match(page, /<img src="\/astro-dice\/die\.webp" alt="" draggable=\{false\}\/><span className="ad2-symbol" aria-hidden="true">/);
+  assert.match(css, /src: url\("\/fonts\/zolacoco-astro-symbols-subset\.woff2"\) format\("woff2"\);/);
+  assert.ok(statSync(new URL("../public/fonts/zolacoco-astro-symbols-subset.woff2", import.meta.url)).size < 20000);
+  assert.doesNotMatch(page, /ad-table-rings/);
+  assert.match(css, /\.ad2-page \.ad2-stage \{[^}]*overflow: clip;/);
+});
+
+test("pearl palette: no browns, khaki, deep purple or dark buttons", () => {
+  const hsl = (hex) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
+    if (max === min) return [0, 0, l];
+    const d = max - min, s = l > .5 ? d / (2 - max - min) : d / (max + min);
+    let h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [h * 60, s, l];
+  };
+  const ornamentGold = new Set(["#c5a46f", "#d8be8a"]);
+  for (const hex of (css.match(/#[0-9a-fA-F]{6}\b/g) || []).map((value) => value.toLowerCase())) {
+    if (ornamentGold.has(hex)) continue;
+    const [h, s, l] = hsl(hex);
+    assert.ok(!(h >= 15 && h <= 55 && s >= .12 && (l < .55 || (s < .45 && l < .9))), `earthy ${hex}`);
+    assert.ok(!(h >= 230 && h <= 335 && s >= .12 && l <= .38), `deep purple ${hex}`);
+  }
+  assert.match(css, /background: linear-gradient\(180deg, #fff2f8 0%, #f4dfe9 100%\);/);
+});

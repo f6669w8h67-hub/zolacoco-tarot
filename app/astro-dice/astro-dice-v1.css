@@ -1,0 +1,266 @@
+/* ===== 星骰互動 v1 + 珍珠粉藍洛可可 (ChatGPT spec, 2026-11-13) =====
+   Short salon hero → topic, question, stage and cast button in one block → a shorter result
+   with the full reading folded → records and guide folded. Page ground: ../styles/pearl-page.css.
+   ad2-* class names so none of the older astro-dice.css layers apply (that file is no longer loaded). */
+
+@font-face {
+  font-family: "Zolacoco Astro Symbols";
+  src: url("/fonts/zolacoco-astro-symbols-subset.woff2") format("woff2");
+  font-display: swap;
+}
+
+.ad2-page {
+  --ad-ink: #263449;
+  --ad-muted: #33445f;
+  --ad-accent: #843450;
+  --ad-gold: #c5a46f;
+  --ad-gold-light: #d8be8a;
+  --ad-border: #d8dce8;
+  --ad-chip: #b9c7d8;
+  --ad-selected: #f4dfe9;
+  --ad-blush: #fce9f1;
+  --ad-blue: #e8f2fc;
+  --ad-good: #305947;
+  min-height: 100vh;
+  background: transparent;
+  color: var(--ad-ink);
+  font-family: "Noto Sans TC", system-ui, sans-serif;
+}
+.ad2-page .ad2-symbol { font-family: "Zolacoco Astro Symbols", "DejaVu Sans", sans-serif; font-variant-emoji: text; }
+.ad2-page :is(h1, h2, h3, h4) { font-family: "Noto Serif TC", serif; }
+
+/* ---------- hero: astronomy salon painting + pearl panel ---------- */
+.ad2-page .ad2-hero {
+  position: relative; isolation: isolate; overflow: hidden;
+  display: flex; align-items: flex-end;
+  height: clamp(380px, 52svh, 420px); margin-top: 64px; padding: 20px;
+}
+.ad2-page .ad2-hero-art { position: absolute; inset: 0; z-index: -1; }
+.ad2-page .ad2-hero-art img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: 75% 30%; }
+.ad2-page .ad2-hero-panel {
+  position: relative; box-sizing: border-box; width: 100%; max-width: 460px;
+  padding: 24px 20px 18px; border: 1px solid var(--ad-border); border-radius: 16px;
+  background: rgba(255, 255, 255, .92);
+}
+.ad2-page .ad2-crest {
+  position: absolute; left: 50%; top: -30px; width: 184px; height: 58px; transform: translateX(-50%);
+  background: url("/pendulum/shell-crest.webp") center / contain no-repeat; pointer-events: none;
+}
+.ad2-page .ad2-kicker { margin: 0; color: var(--ad-accent); font: italic 600 17px/1.4 "Cormorant Garamond", "Noto Serif TC", serif; letter-spacing: .06em; }
+.ad2-page .ad2-kicker.small { font-size: 15px; }
+.ad2-page .ad2-hero h1 { margin: 2px 0 6px; color: var(--ad-accent); font-size: 32px; font-weight: 900; line-height: 1.3; letter-spacing: .035em; }
+.ad2-page .ad2-hero-panel > p:not(.ad2-kicker) { margin: 0 0 12px; color: var(--ad-muted); font-size: 15px; font-weight: 500; line-height: 1.7; }
+.ad2-page :is(.ad2-cta, .ad2-cast, .ad2-save) {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  box-sizing: border-box; min-height: 50px; padding: 0 24px;
+  border: 1px solid var(--ad-gold); border-radius: 12px;
+  background: linear-gradient(180deg, #fff2f8 0%, #f4dfe9 100%);
+  outline: 1px solid rgba(255, 255, 255, .9); outline-offset: -5px; box-shadow: none;
+  color: var(--ad-accent); font: 700 16px/1.3 "Noto Serif TC", serif; letter-spacing: .06em;
+  text-decoration: none; cursor: pointer;
+}
+@media (hover: hover) { .ad2-page :is(.ad2-cta, .ad2-cast, .ad2-save):hover:not(:disabled) { background: #eecfdd; } }
+.ad2-page :is(.ad2-cta, .ad2-cast, .ad2-save):active:not(:disabled) { background: #e5bed0; transform: translateY(1px) scale(.99); }
+.ad2-page :is(.ad2-cta, .ad2-cast, .ad2-save):focus-visible { outline: 2px solid var(--ad-accent); outline-offset: 3px; }
+.ad2-page :is(.ad2-cast, .ad2-save):disabled { background: #ebebf1; border-color: #c9ced9; color: #59657a; cursor: not-allowed; transform: none; }
+@media (min-width: 900px) {
+  .ad2-page .ad2-hero { height: clamp(560px, 62vh, 660px); margin-top: 72px; align-items: center; padding: 48px clamp(28px, 7vw, 110px); }
+  .ad2-page .ad2-hero-panel { padding: 34px 32px 28px; }
+  .ad2-page .ad2-crest { top: -40px; width: 260px; height: 82px; }
+  .ad2-page .ad2-hero h1 { font-size: 46px; }
+}
+
+/* ---------- ritual: topic, question, stage and cast in one block ---------- */
+.ad2-page .ad2-ritual { position: relative; max-width: 1180px; margin: 0 auto; padding: 62px 16px 8px; scroll-margin-top: 88px; }
+.ad2-page .ad2-ritual::before,
+.ad2-page .ad2-ritual::after {
+  content: ""; position: absolute; top: 6px; width: 34px; height: 34px;
+  background: url("/pendulum/rose-corner.webp") center / contain no-repeat; opacity: .7; pointer-events: none;
+}
+.ad2-page .ad2-ritual::before { left: 4px; }
+.ad2-page .ad2-ritual::after { right: 4px; transform: scaleX(-1); }
+.ad2-page .ad2-layout { display: grid; gap: 18px; }
+@media (min-width: 900px) {
+  .ad2-page .ad2-ritual { padding: 108px clamp(14px, 4vw, 40px) 8px; }
+  .ad2-page .ad2-ritual::before, .ad2-page .ad2-ritual::after { top: 10px; width: 76px; height: 76px; }
+  .ad2-page .ad2-ritual::before { left: 0; }
+  .ad2-page .ad2-ritual::after { right: 0; }
+  .ad2-page .ad2-layout { grid-template-columns: 45fr 55fr; column-gap: 32px; align-items: start; }
+  .ad2-page .ad2-stage-card { position: sticky; top: 88px; }
+}
+.ad2-page .ad2-form { display: grid; gap: 10px; min-width: 0; }
+.ad2-page .ad2-form h2 { margin: 0; color: var(--ad-accent); font-size: clamp(26px, 6.4vw, 34px); font-weight: 700; line-height: 1.3; }
+.ad2-page .ad2-steps { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0; padding: 0; list-style: none; max-height: 44px; color: var(--ad-muted); font-size: 13px; line-height: 1.5; }
+.ad2-page .ad2-steps li { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.ad2-page .ad2-steps li + li::before { content: "→"; margin-right: 4px; color: var(--ad-gold); }
+.ad2-page .ad2-steps li.current { color: var(--ad-accent); font-weight: 700; }
+.ad2-page .ad2-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.ad2-page .ad2-chips button {
+  min-height: 44px; padding: 9px 16px;
+  border: 1px solid var(--ad-chip); border-radius: 999px; background: #ffffff;
+  color: var(--ad-ink); font: 600 15px/1.3 inherit; cursor: pointer;
+}
+.ad2-page .ad2-chips button.selected { padding: 8px 15px; border: 2px solid var(--ad-accent); background: var(--ad-selected); color: var(--ad-accent); }
+.ad2-page .ad2-chips button:disabled { opacity: .55; cursor: not-allowed; }
+.ad2-page .ad2-label { margin-top: 4px; color: var(--ad-accent); font: 700 15px/1.5 "Noto Serif TC", serif; }
+.ad2-page :is(.ad2-form, .ad2-reflect) textarea {
+  box-sizing: border-box; width: 100%; min-height: 96px; padding: 12px 14px;
+  border: 1px solid var(--ad-chip); border-radius: 12px; background: #ffffff;
+  color: var(--ad-ink); font: 500 16px/1.7 inherit; resize: vertical;
+}
+.ad2-page :is(.ad2-form, .ad2-reflect) textarea::placeholder { color: #59657a; }
+.ad2-page :is(.ad2-form, .ad2-reflect) textarea:focus { outline: 2px solid var(--ad-accent); outline-offset: 1px; }
+.ad2-page .ad2-under-input { display: flex; justify-content: space-between; gap: 10px; color: var(--ad-muted); font-size: 14px; font-weight: 500; }
+.ad2-page .ad2-under-input small { font-size: 13px; }
+.ad2-page .ad2-ideas { border: 1px solid var(--ad-border); border-radius: 12px; background: #ffffff; }
+.ad2-page .ad2-ideas summary { display: flex; align-items: center; min-height: 48px; padding: 0 14px; list-style: none; cursor: pointer; color: var(--ad-accent); font-weight: 600; }
+.ad2-page .ad2-ideas summary::-webkit-details-marker { display: none; }
+.ad2-page .ad2-ideas summary::after { content: "＋"; margin-left: auto; color: var(--ad-gold); }
+.ad2-page .ad2-ideas[open] summary::after { content: "－"; }
+.ad2-page .ad2-ideas div { display: grid; gap: 8px; padding: 0 12px 12px; }
+.ad2-page .ad2-ideas button {
+  min-height: 44px; padding: 8px 14px; text-align: left;
+  border: 1px solid var(--ad-chip); border-radius: 12px; background: var(--ad-blue);
+  color: var(--ad-ink); font: 500 15px/1.5 inherit; cursor: pointer;
+}
+
+/* ---------- stage with three porcelain dice ---------- */
+.ad2-page .ad2-stage-card { display: grid; justify-items: center; gap: 10px; width: 100%; min-width: 0; }
+.ad2-page .ad2-stage {
+  position: relative; isolation: isolate; overflow: clip;
+  box-sizing: border-box; width: 100%; max-width: 640px; aspect-ratio: 4 / 3;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--ad-gold); border-radius: 12px; box-shadow: none;
+  background: url("/astro-dice/stage-800.webp") center / cover no-repeat, linear-gradient(180deg, #ffffff, var(--ad-blue));
+}
+@media (min-width: 701px) { .ad2-page .ad2-stage { background-image: url("/astro-dice/stage.webp"), linear-gradient(180deg, #ffffff, var(--ad-blue)); } }
+.ad2-page .ad2-dice { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4%; width: 86%; margin-top: 4%; }
+.ad2-page .ad2-die { margin: 0; display: grid; justify-items: center; gap: 6px; min-width: 0; }
+.ad2-page .ad2-die-body { position: relative; width: 100%; aspect-ratio: 1; }
+.ad2-page .ad2-die-body img { display: block; width: 100%; height: 100%; object-fit: contain; pointer-events: none; user-select: none; }
+/* the symbol sits on the die's blank front face (see --face-x / --face-y, set from the art) */
+.ad2-page .ad2-die-body .ad2-symbol {
+  position: absolute; left: var(--face-x, 40.1%); top: var(--face-y, 61.4%); transform: translate(-50%, -50%);
+  color: var(--ad-accent); font-size: clamp(22px, 7vw, 40px); line-height: 1;
+}
+.ad2-page .ad2-die figcaption { display: grid; justify-items: center; gap: 0; padding: 4px 6px; border-radius: 8px; background: rgba(255, 255, 255, .88); text-align: center; }
+.ad2-page .ad2-die figcaption small { color: var(--ad-muted); font-size: 12px; font-weight: 600; letter-spacing: .04em; }
+.ad2-page .ad2-die figcaption b { color: var(--ad-accent); font: 700 clamp(12px, 3.6vw, 16px)/1.35 "Noto Serif TC", serif; }
+.ad2-page .ad2-die:not(.has-value) figcaption b { color: var(--ad-muted); font-weight: 500; font-family: inherit; }
+/* 1200ms tumble: three dice 80ms apart, at most 18px up and ±18deg */
+.ad2-page .ad2-die.is-rolling .ad2-die-body { animation: ad2Tumble 1.2s cubic-bezier(.22, 1, .36, 1) both; animation-delay: calc(var(--i, 0) * 80ms); }
+.ad2-page .ad2-die.is-rolling .ad2-symbol { animation: ad2Flicker .3s steps(2) 4; }
+@keyframes ad2Tumble {
+  0% { transform: translateY(0) rotate(0); }
+  25% { transform: translateY(-18px) rotate(-18deg); }
+  50% { transform: translateY(-6px) rotate(14deg); }
+  75% { transform: translateY(-12px) rotate(-8deg); }
+  100% { transform: translateY(0) rotate(0); }
+}
+@keyframes ad2Flicker { 50% { opacity: .25; } }
+@media (prefers-reduced-motion: reduce) {
+  .ad2-page .ad2-die.is-rolling .ad2-die-body, .ad2-page .ad2-die.is-rolling .ad2-symbol { animation: none; }
+}
+.ad2-page .ad2-cast { min-width: 220px; }
+.ad2-page .ad2-hint { min-height: 1.6em; margin: 0; color: var(--ad-muted); font-size: 14px; font-weight: 500; line-height: 1.6; text-align: center; }
+
+/* ---------- result ---------- */
+.ad2-page .ad2-result {
+  position: relative; box-sizing: border-box; max-width: 860px; margin: 40px auto 0; padding: 40px 18px 24px;
+  border: 1.5px solid var(--ad-gold); border-radius: 16px; outline: .75px solid var(--ad-gold-light); outline-offset: -8px;
+  background: #ffffff; scroll-margin-top: 88px;
+  width: calc(100% - 32px);
+}
+@media (min-width: 900px) { .ad2-page .ad2-result { padding: 48px 40px 32px; } }
+.ad2-page .ad2-result-crest {
+  position: absolute; left: 50%; top: -22px; width: 132px; height: 42px; transform: translateX(-50%);
+  background: url("/pendulum/shell-crest.webp") center / contain no-repeat; pointer-events: none;
+}
+.ad2-page .ad2-result .ad2-kicker { text-align: center; }
+.ad2-page .ad2-result h2 { margin: 6px 0 4px; color: var(--ad-accent); font-size: 28px; font-weight: 700; line-height: 1.4; text-align: center; text-wrap: balance; outline: none; }
+.ad2-page .ad2-question { margin: 0 0 16px; color: var(--ad-muted); font-size: 15px; line-height: 1.7; text-align: center; }
+.ad2-page .ad2-mini { display: grid; grid-template-columns: repeat(3, minmax(0, 104px)); justify-content: center; gap: 10px; margin-bottom: 18px; }
+.ad2-page .ad2-mini div { display: grid; justify-items: center; gap: 2px; padding: 10px 4px; border: 1px solid var(--ad-border); border-radius: 12px; background: var(--ad-blush); }
+.ad2-page .ad2-mini .ad2-symbol { color: var(--ad-accent); font-size: 26px; line-height: 1.2; }
+.ad2-page .ad2-mini small { color: var(--ad-muted); font-size: 12px; }
+.ad2-page .ad2-mini b { color: var(--ad-accent); font: 700 15px/1.4 "Noto Serif TC", serif; }
+.ad2-page .ad2-block { margin: 0 0 16px; }
+.ad2-page .ad2-block h3, .ad2-page .ad2-reflect h3 { margin: 0 0 6px; color: var(--ad-accent); font-size: 18px; font-weight: 700; line-height: 1.5; }
+.ad2-page .ad2-block h3::before { content: ""; display: inline-block; width: 18px; height: 1px; margin: 0 8px 5px 0; background: var(--ad-gold); vertical-align: middle; }
+.ad2-page .ad2-block p, .ad2-page .ad2-reflect p { margin: 0; color: var(--ad-ink); font-size: 16px; font-weight: 500; line-height: 1.88; }
+.ad2-page .ad2-block.lead { padding: 16px; border-radius: 12px; background: var(--ad-blue); }
+.ad2-page .ad2-more { margin: 4px 0 16px; border: 1px solid var(--ad-border); border-radius: 12px; }
+.ad2-page .ad2-more summary { display: flex; align-items: center; min-height: 48px; padding: 0 16px; list-style: none; cursor: pointer; color: var(--ad-accent); font: 700 16px/1.4 "Noto Serif TC", serif; }
+.ad2-page .ad2-more summary::-webkit-details-marker { display: none; }
+.ad2-page .ad2-more summary::after { content: "＋"; margin-left: auto; color: var(--ad-gold); font-weight: 400; }
+.ad2-page .ad2-more[open] summary::after { content: "－"; }
+.ad2-page .ad2-more-body { display: grid; gap: 12px; padding: 0 14px 14px; }
+.ad2-page .ad2-more-body article { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 10px; padding: 12px; border-radius: 12px; background: var(--ad-blush); }
+.ad2-page .ad2-more-body .ad2-symbol { color: var(--ad-accent); font-size: 28px; line-height: 1.3; text-align: center; }
+.ad2-page .ad2-more-body small { color: var(--ad-muted); font-size: 13px; }
+.ad2-page .ad2-more-body h4 { margin: 2px 0 4px; color: var(--ad-accent); font-size: 17px; }
+.ad2-page .ad2-more-body p { margin: 0 0 4px; color: var(--ad-ink); font-size: 15px; line-height: 1.8; }
+.ad2-page .ad2-more-body b { color: var(--ad-ink); font-size: 15px; font-weight: 600; line-height: 1.8; }
+.ad2-page .ad2-lead-note { margin: 0; color: var(--ad-muted); font-size: 15px; line-height: 1.8; }
+.ad2-page .ad2-reflect { display: grid; gap: 8px; padding: 16px; border-left: 3px solid var(--ad-gold); border-radius: 12px; background: var(--ad-blush); }
+.ad2-page .ad2-reflect label { margin-top: 4px; color: var(--ad-accent); font-weight: 700; }
+.ad2-page .ad2-save { justify-self: center; min-width: 220px; }
+.ad2-page .ad2-saved { display: grid; justify-items: center; gap: 6px; text-align: center; }
+.ad2-page .ad2-saved p { color: var(--ad-good); font-size: 15px; font-weight: 600; }
+.ad2-page .ad2-saved button { min-height: 44px; padding: 8px 18px; border: 1px solid var(--ad-accent); border-radius: 999px; background: var(--ad-selected); color: var(--ad-accent); font-weight: 700; cursor: pointer; }
+.ad2-page .ad2-save-error { color: #9a2f50 !important; font-size: 14px !important; text-align: center; }
+.ad2-page .ad2-result-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 18px; }
+.ad2-page .ad2-result-actions :is(button, a) {
+  display: inline-flex; align-items: center; min-height: 48px; padding: 0 20px;
+  border: 1px solid #b78ead; border-radius: 12px; background: #ffffff;
+  color: var(--ad-accent); font-weight: 600; text-decoration: none; cursor: pointer;
+}
+.ad2-page .ad2-disclaimer { margin: 16px 0 0; color: var(--ad-muted); font-size: 13px; line-height: 1.7; text-align: center; }
+
+/* ---------- folded records and guide ---------- */
+.ad2-page .ad2-folds { display: grid; gap: 10px; max-width: 1180px; margin: 28px auto 40px; padding: 0 16px; }
+.ad2-page .ad2-fold { border: 1px solid var(--ad-border); border-radius: 12px; background: #ffffff; scroll-margin-top: 88px; }
+.ad2-page .ad2-fold > summary { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 16px; list-style: none; cursor: pointer; color: var(--ad-accent); font: 700 16px/1.4 "Noto Serif TC", serif; }
+.ad2-page .ad2-fold > summary::-webkit-details-marker { display: none; }
+.ad2-page .ad2-fold > summary small { margin-left: auto; color: var(--ad-muted); font: 500 13px/1.4 inherit; }
+.ad2-page .ad2-fold > summary::after { content: "＋"; color: var(--ad-gold); font-weight: 400; }
+.ad2-page .ad2-fold[open] > summary::after { content: "－"; }
+.ad2-page .ad2-fold > summary:focus-visible { outline: 2px solid var(--ad-accent); outline-offset: 2px; }
+.ad2-page .ad2-fold-note { margin: 0 16px 14px; color: var(--ad-muted); font-size: 14px; line-height: 1.7; }
+.ad2-page .ad2-history, .ad2-page .ad2-guide { display: grid; gap: 10px; padding: 0 12px 14px; }
+.ad2-page .ad2-history article, .ad2-page .ad2-guide article { padding: 12px 14px; border: 1px solid var(--ad-border); border-radius: 12px; background: #ffffff; scroll-margin-top: 96px; }
+.ad2-page .ad2-history article.is-new { border: 2px solid var(--ad-accent); background: var(--ad-blush); }
+.ad2-page .ad2-history article > div { display: flex; justify-content: space-between; gap: 8px; color: var(--ad-muted); font-size: 13px; }
+.ad2-page .ad2-history h3 { margin: 4px 0; color: var(--ad-ink); font-size: 16px; }
+.ad2-page .ad2-history b, .ad2-page .ad2-guide b { color: var(--ad-accent); font-size: 15px; }
+.ad2-page .ad2-history p, .ad2-page .ad2-guide p { margin: 4px 0 0; color: var(--ad-ink); font-size: 15px; line-height: 1.7; }
+@media (min-width: 900px) { .ad2-page .ad2-folds { grid-template-columns: 1fr 1fr; align-items: start; padding: 0 clamp(14px, 4vw, 40px); } }
+.ad2-page .ad2-footer { padding: 24px 16px 40px; text-align: center; color: var(--ad-muted); font-size: 14px; }
+.ad2-page .ad2-footer a { color: var(--ad-accent); font-weight: 600; }
+
+/* ---------- phone: shorter path to the question and the cast button (星骰互動 v1 targets) ---------- */
+@media (max-width: 899px) {
+  .ad2-page .ad2-ritual { padding-top: 54px; }
+  .ad2-page .ad2-ritual::before, .ad2-page .ad2-ritual::after { top: 4px; width: 26px; height: 26px; }
+  .ad2-page .ad2-form > .ad2-kicker { display: none; }
+  /* topics in one scrolling row */
+  .ad2-page .ad2-chips { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 4px; scrollbar-width: none; }
+  .ad2-page .ad2-chips::-webkit-scrollbar { display: none; }
+  .ad2-page .ad2-chips button { flex: 0 0 auto; white-space: nowrap; }
+  /* the cast button sits right under the question; the stage follows and scrolls into view on cast */
+  .ad2-page .ad2-stage-card .ad2-cast { order: -1; width: 100%; }
+  .ad2-page .ad2-stage-card .ad2-hint { order: -1; }
+  .ad2-page .ad2-stage { aspect-ratio: 16 / 11; }
+  .ad2-page .ad2-dice { margin-top: 2%; width: 80%; }
+}
+.ad2-page .ad2-footer a { display: inline-flex; align-items: center; min-height: 44px; }
+@media (max-width: 899px) {
+  .ad2-page .ad2-result { margin-top: 32px; padding: 34px 16px 20px; width: calc(100% - 24px); }
+  .ad2-page .ad2-result-actions { flex-wrap: nowrap; gap: 8px; }
+  .ad2-page .ad2-result-actions :is(button, a) { flex: 1 1 auto; justify-content: center; padding: 0 12px; font-size: 15px; white-space: nowrap; }
+  .ad2-page .ad2-disclaimer { font-size: 12px; line-height: 1.6; }
+  .ad2-page .ad2-mini { gap: 8px; margin-bottom: 14px; }
+  .ad2-page .ad2-mini div { padding: 8px 4px; }
+}
+html body .ad2-page > footer.ad2-footer { background: transparent !important; border: 0 !important; }
+@media (max-width: 899px) { .ad2-page .ad2-steps { gap: 2px 4px; font-size: 12.5px; } .ad2-page .ad2-steps li + li::before { margin-right: 2px; } }

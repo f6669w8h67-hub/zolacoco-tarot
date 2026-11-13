@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import "../styles/pearl-page.css";
 import "./pendulum-v1.css";
 import { choicesFromQuestion, questionQuality } from "./question-quality";
 
@@ -424,7 +425,7 @@ export default function PendulumPage(){
   const stageHint=calibrating?"正在校準，感受靈擺的擺動節奏。":moving?"靈擺正在回應，請讓問題在心裡停留一下。":calibrated?"校準完成，可以開始提問了。":outcome?"可以寫下感受、儲存，或換一個問題再問。":needsQuestion&&!quality.canAsk?"先寫下想問的問題，就可以開始。":tool==="choices"&&choiceList.length<2?"請至少輸入兩個選項。":"也可以先拖曳靈擺，放手後感受它的擺動。";
   const inputsTitle=tool==="choices"?"輸入妳的選項":tool==="number"?"選擇數字範圍":tool==="custom"?"寫下妳想問的問題":needsQuestion?"寫下妳想問的是非題":"讓今天的訊息慢慢浮現";
 
-  return <main className="pendulum-page">
+  return <main className="pendulum-page pearl-page">
     <nav className="pendulum-nav site-nav"><Link className="brand" href="/">ZOLACOCO <span>TAROT</span></Link><div className="pendulum-menu"><Link href="/#draw">塔羅抽牌</Link><Link href="/pendulum#ritual">占卜玩法</Link><Link className="login-link" href="/admin">我的存檔</Link></div></nav>
     <header className="pv-hero">
       <picture className="pv-hero-art" aria-hidden="true"><source media="(max-width: 700px)" srcSet="/pendulum/hero-mobile.webp"/><img src="/pendulum/hero-desktop.webp" alt=""/></picture>
