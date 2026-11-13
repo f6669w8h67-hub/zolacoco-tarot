@@ -1,130 +1,408 @@
-/* Rococo member experience — isolated to authentication and membership pages. */
-:root{--rococo-ivory:#fffaf2;--rococo-gold:#c69a61;--rococo-rose:#b77c8c;--rococo-ink:#744750}
-.auth-page,.membership-gate,.account-page{background:#fffaf2;color:var(--rococo-ink)}
-.auth-page{padding:115px 16px 56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0}
-.rococo-shell{position:relative;width:min(510px,100%);padding:46px clamp(18px,5vw,44px) 34px;border:2px solid #d1a36b;border-radius:46% 46% 24px 24px / 65px 65px 24px 24px;background:#fffaf2;box-shadow:0 0 0 7px #fffaf2,0 0 0 8px #e4c7a1,0 20px 50px #9e6e6420;text-align:center;animation:rococo-enter .55s ease both}
-.rococo-shell:before,.rococo-shell:after,.membership-gate>section:before,.membership-gate>section:after,.account-hero:before,.account-hero:after{content:"❦";position:absolute;color:#c69a61;font:42px Georgia,serif;line-height:1;pointer-events:none}
-.rococo-shell:before,.membership-gate>section:before,.account-hero:before{left:13px;top:13px}
-.rococo-shell:after,.membership-gate>section:after,.account-hero:after{right:13px;bottom:13px;transform:rotate(180deg)}
-.rococo-crest{width:92px;height:78px;margin:0 auto 12px;display:grid;place-items:center;border:2px solid #d5a66c;border-radius:48% 48% 46% 46%;background:#fff2e9;color:#b7827e;box-shadow:0 0 0 5px #f8e9dd,0 0 0 6px #d6b188;font:38px Georgia,serif}
-.rococo-brand{margin:10px 0 0;color:#8c4d52;font:500 27px/1.1 Georgia,serif;letter-spacing:.09em}
-.rococo-kicker{margin:10px 0 25px;color:#a57561;font:11px Georgia,serif;letter-spacing:.22em}
-.rococo-divider{height:1px;margin:0 auto 23px;max-width:280px;background:linear-gradient(90deg,transparent,#c99c68,transparent);position:relative}
-.rococo-divider:after{content:"✦";position:absolute;left:calc(50% - 9px);top:-11px;padding:0 5px;background:#fffaf2;color:#c99c68}
-.rococo-title{font:500 clamp(25px,5vw,33px)/1.4 Georgia,"Noto Serif TC",serif;color:#834d53;margin:0}
-.rococo-description{margin:9px 0 25px;color:#9b6668;font-size:13px;line-height:1.8}
-.rococo-shell .cl-card{box-shadow:none!important;border:0!important;background:transparent!important;width:100%!important}
-.rococo-shell .cl-headerTitle,.rococo-shell .cl-headerSubtitle{display:none!important}
-.rococo-shell .cl-formButtonPrimary{background:linear-gradient(180deg,#dca2a5,#a96376)!important;border:1px solid #c99c68!important;box-shadow:0 3px 0 #b58b5e,0 8px 20px #a963762b!important;color:white!important}
-.rococo-shell .cl-formFieldInput{border:1px solid #d8b28b!important;background:#fffdf9!important;border-radius:12px!important}
-.rococo-shell .cl-formFieldInput:focus{outline:2px solid #c69a61!important;outline-offset:1px}
-.rococo-shell .cl-footerActionLink,.rococo-shell .cl-formFieldAction{color:#99596a!important}
-.rococo-shell .cl-socialButtonsBlockButton{border-color:#dec3a5!important}
-.rococo-shell .cl-dividerLine{background:#e2cbb2!important}
-.rococo-shell .cl-formFieldLabel{color:#754e54!important}
-.rococo-shell .cl-footer{background:transparent!important}
-.membership-gate{padding:115px 16px 55px}
-.membership-gate>section,.account-hero{position:relative;width:min(650px,100%);margin-inline:auto;border:2px solid #cda06b;border-radius:80px 80px 24px 24px;background:#fffaf2;color:#744750;box-shadow:0 0 0 7px #fffaf2,0 0 0 8px #e6cfb2,0 22px 55px #966a6624;animation:rococo-enter .55s ease both}
-.membership-gate>section{padding:52px clamp(22px,5vw,60px)}
-.membership-gate .eyebrow,.account-hero .eyebrow{color:#b38a5d}
-.membership-gate-mark{background:#fff2e8;color:#a86f7c;border:2px solid #d3a66b;box-shadow:0 0 0 7px #f6e9dd;font-size:32px}
-.membership-gate h1,.account-hero h1{color:#834d53}
-.membership-gate section>p:last-of-type{color:#795d60}
-.membership-gate-actions :is(a,button),.account-primary,.member-profile-card form button{background:linear-gradient(180deg,#f6dcdf,#e7b7bd);color:#6b3447!important;border:1px solid #c99c68;box-shadow:0 3px 0 #d3ab7d,0 8px 20px #a963761f;border-radius:16px}
-.membership-gate-actions a:last-child,.account-secondary{background:#fffaf2;color:#895563!important;border:1px solid #c99c68;box-shadow:none}
-.account-page{padding-top:125px}
-.account-hero{padding:44px 24px;margin-bottom:42px}
-.account-hero>p:last-of-type{color:#795d60}
-.member-profile-card{background:#fffdf8;border:1px solid #d4ad80}
-.member-profile-card input:focus{outline:2px solid #c99c68}
-.rococo-shell :is(button,a),.membership-gate-actions :is(button,a),.account-actions :is(button,a){transition:transform .2s ease,filter .2s ease}
-.rococo-shell :is(button,a):hover,.membership-gate-actions :is(button,a):hover,.account-actions :is(button,a):hover{filter:brightness(1.04)}
-@media(hover:hover){.rococo-shell button:hover,.membership-gate-actions :is(button,a):hover,.account-actions :is(button,a):hover{transform:translateY(-2px)}}
-@keyframes rococo-enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:600px){.rococo-shell{border-radius:75px 75px 20px 20px;padding:34px 18px 25px}.rococo-brand{font-size:24px}.rococo-shell:before,.rococo-shell:after,.membership-gate>section:before,.membership-gate>section:after,.account-hero:before,.account-hero:after{font-size:26px}.membership-gate>section{border-radius:65px 65px 20px 20px;padding:40px 23px}.account-hero{border-radius:65px 65px 20px 20px;padding:40px 18px}.auth-page{padding-top:105px}}
-@media(prefers-reduced-motion:reduce){.rococo-shell,.membership-gate>section,.account-hero{animation:none}.rococo-shell :is(button,a),.membership-gate-actions :is(button,a),.account-actions :is(button,a){transition:none}}
+/* ===== Member pages · 珍珠粉藍洛可可 =====
+   /account (every stage), /sign-in, /sign-up and the member gate (ChatGPT step-5 spec, PR #30).
+   Each page also carries .pearl-page, so the ground, header and notice come from styles/pearl-page.css.
+   Only the look lives here: who may enter is decided in membership-gate.tsx and on the server. */
 
-/* Account center: status-aware hero, onboarding steps, member spaces and profile card. */
-.account-page{padding-bottom:90px}
-.account-hero-anchor,.member-profile-card{scroll-margin-top:96px}
-.account-hero>p.account-lead{max-width:600px;margin:22px auto 0;color:#795d60;font-size:15px;line-height:1.95}
-.account-hero>p.account-meta{width:max-content;max-width:100%;line-height:1.6;margin:16px auto 0;padding:7px 15px;border:1px solid #e2c49c;border-radius:999px;background:#fff4ea;color:#8c5c4f;font-size:13px;font-weight:600}
-.account-hero>p.account-meta-warning{border-color:#e8b48f;background:#fdeee3;color:#8a4f2f}
-.account-hero .account-actions{margin-top:26px}
-.account-actions :is(a,button){min-height:48px;padding:12px 24px;display:inline-flex;align-items:center;justify-content:center;border-radius:16px;text-decoration:none;font-family:inherit;font-size:14px;font-weight:650;line-height:1.3;cursor:pointer}
-.account-hero>p.account-line-hint{max-width:470px;margin:14px auto 0;color:#9b7774;font-size:12px;line-height:1.75}
-.account-line-hint a{color:#99596a;text-underline-offset:3px}
-.account-message-preview{max-width:470px;margin:10px auto 0;color:#795d60;font-size:12px;text-align:left}
-.account-message-preview summary{width:max-content;max-width:100%;min-height:32px;margin:auto;display:flex;align-items:center;gap:6px;color:#99596a;cursor:pointer}
-.account-message-preview pre{margin:8px 0 0;padding:14px 16px;border:1px dashed #d8b28b;border-radius:14px;background:#fffdf9;white-space:pre-wrap;word-break:break-word;font-family:inherit;font-size:13px;line-height:1.8}
-.account-quiet-actions{margin:16px 0 0;display:flex;justify-content:center;gap:16px}
-.account-hero>p.account-quiet-actions{margin:16px auto 0}
-.account-quiet-actions a,.account-signout{min-height:44px;padding:8px 6px;display:inline-flex;align-items:center;border:0;background:none;color:#99596a;font-family:inherit;font-size:13px;text-decoration:underline;text-decoration-color:#d8b28b;text-underline-offset:4px;cursor:pointer}
-.account-status.status-expiring i{background:#e09a68;box-shadow:0 0 0 4px #e09a6826}
-.account-status.status-expired i{background:#b77c8c;box-shadow:0 0 0 4px #b77c8c1f}
-.account-status.status-suspended i{background:#a39189;box-shadow:0 0 0 4px #a391891f}
-.account-status.status-error i{background:#a39189;box-shadow:0 0 0 4px #a391891f}
-
-.account-steps{max-width:640px;margin:30px auto 0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;list-style:none;text-align:center}
-.account-steps li{position:relative;padding:0 4px;display:grid;justify-items:center;align-content:start;gap:5px}
-.account-steps li:not(:last-child):after{content:"";position:absolute;top:17px;left:calc(50% + 24px);right:calc(-50% + 24px);height:1px;background:#e0c7a6}
-.account-step-mark{width:34px;height:34px;display:grid;place-items:center;border:1px solid #d3a66b;border-radius:50%;background:#fffaf2;color:#a57561;font:14px/1 Georgia,serif}
-.account-steps li.done .account-step-mark{border-color:#c99c68;background:linear-gradient(180deg,#dca2a5,#a96376);color:#fff}
-.account-steps li.current .account-step-mark{border-color:#b77c8c;color:#8c4d52;font-weight:700;box-shadow:0 0 0 5px #f6e2dd}
-.account-steps b{color:#744750;font-size:13px;line-height:1.4}
-.account-steps li.current b{color:#8c4d52}
-.account-steps small{color:#a08583;font-size:11px;line-height:1.5}
-
-.account-journey{width:min(760px,100%);margin:0 auto 48px;text-align:center}
-.account-journey h2,.account-spaces h2,.member-profile-head h2{margin:0;color:#834d53;font:500 clamp(22px,3vw,28px)/1.4 Georgia,"Noto Serif TC",serif}
-.account-spaces{width:min(900px,100%);margin:0 auto 46px}
-.account-spaces>header{margin-bottom:20px;text-align:center}
-.account-spaces .eyebrow{margin:0 0 6px;color:#b38a5d;font:10px Georgia,serif;letter-spacing:.22em}
-.account-space-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.account-space{position:relative;min-height:96px;padding:18px 44px 18px 20px;display:grid;align-content:center;gap:5px;border:1px solid #e0c3a0;border-radius:20px;background:#fffdf8;color:#744750;text-decoration:none;box-shadow:0 10px 24px #9e6e6412;transition:transform .2s ease,border-color .2s ease}
-.account-space b{color:#834d53;font-size:15px}
-.account-space small{color:#9b7774;font-size:12px;line-height:1.55}
-.account-space>span{position:absolute;top:50%;right:18px;transform:translateY(-50%);color:#c69a61;font-size:16px}
-a.account-space:hover{border-color:#c99c68}
-@media(hover:hover){a.account-space:hover{transform:translateY(-2px)}}
-.account-space.is-locked{border-style:dashed;background:#fffaf2;box-shadow:none}
-.account-space.is-locked>span{position:static;width:max-content;margin-top:4px;padding:2px 9px;transform:none;border:1px solid #e3cdb1;border-radius:999px;color:#a57561;font-size:10px;letter-spacing:.06em}
-.account-records-link{position:relative;max-width:520px;margin:18px auto 0;padding:14px 44px 14px 20px;display:grid;gap:3px;border:1px solid #e3cdb1;border-radius:16px;background:#fffaf2;color:#744750;text-decoration:none}
-.account-records-link b{color:#834d53;font-size:14px}
-.account-records-link small{color:#9b7774;font-size:12px}
-.account-records-link>span{position:absolute;top:50%;right:18px;transform:translateY(-50%);color:#c69a61}
-.account-records-link:hover{border-color:#c99c68}
-
-.account-page .member-profile-card{position:relative;width:min(760px,100%);margin:0 auto 46px;padding:30px clamp(18px,4vw,36px);border:1px solid #d4ad80;border-radius:28px;background:#fffdf8;box-shadow:0 0 0 6px #fffaf2,0 0 0 7px #ecd9c1,0 18px 44px #966a661a}
-.member-profile-head{margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.member-profile-card .member-profile-edit,.member-profile-card form .member-profile-cancel{min-height:42px;padding:8px 18px;border:1px solid #c99c68;border-radius:999px;background:#fffaf2;box-shadow:none;color:#895563!important;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
-.member-profile-rows{margin:0}
-.member-profile-rows>div{padding:14px 0;display:grid;grid-template-columns:150px 1fr;gap:16px;border-bottom:1px solid #f0e2d1}
-.member-profile-rows dt{color:#a57561;font-size:12px;letter-spacing:.06em}
-.member-profile-rows dd{margin:0;color:#744750;font-weight:600;word-break:break-word}
-.member-profile-card .member-profile-form{margin-top:22px;display:grid;grid-template-columns:repeat(3,1fr);gap:15px}
-.member-profile-form-actions{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:10px}
-.member-profile-card form .member-profile-form-actions button[type=submit]{min-height:48px;padding:12px 26px;font-family:inherit;font-size:14px;font-weight:650;cursor:pointer}
-.member-profile-card form button:disabled{cursor:wait;opacity:.7}
-.member-profile-notice{margin:14px 0 0;color:#5f7d64;font-size:13px;line-height:1.7}
-.member-profile-notice:empty{margin:0}
-.member-profile-notice.is-error{color:#a3474f}
-.member-privacy-note{margin:18px 0 0;padding:16px 18px;border-radius:14px;background:#fbf1e6;color:#8b6d6a;font-size:12px;line-height:1.85}
-.member-privacy-note b{display:block;margin-bottom:6px;color:#744750;font-size:13px}
-.member-privacy-note p{margin:0 0 6px}
-.member-privacy-note p:last-child{margin-bottom:0}
-.member-profile-card .member-profile-foot{margin-top:10px;padding:0;display:flex;justify-content:flex-end;background:none;text-align:right}
-.account-page :is(a,button,summary,input):focus-visible{outline:2px solid #c69a61;outline-offset:3px}
-
-@media(max-width:780px){.account-space-grid{grid-template-columns:1fr 1fr}.account-hero .account-actions{display:grid}}
-@media(max-width:700px){.member-profile-rows>div{grid-template-columns:1fr;gap:4px}.account-page .member-profile-card .member-profile-form{grid-template-columns:1fr}}
-@media(max-width:600px){
-  .account-steps{max-width:300px;grid-template-columns:1fr;gap:0;text-align:left}
-  .account-steps li{padding:0 0 14px;grid-template-columns:34px 1fr;justify-items:start;column-gap:12px;row-gap:1px}
-  .account-step-mark{grid-row:span 2}
-  .account-steps li:not(:last-child):after{top:38px;bottom:3px;left:17px;right:auto;width:1px;height:auto}
+:is(.account-page, .membership-gate, .auth-page) {
+  --mp-ink: #263449; --mp-muted: #33445f; --mp-title: #843450; --mp-gold: #c5a46f; --mp-gold-line: #e6d8bb;
+  --mp-blue: #e8f2fc; --mp-blue-line: #b9c7d8; --mp-blush: #fceaf3; --mp-selected: #f4dfe9; --mp-line: #d8dce8;
+  --mp-card-shadow: 0 22px 48px rgba(132, 52, 80, .08), 0 2px 10px rgba(38, 52, 73, .04);
+  --mp-serif: "Noto Serif TC", "Songti TC", Georgia, serif;
+  --mp-latin: "Cormorant Garamond", "Noto Serif TC", Georgia, serif;
+  --mp-shell: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 48' fill='none' stroke='%23c5a46f' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M32 42 9 21c5-9 14-14 23-14s18 5 23 14Z'/%3E%3Cpath d='M32 42 18 14M32 42V8M32 42l14-28M32 42 12 25M32 42l20-17'/%3E%3C/svg%3E");
+  position: relative;
+  min-height: 100svh;
+  background: transparent;
+  color: var(--mp-ink);
+  font-family: var(--mp-serif);
 }
-@media(max-width:480px){.account-space-grid{gap:9px}.account-space{min-height:88px;padding:14px 30px 14px 14px;border-radius:16px}.account-space b{font-size:14px}.account-space small{font-size:11px}.account-space>span{right:12px}.account-space.is-locked{padding-right:14px}}
-@media(prefers-reduced-motion:reduce){.account-space{transition:none}a.account-space:hover{transform:none}}
-.account-meta>span{white-space:nowrap}
-@media(max-width:359px){.account-space-grid{grid-template-columns:1fr}.account-space{min-height:72px}}
+
+:is(.account-page, .membership-gate, .auth-page) :is(p, small, h2, b, dd) { text-wrap: pretty; } /* no lone last character */
+:is(.account-page, .membership-gate, .auth-page) h1 { text-wrap: balance; }
+
+/* ---------- shared buttons ---------- */
+:is(.account-page, .membership-gate, .auth-page) :is(.account-primary, .account-secondary, .gate-primary, .gate-secondary),
+.account-page .member-profile-card .member-profile-form-actions button {
+  min-height: 50px;
+  padding: 12px 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--mp-gold);
+  border-radius: 999px;
+  font: 700 15px/1.4 var(--mp-serif);
+  letter-spacing: .04em;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+}
+:is(.account-page, .membership-gate, .auth-page) :is(.account-primary, .gate-primary),
+.account-page .member-profile-card .member-profile-form-actions button[type=submit] {
+  background: linear-gradient(180deg, #fff2f8, #f4dfe9);
+  color: var(--mp-title);
+  box-shadow: 0 10px 22px rgba(132, 52, 80, .10), inset 0 1px #fff;
+}
+:is(.account-page, .membership-gate, .auth-page) :is(.account-secondary, .gate-secondary),
+.account-page .member-profile-card :is(.member-profile-edit, .member-profile-cancel) {
+  background: #ffffff;
+  color: var(--mp-title);
+  box-shadow: none;
+}
+@media (hover: hover) {
+  :is(.account-page, .membership-gate) :is(.account-primary, .gate-primary):hover,
+  .account-page .member-profile-card .member-profile-form-actions button[type=submit]:hover { background: linear-gradient(180deg, #fdeaf3, #eecfdd); transform: translateY(-1px); }
+  :is(.account-page, .membership-gate) :is(.account-secondary, .gate-secondary):hover,
+  .account-page .member-profile-card :is(.member-profile-edit, .member-profile-cancel):hover { background: #fbf6fb; transform: translateY(-1px); }
+}
+.account-page .member-profile-card button:disabled { cursor: wait; opacity: .7; transform: none; }
+:is(.account-page, .membership-gate, .auth-page) :is(a, button, summary, input):focus-visible {
+  outline: 2px solid var(--mp-title);
+  outline-offset: 3px;
+}
+
+/* ---------- pearl loading (three pearls) ---------- */
+.pearl-loading { margin: 22px auto 0; display: flex; justify-content: center; gap: 10px; }
+.pearl-loading i {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #f4dfe9 58%, #dccbd8);
+  box-shadow: 0 0 0 1px var(--mp-gold-line), 0 3px 8px rgba(132, 52, 80, .12);
+  animation: pearl-glow 1.2s ease-in-out infinite;
+}
+.pearl-loading i:nth-child(2) { animation-delay: .16s; }
+.pearl-loading i:nth-child(3) { animation-delay: .32s; }
+@keyframes pearl-glow { 0%, 100% { opacity: .45; transform: scale(.88); } 50% { opacity: 1; transform: scale(1); } }
+
+/* ---------- /account ---------- */
+.account-page { padding: 112px max(16px, 5vw) 90px; }
+.account-hero-anchor, .account-page .member-profile-card { scroll-margin-top: 96px; }
+.account-hero {
+  position: relative;
+  width: min(820px, 100%);
+  margin: 0 auto 32px;
+  padding: 58px clamp(20px, 5vw, 56px) 40px;
+  border: 1px solid var(--mp-gold);
+  border-radius: 150px 150px 30px 30px / 90px 90px 30px 30px;
+  background: rgba(255, 255, 255, .95);
+  box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 7px var(--mp-gold-line), var(--mp-card-shadow);
+  text-align: center;
+}
+.account-hero::before {
+  content: ""; position: absolute; top: 14px; left: 50%; width: 46px; height: 34px; transform: translateX(-50%);
+  background: var(--mp-shell) center / contain no-repeat;
+}
+.account-hero .eyebrow,
+.account-spaces .eyebrow,
+.membership-gate .eyebrow {
+  margin: 0;
+  color: var(--mp-title);
+  font: italic 600 18px/1.3 var(--mp-latin);
+  letter-spacing: .08em;
+}
+.account-hero h1 {
+  margin: 0;
+  color: var(--mp-title);
+  font: 700 clamp(30px, 4.6vw, 46px)/1.35 var(--mp-serif);
+  letter-spacing: .02em;
+}
+.account-hero > p.account-lead {
+  max-width: 600px;
+  margin: 18px auto 0;
+  color: var(--mp-muted);
+  font-size: 16px;
+  line-height: 1.9;
+}
+.account-hero .account-actions { margin-top: 24px; }
+.account-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+
+/* status chip: words first, colour only helps */
+.account-status {
+  --chip-bg: #ffffff; --chip-line: var(--mp-line); --chip-ink: var(--mp-muted); --chip-dot: var(--mp-blue-line);
+  width: max-content;
+  max-width: 100%;
+  margin: 14px auto 16px;
+  padding: 7px 15px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid var(--chip-line);
+  border-radius: 999px;
+  background: var(--chip-bg);
+  color: var(--chip-ink);
+  font: 700 14px/1.4 var(--mp-serif);
+  letter-spacing: .04em;
+}
+.account-status i { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--chip-dot); box-shadow: 0 0 0 4px color-mix(in srgb, var(--chip-dot) 18%, transparent); }
+.account-status:is(.status-signed-out, .status-pending-incomplete, .status-pending-ready) { --chip-bg: var(--mp-blue); --chip-line: var(--mp-blue-line); --chip-ink: var(--mp-ink); --chip-dot: #6f8bb0; }
+.account-status.status-error { --chip-bg: #fff6fa; --chip-line: #e9b8cb; --chip-ink: var(--mp-title); --chip-dot: #c0577a; }
+.account-status.status-active { --chip-bg: #e9f6f2; --chip-line: #b5dccf; --chip-ink: #22665a; --chip-dot: #3f9a85; }
+.account-status.status-expiring { --chip-bg: #fdeee8; --chip-line: #efc5b9; --chip-ink: #8f2f4e; --chip-dot: #d9748a; }
+.account-status:is(.status-expired, .status-suspended) { --chip-bg: #eef1f6; --chip-line: #c9d1de; --chip-ink: var(--mp-muted); --chip-dot: #8a97ab; }
+.account-status.status-admin { --chip-bg: #ffffff; --chip-line: var(--mp-gold); --chip-ink: var(--mp-title); --chip-dot: var(--mp-gold); }
+
+.account-hero > p.account-meta {
+  width: max-content;
+  max-width: 100%;
+  margin: 16px auto 0;
+  padding: 7px 16px;
+  border: 1px solid var(--mp-blue-line);
+  border-radius: 999px;
+  background: var(--mp-blue);
+  color: var(--mp-ink);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+.account-hero > p.account-meta-warning { border-color: #efc5b9; background: #fdeee8; color: #8f2f4e; }
+.account-meta > span { white-space: nowrap; }
+
+/* LINE request: a small card of its own inside the hero */
+.account-line-request {
+  max-width: 560px;
+  margin: 24px auto 0;
+  padding: 20px clamp(16px, 4vw, 24px);
+  border: 1px solid var(--mp-gold-line);
+  border-radius: 22px;
+  background: #fbf9ff;
+  text-align: center;
+}
+.account-line-request .account-actions { margin-top: 0; }
+.account-line-hint { max-width: 470px; margin: 14px auto 0; color: var(--mp-muted); font-size: 14px; line-height: 1.8; }
+.account-line-hint a { padding-block: 11px; color: var(--mp-title); text-decoration: underline; text-underline-offset: 3px; } /* inline link, hit area 44px */
+.account-message-preview { max-width: 470px; margin: 8px auto 0; color: var(--mp-muted); font-size: 14px; text-align: left; }
+.account-message-preview summary { width: max-content; max-width: 100%; min-height: 44px; margin: auto; display: flex; align-items: center; gap: 6px; color: var(--mp-title); cursor: pointer; }
+.account-message-preview pre {
+  margin: 6px 0 0; padding: 14px 16px;
+  border: 1px dashed var(--mp-gold); border-radius: 14px; background: #ffffff;
+  color: var(--mp-ink); white-space: pre-wrap; word-break: break-word; font: 14px/1.8 var(--mp-serif);
+}
+
+.account-quiet-actions { margin: 16px 0 0; display: flex; justify-content: center; gap: 16px; }
+.account-hero > p.account-quiet-actions { margin: 16px auto 0; }
+.account-quiet-actions a, .account-page .account-signout {
+  min-height: 44px; padding: 8px 6px; display: inline-flex; align-items: center;
+  border: 0; background: none; color: var(--mp-title);
+  font: 600 14px/1.4 var(--mp-serif); text-decoration: underline; text-underline-offset: 4px; cursor: pointer;
+}
+
+/* four steps */
+.account-journey {
+  width: min(820px, 100%);
+  margin: 0 auto 32px;
+  padding: 30px clamp(18px, 4vw, 40px);
+  border: 1px solid var(--mp-gold-line);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: var(--mp-card-shadow);
+  text-align: center;
+}
+.account-journey h2, .account-spaces h2, .member-profile-head h2 {
+  margin: 0;
+  color: var(--mp-title);
+  font: 700 clamp(22px, 3vw, 28px)/1.4 var(--mp-serif);
+}
+.account-steps {
+  max-width: 700px; margin: 26px auto 0; padding: 0;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  list-style: none; text-align: center;
+}
+.account-steps li { position: relative; padding: 0 4px; display: grid; justify-items: center; align-content: start; gap: 6px; }
+.account-steps li:not(:last-child)::after {
+  content: ""; position: absolute; top: 19px; left: calc(50% + 26px); right: calc(-50% + 26px); height: 1px;
+  background: linear-gradient(90deg, var(--mp-gold), var(--mp-gold-line));
+}
+.account-step-mark {
+  width: 38px; height: 38px; display: grid; place-items: center;
+  border: 1px solid var(--mp-line); border-radius: 50%; background: #ffffff;
+  color: var(--mp-muted); font: italic 600 19px/1 var(--mp-latin);
+}
+.account-steps li.done .account-step-mark { border-color: var(--mp-blue-line); background: var(--mp-blue); color: var(--mp-ink); font: 700 15px/1 var(--mp-serif); }
+.account-steps li.current .account-step-mark { border-color: var(--mp-gold); background: var(--mp-blush); color: var(--mp-title); box-shadow: 0 0 0 5px rgba(252, 234, 243, .9); }
+.account-steps b { color: var(--mp-ink); font-size: 15px; line-height: 1.45; }
+.account-steps li.current b { color: var(--mp-title); }
+.account-steps small { color: var(--mp-muted); font-size: 13px; line-height: 1.55; }
+
+/* member spaces */
+.account-spaces { width: min(980px, 100%); margin: 0 auto 32px; }
+.account-spaces > header { margin-bottom: 18px; text-align: center; }
+.account-spaces .eyebrow { margin-bottom: 4px; font-size: 17px; }
+.account-space-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.account-space {
+  position: relative;
+  min-height: 112px;
+  padding: 18px 42px 18px 18px;
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  column-gap: 14px;
+  row-gap: 3px;
+  align-content: center;
+  border: 1px solid var(--mp-gold-line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 10px 24px rgba(132, 52, 80, .06);
+  color: var(--mp-ink);
+  text-decoration: none;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+.account-space-icon {
+  grid-row: 1 / span 2; align-self: center;
+  width: 44px; height: 44px; padding: 8px;
+  border: 1px solid var(--mp-gold-line); border-radius: 50%;
+  background: linear-gradient(180deg, #ffffff, var(--mp-blush));
+  fill: none; stroke: var(--mp-gold); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round;
+}
+.account-space b { color: var(--mp-title); font-size: 16px; line-height: 1.4; }
+.account-space small { color: var(--mp-muted); font-size: 14px; line-height: 1.55; }
+.account-space-arrow { position: absolute; top: 50%; right: 16px; transform: translateY(-50%); color: var(--mp-gold); font-size: 18px; }
+@media (hover: hover) {
+  a.account-space:hover { transform: translateY(-2px); border-color: var(--mp-gold); box-shadow: 0 14px 30px rgba(132, 52, 80, .10); }
+}
+.account-space.is-locked { border-color: #c9d1de; background: #ffffff; box-shadow: none; }
+.account-space.is-locked .account-space-icon { border-color: #dfe5ee; background: #f6f8fb; opacity: .85; }
+.account-space-lock {
+  grid-column: 2; width: max-content; margin-top: 6px; padding: 3px 11px 3px 8px;
+  display: inline-flex; align-items: center; gap: 5px;
+  border: 1px solid #c9d1de; border-radius: 999px; background: #f4f7fb;
+  color: var(--mp-muted); font-size: 12px; font-weight: 600; letter-spacing: .04em;
+}
+.account-space-lock svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.account-records-link {
+  position: relative; max-width: 560px; margin: 18px auto 0; padding: 15px 46px 15px 20px;
+  display: grid; gap: 3px;
+  border: 1px solid var(--mp-gold-line); border-radius: 18px; background: #ffffff;
+  color: var(--mp-ink); text-decoration: none;
+}
+.account-records-link b { color: var(--mp-title); font-size: 15px; }
+.account-records-link small { color: var(--mp-muted); font-size: 14px; }
+.account-records-link > span { position: absolute; top: 50%; right: 18px; transform: translateY(-50%); color: var(--mp-gold); }
+@media (hover: hover) { .account-records-link:hover { border-color: var(--mp-gold); } }
+
+/* profile card */
+.account-page .member-profile-card {
+  position: relative;
+  width: min(760px, 100%);
+  margin: 0 auto 32px;
+  padding: 30px clamp(18px, 4vw, 36px);
+  border: 1px solid var(--mp-gold);
+  border-radius: 28px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 5px #fff, inset 0 0 0 6px var(--mp-gold-line), 0 20px 44px rgba(132, 52, 80, .08);
+}
+.member-profile-head { margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.account-page .member-profile-card :is(.member-profile-edit, .member-profile-cancel) {
+  min-height: 44px; padding: 8px 18px; border: 1px solid var(--mp-gold); border-radius: 999px;
+  font: 700 14px/1.4 var(--mp-serif); letter-spacing: .04em; cursor: pointer;
+}
+.member-profile-rows { margin: 0; }
+.member-profile-rows > div { padding: 14px 0; display: grid; grid-template-columns: 150px 1fr; gap: 16px; border-bottom: 1px solid #efe8f0; }
+.member-profile-rows dt { color: var(--mp-muted); font-size: 14px; letter-spacing: .04em; }
+.member-profile-rows dd { margin: 0; color: var(--mp-ink); font-size: 16px; font-weight: 600; word-break: break-word; }
+.account-page .member-profile-card .member-profile-form { margin-top: 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+.member-profile-form label { display: grid; gap: 8px; color: var(--mp-ink); font-size: 14px; font-weight: 600; }
+.member-profile-form input {
+  width: 100%; min-height: 48px; padding: 10px 14px;
+  border: 1px solid var(--mp-gold); border-radius: 12px; background: #ffffff;
+  color: var(--mp-ink); font: 16px/1.4 var(--mp-serif);
+}
+.member-profile-form input:focus { outline: none; border-color: var(--mp-title); box-shadow: 0 0 0 3px rgba(132, 52, 80, .18); }
+.member-profile-form-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px; }
+.member-profile-notice { margin: 14px 0 0; padding: 10px 14px; border: 1px solid var(--mp-blue-line); border-radius: 12px; background: var(--mp-blue); color: var(--mp-ink); font-size: 14px; line-height: 1.7; }
+.member-profile-notice:empty { margin: 0; padding: 0; border: 0; }
+.member-profile-notice.is-error { border-color: #e9b8cb; background: #fff6fa; color: #8f2f4e; }
+.member-privacy-note { margin: 18px 0 0; padding: 16px 18px; border: 1px solid var(--mp-line); border-radius: 16px; background: #f8f7ff; color: var(--mp-muted); font-size: 13px; line-height: 1.85; }
+.member-privacy-note b { display: block; margin-bottom: 6px; color: var(--mp-ink); font-size: 14px; }
+.member-privacy-note p { margin: 0 0 6px; }
+.member-privacy-note p:last-child { margin-bottom: 0; }
+.account-page .member-profile-card .member-profile-foot { margin-top: 10px; padding: 0; display: flex; justify-content: flex-end; background: none; }
+
+/* not configured yet */
+.account-status.status-setup { --chip-bg: #ffffff; }
+
+/* ---------- member gate ---------- */
+.membership-gate { padding: 112px 16px 60px; display: grid; place-items: center; text-align: center; }
+.membership-gate > section {
+  position: relative;
+  width: min(620px, 100%);
+  padding: 44px clamp(20px, 6vw, 56px) 40px;
+  border: 1px solid var(--mp-gold);
+  border-radius: 160px 160px 30px 30px / 100px 100px 30px 30px;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 7px var(--mp-gold-line), var(--mp-card-shadow);
+}
+.membership-gate-mark { width: 56px; height: 42px; margin: 0 auto 10px; display: block; }
+.membership-gate-mark svg, .rococo-crest svg { width: 100%; height: 100%; fill: none; stroke: var(--mp-gold); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.membership-gate-mark circle, .rococo-crest circle { fill: var(--mp-gold); stroke: none; }
+.membership-gate h1 { margin: 12px 0 0; color: var(--mp-title); font: 700 clamp(26px, 4vw, 34px)/1.4 var(--mp-serif); }
+.membership-gate section > p:not(.eyebrow) { max-width: 460px; margin: 14px auto 0; color: var(--mp-muted); font-size: 16px; line-height: 1.9; }
+.membership-gate-actions { margin-top: 26px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+
+/* ---------- /sign-in and /sign-up ---------- */
+.auth-page { padding: 104px 16px 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.rococo-shell, .auth-setup {
+  position: relative;
+  width: min(520px, 100%);
+  padding: 40px clamp(18px, 5vw, 40px) 30px;
+  border: 1px solid var(--mp-gold);
+  border-radius: 170px 170px 30px 30px / 100px 100px 30px 30px;
+  background: rgba(255, 255, 255, .97);
+  box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 7px var(--mp-gold-line), var(--mp-card-shadow);
+  text-align: center;
+}
+.rococo-crest { width: 60px; height: 45px; margin: 0 auto 8px; }
+.rococo-brand { margin: 4px 0 0; color: var(--mp-title); font: 700 17px/1.3 var(--mp-serif); letter-spacing: .2em; }
+.rococo-kicker { margin: 4px 0 16px; color: var(--mp-title); font: italic 600 18px/1.3 var(--mp-latin); letter-spacing: .08em; opacity: .85; }
+.rococo-divider { position: relative; max-width: 260px; height: 1px; margin: 0 auto 20px; background: linear-gradient(90deg, transparent, var(--mp-gold), transparent); }
+.rococo-divider::after { content: "✦"; position: absolute; top: -11px; left: calc(50% - 12px); padding: 0 6px; background: #ffffff; color: var(--mp-gold); font-size: 13px; }
+.rococo-title, .auth-setup h1 { margin: 0; color: var(--mp-title); font: 700 clamp(24px, 5vw, 30px)/1.4 var(--mp-serif); }
+.rococo-description, .auth-setup p { margin: 8px 0 22px; color: var(--mp-muted); font-size: 15px; line-height: 1.8; }
+.auth-setup { padding-top: 50px; }
+/* Clerk: the arch already says who she is signing in to, so its first-step heading is hidden; later
+   steps (the Email code, a second factor) keep their own instructions. */
+.rococo-shell :is(.cl-signIn-start, .cl-signUp-start) .cl-header { display: none; }
+.rococo-shell .cl-rootBox, .rococo-shell .cl-cardBox { width: 100%; max-width: 100%; }
+.rococo-shell .cl-footer { background: transparent; }
+
+/* ---------- phones ---------- */
+@media (max-width: 780px) {
+  .account-page { padding: 92px 16px 72px; }
+  .account-hero { padding: 54px 18px 32px; border-radius: 96px 96px 26px 26px / 60px 60px 26px 26px; }
+  .account-hero > p.account-meta { border-radius: 18px; }
+  .account-hero .account-actions, .account-line-request .account-actions, .membership-gate-actions { display: grid; }
+  .account-hero .account-actions > *, .account-line-request .account-actions > *, .membership-gate-actions > * { width: 100%; }
+  .account-space-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .account-space { min-height: 0; padding: 16px 14px; grid-template-columns: 1fr; row-gap: 6px; align-content: start; }
+  .account-space-icon { grid-row: auto; width: 40px; height: 40px; padding: 7px; margin-bottom: 4px; }
+  .account-space-arrow { top: 18px; right: 14px; transform: none; }
+  .account-space-lock { grid-column: 1; }
+  .account-space b { font-size: 15px; }
+  .account-space small { font-size: 13px; }
+  .membership-gate { padding: 92px 16px 48px; }
+  .membership-gate > section { padding: 40px 18px 30px; border-radius: 100px 100px 26px 26px / 62px 62px 26px 26px; }
+  .auth-page { padding: 88px 16px 44px; }
+  .rococo-shell, .auth-setup { padding: 34px 16px 24px; border-radius: 100px 100px 26px 26px / 62px 62px 26px 26px; }
+}
+@media (max-width: 700px) {
+  .member-profile-rows > div { grid-template-columns: 1fr; gap: 4px; }
+  .account-page .member-profile-card .member-profile-form { grid-template-columns: 1fr; }
+  .account-page .member-profile-card { padding: 24px 18px; }
+  .member-profile-form-actions > button { flex: 1 1 auto; }
+}
+@media (max-width: 600px) {
+  .account-journey { padding: 26px 18px; }
+  .account-steps { max-width: 320px; grid-template-columns: 1fr; gap: 0; text-align: left; }
+  .account-steps li { padding: 0 0 16px; grid-template-columns: 38px 1fr; justify-items: start; column-gap: 14px; row-gap: 1px; }
+  .account-step-mark { grid-row: span 2; }
+  .account-steps li:not(:last-child)::after { top: 42px; bottom: 4px; left: 19px; right: auto; width: 1px; height: auto; background: linear-gradient(180deg, var(--mp-gold), var(--mp-gold-line)); }
+}
+@media (max-width: 359px) {
+  .account-space-grid { grid-template-columns: 1fr; }
+  .account-space { grid-template-columns: 40px 1fr; column-gap: 12px; padding-right: 36px; }
+  .account-space-icon { grid-row: 1 / span 2; margin-bottom: 0; }
+  .account-space-lock { grid-column: 2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pearl-loading i { animation: none; opacity: .8; }
+  :is(.account-page, .membership-gate, .auth-page) :is(a, button, .account-space) { transition: none; }
+  :is(.account-page, .membership-gate, .auth-page) :is(a, button):hover { transform: none; }
+}

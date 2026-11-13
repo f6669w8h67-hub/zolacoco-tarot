@@ -27,19 +27,38 @@ import type { ClientMember, MemberLoadFailure } from "@/lib/member-client";
 
 export type SaveProfile = (input: ProfileInput) => Promise<{ ok: true } | { ok: false; message: string }>;
 
-const memberSpaces = [
-  { href: "/#draw", title: "塔羅抽牌", note: "單張與三張牌陣" },
-  { href: "/pendulum", title: "靈擺占卜", note: "直覺問答與生活指引" },
-  { href: "/astro-dice", title: "星骰指引", note: "行星 × 星座 × 宮位" },
-  { href: "/astrology-exploration", title: "探索妳的星盤", note: "理解內在需求與人生課題" },
-  { href: "/?tool=archetype#explore", title: "內在探索", note: "內在原型、直覺練習與七日筆記" },
-  { href: "/healing-room", title: "療癒小房間", note: "情緒、關係與睡前練習" },
+type SpaceIconName = "tarot" | "pendulum" | "dice" | "chart" | "bloom" | "heart";
+
+const memberSpaces: { href: string; title: string; note: string; icon: SpaceIconName }[] = [
+  { href: "/#draw", title: "塔羅抽牌", note: "單張與三張牌陣", icon: "tarot" },
+  { href: "/pendulum", title: "靈擺占卜", note: "直覺問答與生活指引", icon: "pendulum" },
+  { href: "/astro-dice", title: "星骰指引", note: "行星 × 星座 × 宮位", icon: "dice" },
+  { href: "/astrology-exploration", title: "探索妳的星盤", note: "理解內在需求與人生課題", icon: "chart" },
+  { href: "/?tool=archetype#explore", title: "內在探索", note: "內在原型、直覺練習與七日筆記", icon: "bloom" },
+  { href: "/healing-room", title: "療癒小房間", note: "情緒、關係與睡前練習", icon: "heart" },
 ];
+
+// Gold line icons for the six member spaces (ChatGPT step-5 spec), drawn in place so no new images load.
+function SpaceIcon({ name }: { name: SpaceIconName }) {
+  const paths: Record<SpaceIconName, ReactNode> = {
+    tarot: <><rect x="9" y="4" width="14" height="24" rx="2" /><path d="m16 10 1.5 3.2 3.4.4-2.5 2.3.7 3.4L16 17.6l-3.1 1.7.7-3.4-2.5-2.3 3.4-.4Z" /></>,
+    pendulum: <><path d="M16 3v11" /><path d="M11.5 14h9L16 28Z" /><path d="m11.5 14 4.5 4 4.5-4" /></>,
+    dice: <><path d="M16 4 27 10v12L16 28 5 22V10Z" /><path d="m5 10 11 6 11-6M16 16v12" /><circle cx="16" cy="10" r="1.3" /><circle cx="10" cy="17" r="1.1" /><circle cx="22" cy="21" r="1.1" /></>,
+    chart: <><circle cx="16" cy="16" r="12" /><circle cx="16" cy="16" r="6.5" /><path d="M4 16h5.5M22.5 16H28M16 4v5.5M16 22.5V28M7.5 7.5l4 4M20.5 20.5l4 4M24.5 7.5l-4 4M11.5 20.5l-4 4" /></>,
+    bloom: <><path d="M16 4c2.4 4.6 2.4 7.4 0 12-2.4-4.6-2.4-7.4 0-12ZM16 28c2.4-4.6 2.4-7.4 0-12-2.4 4.6-2.4 7.4 0 12ZM4 16c4.6-2.4 7.4-2.4 12 0-4.6 2.4-7.4 2.4-12 0ZM28 16c-4.6-2.4-7.4-2.4-12 0 4.6 2.4 7.4 2.4 12 0Z" /><circle cx="16" cy="16" r="1.6" /></>,
+    heart: <><path d="M16 27S5 20.2 5 12.2a5.4 5.4 0 0 1 11-1.6 5.4 5.4 0 0 1 11 1.6C27 20.2 16 27 16 27Z" /><path d="M16 14.6c-1.6-.2-2.5 1.4-1.4 2.4 1.5 1.2 3.6-.2 3.1-2.1-.5-2-3.4-2.4-4.8-.8" /></>,
+  };
+  return <svg className="account-space-icon" viewBox="0 0 32 32" aria-hidden="true">{paths[name]}</svg>;
+}
+
+function LockIcon() {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5" /><path d="M8.5 11V8a3.5 3.5 0 0 1 7 0v3" /></svg>;
+}
 
 const statusLabels: Record<AccountStage, string> = {
   admin: "管理員",
   "pending-incomplete": "尚未開通",
-  "pending-ready": "尚未開通",
+  "pending-ready": "待通知 Zola", // not 等待 Zola 開通: the site cannot know whether the LINE was sent yet
   active: "使用中",
   expiring: "即將到期",
   expired: "已到期",
@@ -57,7 +76,7 @@ function Title({ text }: { text: string }) {
 
 function Hero({ status, statusClass, title, children }: { status: string; statusClass: string; title: string; children: ReactNode }) {
   return <section className="account-hero">
-    <p className="eyebrow">ZOLACOCO MEMBER</p>
+    <p className="eyebrow">zolacoco member</p>
     <span className={`account-status ${statusClass}`}><i aria-hidden="true" />{status}</span>
     <Title text={title} />
     {children}
@@ -75,7 +94,7 @@ function LineRequest({ label, message, primaryRef }: { label: string; message: s
       setCopy("failed");
     }
   }
-  return <>
+  return <div className="account-line-request">
     <div className="account-actions">
       <a ref={primaryRef} className="account-primary" href={lineMessageUrl(message)} target="_blank" rel="noreferrer">{label}</a>
       <button className="account-secondary" type="button" onClick={() => void copyMessage()}>{copy === "done" ? "已複製訊息" : "複製訊息"}</button>
@@ -89,7 +108,7 @@ function LineRequest({ label, message, primaryRef }: { label: string; message: s
       <summary>查看要傳給 Zola 的訊息</summary>
       <pre>{message}</pre>
     </details>
-  </>;
+  </div>;
 }
 
 function JourneySteps({ profileDone, signedIn }: { profileDone: boolean; signedIn: boolean }) {
@@ -117,23 +136,25 @@ function MemberSpaces({ locked }: { locked: boolean }) {
     </header>
     <div className="account-space-grid">
       {memberSpaces.map((space) => locked
-        ? <div className="account-space is-locked" key={space.title}><b>{space.title}</b><small>{space.note}</small><span>開通後開放</span></div>
-        : <Link className="account-space" href={space.href} key={space.title}><b>{space.title}</b><small>{space.note}</small><span aria-hidden="true">→</span></Link>)}
+        ? <div className="account-space is-locked" key={space.title}><SpaceIcon name={space.icon} /><b>{space.title}</b><small>{space.note}</small><span className="account-space-lock"><LockIcon />開通後開放</span></div>
+        : <Link className="account-space" href={space.href} key={space.title}><SpaceIcon name={space.icon} /><b>{space.title}</b><small>{space.note}</small><span className="account-space-arrow" aria-hidden="true">→</span></Link>)}
     </div>
     {locked ? null : <Link className="account-records-link" href="/admin"><b>我的占卜紀錄</b><small>查看儲存在這台裝置上的占卜紀錄</small><span aria-hidden="true">→</span></Link>}
   </section>;
 }
 
 export function AccountLoadingView() {
-  return <main className="account-page" aria-busy="true"><section className="account-hero">
-    <p className="eyebrow">ZOLACOCO MEMBER</p>
+  return <main className="account-page pearl-page" aria-busy="true"><section className="account-hero">
+    <p className="eyebrow">zolacoco member</p>
+    <span className="account-status status-loading"><i aria-hidden="true" />正在讀取</span>
     <h1>正在讀取會員資料…</h1>
+    <span className="pearl-loading" aria-hidden="true"><i /><i /><i /></span>
   </section></main>;
 }
 
 export function SignedOutView({ signIn }: { signIn: ReactNode }) {
-  return <main className="account-page">
-    <Hero status="尚未登入" statusClass="" title={"一個帳號，\n開啟完整探索空間"}>
+  return <main className="account-page pearl-page">
+    <Hero status="尚未登入" statusClass="status-signed-out" title={"一個帳號，\n開啟完整探索空間"}>
       <p className="account-lead">第一次註冊後會先等待 Zola 開通；開通期間內，塔羅、靈擺、星骰、療癒小房間與星盤探索會全部開放。</p>
       <div className="account-actions">{signIn}<Link className="account-secondary" href="/sign-up">建立新帳號</Link></div>
     </Hero>
@@ -180,7 +201,7 @@ export function AccountErrorView({ failure, onRetry, signOut, onManageAccount }:
   onManageAccount?: () => void;
 }) {
   const copy = failureCopy[failure];
-  return <main className="account-page">
+  return <main className="account-page pearl-page">
     <Hero status={copy.status} statusClass="status-error" title={copy.title}>
       <p className="account-lead" role="alert">{copy.body}</p>
       {failure === "EMAIL_ALREADY_LINKED"
@@ -303,7 +324,7 @@ export function MemberAccountView({ member, now, onSave, signOut }: {
     });
   }
 
-  const statusClass = stage === "expiring" ? "status-expiring" : stage === "admin" ? "status-active" : `status-${member.effective_status}`;
+  const statusClass = `status-${stage}`;
   const welcome = name ? `${name}，\n歡迎回來` : "妳的會員中心";
 
   let heroBody: ReactNode;
@@ -368,7 +389,7 @@ export function MemberAccountView({ member, now, onSave, signOut }: {
   }
 
   const hasAccess = stage === "admin" || stage === "active" || stage === "expiring";
-  return <main className="account-page">
+  return <main className="account-page pearl-page">
     <div ref={hero} className="account-hero-anchor">
       <Hero status={stage === "expiring" && remainingDays === 0 ? "今天到期" : statusLabels[stage]} statusClass={statusClass} title={title}>{heroBody}</Hero>
     </div>
