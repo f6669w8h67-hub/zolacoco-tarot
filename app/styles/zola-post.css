@@ -1,0 +1,347 @@
+/* Post theme (owner decision 2026-11-12, Issue #12): the website wears the look of the IG
+   大眾占卜 posts (「直覺選一張」 series) — aged parchment, a gilded rose-and-scroll frame with a
+   shell crest, lowercase italic English labels, heavy wine serif titles, a short gold rule,
+   warm brown text. Texture and frame are drawn assets in /public/textures until the owner's
+   originals replace them. Ornaments never take pointer events. */
+
+:root {
+  --post-parchment: #e6cfa6;
+  --post-paper: #f6ead3;
+  --post-paper-2: #eedbb8;
+  --post-rose: #edd3c0;
+  --post-wine: #74283a;
+  --post-wine-deep: #5c1f2c;
+  --post-ink: #3e2716;
+  --post-ink-2: #5e4128;
+  --post-sub: #6f5230;
+  --post-gold: #b08a5a;
+  --post-gold-text: #6d4c1e;
+  --post-line: #c9a675;
+  --post-title-font: "Noto Serif TC", "Noto Serif CJK TC", "Songti TC", "STSong", Georgia, serif;
+  --post-latin-font: "Cormorant Garamond", "Cormorant", Georgia, "Times New Roman", serif;
+  --post-frame-w: 84px;
+  --post-frame-inset: 18px;
+}
+@media (max-width: 760px) { :root { --post-frame-w: 62px; --post-frame-inset: 4px; } }
+
+/* ---------- Parchment page ---------- */
+html { background: var(--post-parchment); }
+body {
+  background-color: var(--post-parchment) !important;
+  background-image: url('/textures/parchment.webp') !important;
+  background-size: 1024px 1024px !important;
+  background-repeat: repeat !important;
+  color: var(--post-ink);
+}
+@media (max-width: 760px) { body { background-size: 720px 720px !important; } }
+
+/* ---------- Gilded frame (border-image) + shell crest ---------- */
+:is(.post-frame, #draw, #cat-story, #explore, #consult, #about, #membership.premium-room, .pendulum-page .divination-centre) {
+  position: relative;
+  isolation: isolate;
+}
+:is(.post-frame, #draw, #cat-story, #explore, #consult, #about, #membership.premium-room, .pendulum-page .divination-centre)::after {
+  content: "";
+  position: absolute;
+  inset: var(--post-frame-inset);
+  z-index: -1;
+  border: var(--post-frame-w) solid transparent;
+  border-image: url('/textures/post-frame.svg') 140 / var(--post-frame-w) / 0 round;
+  /* the sheet darkens toward its edges, like the posts' paper */
+  background: radial-gradient(ellipse 75% 70% at 50% 45%, rgba(255, 246, 226, .32) 0%, rgba(255, 246, 226, 0) 60%, rgba(130, 88, 40, .16) 100%);
+  background-origin: border-box;
+  pointer-events: none;
+}
+:is(.post-frame, #draw, #cat-story, #explore, #consult, #about, #membership.premium-room, .pendulum-page .divination-centre)::before {
+  content: "" !important;
+  display: block !important;
+  position: absolute !important;
+  top: calc(var(--post-frame-inset) + var(--post-frame-w) * .14) !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  width: calc(var(--post-frame-w) * 2.4) !important;
+  height: calc(var(--post-frame-w) * .7) !important;
+  transform: translateX(-50%) !important;
+  z-index: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+  background: url('/textures/post-crest.svg') center / contain no-repeat !important;
+  pointer-events: none !important;
+  animation: none !important;
+}
+
+/* home sections sit on the parchment, each framed like a post page */
+:is(.hero, .draw-section, .cat-story, .explore, .consult, .about, main > footer) { background: transparent !important; }
+.hero::before, .hero::after, .hero .orb { display: none !important; }
+:is(#draw, #cat-story, #explore, #consult, #about) { margin-left: auto; margin-right: auto; max-width: 1240px; }
+:is(#draw, #cat-story, #explore, #consult, #about, #membership.premium-room, .pendulum-page .divination-centre) {
+  padding-top: max(96px, calc(var(--post-frame-inset) + var(--post-frame-w) + 40px)) !important;
+  padding-bottom: max(88px, calc(var(--post-frame-inset) + var(--post-frame-w) + 36px)) !important;
+}
+@media (max-width: 760px) {
+  :is(#draw, #cat-story, #explore, #consult, #about, #membership.premium-room, .pendulum-page .divination-centre) {
+    padding-left: calc(var(--post-frame-inset) + var(--post-frame-w) * .52) !important;
+    padding-right: calc(var(--post-frame-inset) + var(--post-frame-w) * .52) !important;
+  }
+}
+
+/* ---------- Post typography ---------- */
+/* English labels: lowercase italic serif, wide spacing, gold-brown (「pure or not」) */
+:is(.eyebrow, .rc-eyebrow, .section-heading > p, .explore-heading .eyebrow, .reading-label, .heal-eyebrow, .ad-eyebrow, .tool-progress span, .archetype-result > p, .portrait-caption > span) {
+  color: var(--post-gold-text) !important;
+  font-family: var(--post-latin-font) !important;
+  font-style: italic !important;
+  font-weight: 500 !important;
+  font-size: clamp(15px, 1.6vw, 19px) !important;
+  letter-spacing: .24em !important;
+  text-transform: lowercase !important;
+}
+.section-heading > p > span:first-child { display: none; }
+/* titles: heavy wine serif */
+main :is(h1, h2):not(.rc-card-face__name),
+.section-heading h2, .explore-heading h2, .cat-story h2, .consult h2, .about h2, .result-intro h2 {
+  color: var(--post-wine) !important;
+  font-family: var(--post-title-font) !important;
+  font-weight: 900 !important;
+  letter-spacing: .04em;
+}
+main :is(h1, h2, h3) { text-wrap: balance; }
+/* the short gold rule under section titles */
+:is(.section-heading, .explore-heading) h2::after,
+.about h2::after {
+  content: "";
+  display: block;
+  width: 88px;
+  height: 1px;
+  margin: 22px auto 0;
+  background: var(--post-gold);
+}
+/* subtitles: serif, gold-brown, like 「妳卻還是在心裡留了一道小小的問號」 */
+:is(.deck-note, .explore-heading > p:last-child, .hero .intro, .ritual) {
+  color: var(--post-sub) !important;
+  font-family: var(--post-title-font) !important;
+  font-weight: 500 !important;
+  letter-spacing: .06em !important;
+}
+.deck-note { font-size: 15px !important; }
+.hero h1 { color: var(--post-wine) !important; }
+.hero h1 em { color: var(--post-gold-text) !important; font-family: var(--post-title-font) !important; font-style: normal; font-weight: 700; }
+
+/* ---------- Vintage controls: labels with a double gold rule instead of pills ---------- */
+:is(#draw .topics button, #draw .spread-options button, #explore .tool-tabs button, #explore :is(.answer-list, .feeling-list, .teaching-options) button, #explore .day-picker button) {
+  border: 1px solid var(--post-gold) !important;
+  border-radius: 4px !important;
+  background: rgba(248, 238, 218, .62) !important;
+  box-shadow: inset 0 0 0 3px rgba(248, 238, 218, .62), inset 0 0 0 4px rgba(201, 166, 117, .9) !important;
+  color: var(--post-ink) !important;
+  font-family: var(--post-title-font) !important;
+}
+#draw .topics button { font-size: 17px !important; font-weight: 600 !important; letter-spacing: .12em !important; }
+:is(#draw .topics button.active, #draw .spread-options button.active, #explore .tool-tabs button.active, #explore .feeling-list button.active, #explore .day-picker button.active) {
+  border-color: var(--post-wine) !important;
+  background: rgba(237, 211, 192, .9) !important;
+  box-shadow: inset 0 0 0 3px rgba(237, 211, 192, .9), inset 0 0 0 4px var(--post-wine) !important;
+  color: var(--post-wine) !important;
+}
+#draw .spread-options button.active { padding: 16px !important; }
+#draw .spread-options .spread-name { font-family: var(--post-title-font) !important; font-weight: 700 !important; }
+#draw .spread-recommended { border-radius: 2px !important; background: var(--post-wine) !important; border-color: var(--post-wine) !important; color: #f8eedc !important; font-family: var(--post-title-font); letter-spacing: .1em; }
+
+/* primary: wine plate with an inner gold rule; secondary: outlined */
+:is(#top, #draw, #explore, #consult) :is(.primary, .draw-button, .flow-button.primary-flow, .tool-primary, .learning-bridge a:first-child, .consult-card a, .archetype-result button),
+.pendulum-page :is(a.primary, .pendulum-cta, .piano-button),
+#membership .premium-actions a:first-child {
+  border: 1px solid var(--post-wine-deep) !important;
+  border-radius: 4px !important;
+  background: var(--post-wine) !important;
+  box-shadow: inset 0 0 0 3px var(--post-wine), inset 0 0 0 4px rgba(214, 182, 115, .85), 0 6px 16px rgba(62, 39, 22, .18) !important;
+  color: #f8eedc !important;
+  font-family: var(--post-title-font) !important;
+  font-weight: 600 !important;
+  letter-spacing: .14em !important;
+}
+@media (hover: hover) {
+  :is(#top, #draw, #explore, #consult) :is(.primary, .draw-button, .flow-button.primary-flow, .tool-primary, .learning-bridge a:first-child, .consult-card a, .archetype-result button):hover:not(:disabled) { background: var(--post-wine-deep) !important; box-shadow: inset 0 0 0 3px var(--post-wine-deep), inset 0 0 0 4px rgba(214, 182, 115, .85), 0 8px 20px rgba(62, 39, 22, .22) !important; }
+}
+:is(#top, #draw, #explore, #consult) :is(.reshuffle, .flow-button.secondary-flow, .learning-bridge a:not(:first-child)),
+#membership .premium-actions a:last-child {
+  border: 1px solid var(--post-gold) !important;
+  border-radius: 4px !important;
+  background: rgba(248, 238, 218, .7) !important;
+  box-shadow: inset 0 0 0 3px rgba(248, 238, 218, .7), inset 0 0 0 4px rgba(201, 166, 117, .9) !important;
+  color: var(--post-wine) !important;
+  font-family: var(--post-title-font) !important;
+  letter-spacing: .1em !important;
+}
+
+/* ---------- Paper panels (text blocks on the sheet) ---------- */
+:is(.cat-profile, .consult-card, .synthesis, .tarot-consult, .reading-sequence .card-reading-unit, .explore .tool-stage, .explore .learning-bridge, .visitor-status, .member-status) {
+  border: 1px solid var(--post-gold) !important;
+  border-radius: 4px !important;
+  background: rgba(249, 240, 222, .66) !important;
+  box-shadow: inset 0 0 0 4px rgba(249, 240, 222, .5), inset 0 0 0 5px rgba(201, 166, 117, .75) !important;
+  backdrop-filter: none !important;
+}
+.cat-profile :is(h3, b, strong), .reading-unit-head h3 { color: var(--post-wine) !important; font-family: var(--post-title-font) !important; font-weight: 900 !important; }
+.synthesis > span, .reading-unit-head span { color: var(--post-gold-text) !important; }
+.position-reading, .synthesis p { color: var(--post-ink) !important; line-height: 2 !important; }
+/* the soundscape row reads as a line of text between two rules, not a pill */
+#draw .tarot-soundscape {
+  border: 0 !important;
+  border-top: 1px solid var(--post-line) !important;
+  border-bottom: 1px solid var(--post-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+#draw .tarot-soundscape-toggle { border-radius: 4px !important; }
+main :is(textarea, input[type="text"], input[type="email"], input:not([type]), select) {
+  border: 1px solid var(--post-gold) !important;
+  border-radius: 4px !important;
+  background-color: rgba(251, 243, 226, .72) !important;
+  color: var(--post-ink) !important;
+}
+main :is(textarea, input)::placeholder { color: #84694a !important; }
+
+/* ---------- Cover-style portrait (hero) ---------- */
+.hero-portrait { border: 1px solid var(--post-gold) !important; box-shadow: 0 0 0 6px rgba(246, 234, 211, .6), 0 0 0 7px var(--post-line), 0 26px 60px rgba(62, 39, 22, .25) !important; }
+.portrait-caption {
+  background: rgba(46, 28, 16, .42) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(230, 200, 140, .55) !important;
+  border-radius: 6px !important;
+}
+.portrait-caption > span { color: #e7c98e !important; font-size: 15px !important; }
+.portrait-caption strong { font-family: var(--post-latin-font) !important; font-style: italic; font-size: 34px !important; }
+
+/* ---------- Former night pages (星骰, 星盤探索, 療癒小房間) ----------
+   Recoloured to the post palette in their own stylesheets; here: titles, frames, artwork.
+   The astrology scenes are night paintings: on parchment they are printed in warm sepia,
+   so no deep purple remains on screen. */
+:is(.astro-dice-page, .astro-page, .healing-room) :is(h1, h2) { color: var(--post-wine) !important; }
+html body :is(.astro-intro-art, .astro-scene, .astro-service-art) { filter: sepia(.6) saturate(.78) brightness(1.1) contrast(.93) !important; }
+.room-doors .astrology-door {
+  background:
+    linear-gradient(90deg, rgba(240, 222, 190, .86), rgba(240, 222, 190, .97)),
+    url('/astrology-exploration/scene-01.webp') center / cover no-repeat !important;
+}
+.room-doors .astrology-door :is(b, p, small, i) { position: relative; }
+
+/* ---------- 靈擺 membership section: was a dark teal/plum band, now a framed parchment page ---------- */
+#membership.premium-room { background: transparent !important; color: var(--post-ink) !important; }
+#membership .premium-intro .eyebrow { color: var(--post-gold-text) !important; }
+#membership .premium-intro h2 { color: var(--post-wine) !important; font-weight: 700; }
+#membership .premium-intro > p:last-child,
+#membership .premium-dashboard p { color: var(--post-ink-2) !important; }
+#membership .premium-dashboard article,
+#membership .premium-features span {
+  border-color: var(--post-line) !important;
+  background: rgba(246, 234, 211, .85) !important;
+  box-shadow: 0 6px 18px rgba(62, 39, 22, .07) !important;
+  color: var(--post-ink) !important;
+}
+#membership .premium-dashboard small { color: var(--post-gold-text) !important; font-size: 11px !important; }
+#membership .premium-dashboard strong { color: var(--post-wine) !important; }
+#membership .premium-features span { font-size: 13px !important; }
+#membership .premium-actions a { border-color: var(--post-wine) !important; background: var(--post-wine) !important; color: #f8eedc !important; }
+#membership .premium-actions a:last-child { border-color: var(--post-gold) !important; background: var(--post-paper) !important; color: var(--post-wine) !important; }
+
+/* ---------- Pages that painted their own ivory or pink ground ---------- */
+:is(.auth-page, .membership-gate, .account-page, .admin-page, .pendulum-page) { background: transparent !important; }
+
+/* ---------- 靈擺: pink-pearl tiles and buttons become paper tiles, wine actions ---------- */
+.pendulum-page :is(.divination-centre, .pendulum-guide, .pendulum-history, .tool-group) { background: transparent !important; }
+.pendulum-page .pendulum-ritual { background: transparent !important; }
+.pendulum-page :is(.tool-group, .divination-centre article, .pendulum-guide article, .pendulum-guide li) {
+  border-color: var(--post-line) !important;
+  background: rgba(246, 234, 211, .8) !important;
+  box-shadow: 0 6px 18px rgba(62, 39, 22, .07) !important;
+}
+.pendulum-page .divination-centre article.active { border-color: var(--post-wine) !important; background: var(--post-rose) !important; }
+.pendulum-page :is(.divination-centre, .tool-group, .pendulum-guide, .pendulum-ritual) button:not(.image-start-hitbox) {
+  border-color: var(--post-line) !important;
+  background: #f6ead3 !important;
+  color: var(--post-ink) !important;
+  text-shadow: none !important;
+  box-shadow: 0 4px 12px rgba(62, 39, 22, .06) !important;
+}
+.pendulum-page :is(.divination-centre, .tool-group, .pendulum-guide, .pendulum-ritual) button:is(.selected, .active):not(.image-start-hitbox) {
+  border-color: var(--post-wine) !important;
+  background: var(--post-rose) !important;
+  box-shadow: inset 0 0 0 1px var(--post-wine) !important;
+}
+.pendulum-page :is(a.primary, .pendulum-cta, .piano-button) {
+  border-color: var(--post-wine) !important;
+  background: var(--post-wine) !important;
+  color: #f8eedc !important;
+  text-shadow: none !important;
+}
+.pendulum-page :is(.divination-centre, .tool-group, .pendulum-ritual, .pendulum-guide) :is(button, a)::before { display: none !important; }
+.pendulum-page :is(h2, h3) { color: var(--post-wine) !important; }
+#draw .tarot-soundscape-toggle > span:first-child,
+#draw .tarot-soundscape-icon { background: rgba(248, 238, 218, .8) !important; border-color: var(--post-gold) !important; color: var(--post-wine) !important; }
+.portrait-caption { background: rgba(46, 28, 16, .7) !important; }
+.portrait-caption strong { color: #fff7ea !important; }
+.portrait-caption small { color: #efdcc6 !important; }
+.portrait-caption p { color: #f3e6d6 !important; border-top-color: rgba(230, 200, 140, .4) !important; }
+.explore .learning-bridge > span {
+  color: var(--post-gold-text) !important;
+  font-family: var(--post-latin-font) !important;
+  font-style: italic !important;
+  font-size: 15px !important;
+  letter-spacing: .2em !important;
+  text-transform: lowercase !important;
+}
+@media (max-width: 600px) {
+  .about h2 { font-size: 26px !important; }
+  .consult h2 { font-size: clamp(26px, 7.4vw, 30px) !important; }
+}
+
+/* ---------- Former night pages speak the same post vocabulary ---------- */
+:is(.astro-dice-page, .astro-page, .healing-room),
+:is(.astro-dice-page, .astro-page, .healing-room) > section:not(.astro-intro-art):not(.astro-scene):not(.astro-service-art),
+.astro-dice-page :is(.ad-intro, .ad-ritual, .ad-result, .ad-history),
+.astro-page :is(.astro-intro, .astro-questions, .astro-step, .astro-result, .astro-service, .astro-records) {
+  background-color: transparent !important;
+}
+.astro-dice-page :is(.ad-intro, .ad-ritual, .ad-result, .ad-history),
+.astro-page :is(.astro-result, .astro-records),
+.healing-room :is(.heal-lobby, .heal-sheet, .records-page) { background-image: none !important; }
+:is(.astro-dice-page, .astro-page, .healing-room) :is(h1, h2) :is(span, em, b, strong) { color: inherit !important; }
+:is(.astro-dice-page, .astro-page, .healing-room) :is(h1, h2) { font-family: var(--post-title-font) !important; font-weight: 900 !important; }
+:is(.ad-eyebrow, .heal-eyebrow, .astro-result-label, .ad-die-label) {
+  color: var(--post-gold-text) !important;
+  font-family: var(--post-latin-font) !important;
+  font-style: italic !important;
+  letter-spacing: .22em !important;
+  text-transform: lowercase !important;
+}
+:is(.astro-dice-page .ad-cast, .astro-page .astro-primary, .healing-room button.gold) {
+  border: 1px solid var(--post-wine-deep) !important;
+  border-radius: 4px !important;
+  background: var(--post-wine) !important;
+  box-shadow: inset 0 0 0 3px var(--post-wine), inset 0 0 0 4px rgba(214, 182, 115, .85), 0 6px 16px rgba(62, 39, 22, .18) !important;
+  color: #f8eedc !important;
+  font-family: var(--post-title-font) !important;
+  letter-spacing: .14em !important;
+}
+:is(.astro-dice-page .ad-cast, .astro-page .astro-primary, .healing-room button.gold):disabled { opacity: .55 !important; }
+:is(.astro-dice-page .ad-next-step, .astro-page :is(.astro-back, .astro-text-button, .astro-clarify, .astro-mindset), .healing-room :is(.records-link, .back-room)) {
+  border-radius: 4px !important;
+  border-color: var(--post-gold) !important;
+  color: var(--post-wine) !important;
+  font-family: var(--post-title-font) !important;
+}
+:is(.astro-dice-page, .astro-page, .healing-room) :is(button, a):not(.ad-cast):not(.astro-primary):not(.gold):not(.astrology-door) { border-radius: 4px !important; }
+:is(.astro-dice-page, .astro-page, .healing-room) :is(article, aside, form, .ad-card, .heal-card) { border-radius: 6px !important; }
+:is(.astro-dice-page, .astro-page, .healing-room) :is(textarea, input) { border-radius: 4px !important; }
+/* stronger selectors: the page stylesheets set these with !important at two-class strength */
+html body main:is(.astro-dice-page, .astro-page, .healing-room) { background: transparent !important; }
+html body main.astro-dice-page :is(.ad-intro, .ad-ritual, .ad-result, .ad-history),
+html body main.astro-page :is(.astro-result, .astro-records, .astro-questions, .astro-step),
+html body main.healing-room :is(.heal-lobby, .heal-sheet, .records-page, .heal-opening) { background: transparent !important; }
+html body :is(.astro-dice-page, .astro-page, .healing-room) :is(h1, h2):not(.post-never) { color: var(--post-wine) !important; }

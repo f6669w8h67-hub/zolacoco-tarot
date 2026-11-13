@@ -1,32 +1,35 @@
-/* Zolacoco Rococo design system v1.0 (Issue #12, ChatGPT spec).
-   Phase 1: tokens, base typography, focus, shared components and the global header.
-   Pages opt into the night palette with data-theme="rococo-night" on their own root;
-   nothing sets the night theme globally. */
+/* Zolacoco Rococo design system (Issue #12): tokens, base typography, focus, shared
+   components and the global header. */
 
+/* Post theme (owner decision 2026-11-12, Issue #12): the site matches the IG 大眾占卜 posts —
+   aged parchment, gilded Rococo frame, wine serif titles, italic letter-spaced English labels.
+   Colours sampled from the posts and tuned to 4.5:1 on parchment. No deep purple anywhere;
+   the old night palette is retired. */
 :root,
 [data-theme="rococo-light"] {
-  --rococo-bg: #fffaf2;
-  --rococo-surface: #fffdf9;
-  --rococo-surface-muted: #f7edf0;
-  --rococo-text: #49343b;
-  --rococo-text-muted: #704d58;
-  --rococo-gold: #c69a61;
-  --rococo-gold-text: #77552e;
-  --rococo-blush: #ead7df;
-  --rococo-border: #d8be96;
-  --rococo-focus: #77552e;
+  --rococo-bg: #e9d3ae;
+  --rococo-surface: #f6ead3;
+  --rococo-surface-muted: #eedbb8;
+  --rococo-text: #3e2716;
+  --rococo-text-muted: #5e4128;
+  --rococo-wine: #6e2630;
+  --rococo-gold: #b08a5a;
+  --rococo-gold-text: #6d4c1e;
+  --rococo-blush: #edd3c0;
+  --rococo-border: #c9a675;
+  --rococo-focus: #6e2630;
   --rococo-success: #35634c;
   --rococo-warning: #86521f;
   --rococo-error: #9b3445;
-  --rococo-btn-primary-bg: #ead7df;
-  --rococo-btn-primary-text: #51323d;
-  --rococo-btn-primary-border: #c69a61;
-  --rococo-btn-secondary-bg: #fffdf9;
-  --rococo-btn-secondary-text: #744750;
-  --rococo-btn-secondary-border: #ac8759;
-  --rococo-tag-bg: #f1dfe5;
-  --rococo-tag-text: #744750;
-  --rococo-shadow-card: 0 6px 24px rgba(73, 52, 59, .06);
+  --rococo-btn-primary-bg: #6e2630;
+  --rococo-btn-primary-text: #f8eedc;
+  --rococo-btn-primary-border: #6e2630;
+  --rococo-btn-secondary-bg: #f6ead3;
+  --rococo-btn-secondary-text: #6e2630;
+  --rococo-btn-secondary-border: #b08a5a;
+  --rococo-tag-bg: #edd3c0;
+  --rococo-tag-text: #6e2630;
+  --rococo-shadow-card: 0 6px 24px rgba(62, 39, 22, .10);
   --rococo-radius-card: 16px;
   --rococo-radius-control: 12px;
   --rococo-space-section: 64px;
@@ -34,31 +37,6 @@
   --rococo-font-body: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
   --rococo-font-latin: Georgia, "Times New Roman", serif;
   --rococo-header-h: 72px;
-}
-
-[data-theme="rococo-night"] {
-  --rococo-bg: #171d32;
-  --rococo-surface: #24243d;
-  --rococo-surface-muted: #30283e;
-  --rococo-text: #f4e9da;
-  --rococo-text-muted: #dec4cf;
-  --rococo-gold: #bfa178;
-  --rococo-gold-text: #e8cfa2;
-  --rococo-blush: #dfc8d0;
-  --rococo-border: #89765f;
-  --rococo-focus: #f2d69b;
-  --rococo-success: #a9d6be;
-  --rococo-warning: #f0cca0;
-  --rococo-error: #f3b5be;
-  --rococo-btn-primary-bg: #dfc8d0;
-  --rococo-btn-primary-text: #4b3040;
-  --rococo-btn-primary-border: #bfa178;
-  --rococo-btn-secondary-bg: #24243d;
-  --rococo-btn-secondary-text: #f4e9da;
-  --rococo-btn-secondary-border: #89765f;
-  --rococo-tag-bg: #30283e;
-  --rococo-tag-text: #f4e9da;
-  --rococo-shadow-card: 0 8px 28px rgba(0, 0, 0, .28);
 }
 
 @media (max-width: 760px) { :root { --rococo-header-h: 60px; } }
@@ -177,7 +155,7 @@ main [id] { scroll-margin-top: calc(var(--rococo-header-h) + 8px); }
 .global-site-header {
   height: var(--rococo-header-h);
   border-bottom: 1px solid var(--rococo-border);
-  background: rgba(255, 250, 242, .94);
+  background: rgba(243, 228, 200, .95);
 }
 .global-brand { color: var(--rococo-text); font-family: var(--rococo-font-latin); }
 .global-brand span { color: var(--rococo-gold-text); }
@@ -196,7 +174,7 @@ main [id] { scroll-margin-top: calc(var(--rococo-header-h) + 8px); }
 .global-function-menu {
   border: 1px solid var(--rococo-border);
   background: var(--rococo-surface);
-  box-shadow: 0 24px 60px rgba(73, 52, 59, .16);
+  box-shadow: 0 24px 60px rgba(62, 39, 22, .18);
 }
 .global-menu-heading { border-bottom-color: var(--rococo-border); }
 .global-menu-heading small { color: var(--rococo-gold-text); font-size: 11px; }

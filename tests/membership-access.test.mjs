@@ -190,6 +190,7 @@ test("root layout selects a closed fallback in production and retains developmen
       "./rococo-membership.css": {},
       "./styles/rococo-tokens.css": {},
       "./styles/rococo-tarot.css": {},
+      "./styles/zola-post.css": {},
       "./site-header": { default: () => null },
       "./membership-gate": { default: wrapper("authenticated"), UnconfiguredMembershipGate: wrapper("closed") },
     } });

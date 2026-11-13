@@ -27,7 +27,7 @@ test("text never floats over the art and the art is never cropped", () => {
   assert.match(rule(".rc-card-face"), /grid-template-rows: 40px minmax\(0, 1fr\) 48px/);
   assert.match(css, /\.rc-card-face > \* \{ position: relative !important; inset: auto !important;/);
   assert.match(rule(".rc-card-face__art img"), /object-fit: contain !important/);
-  assert.match(rule(".rc-card-face__art"), /background: #f3e9da/);
+  assert.match(rule(".rc-card-face__art"), /background: #efe0c3/);
   assert.match(rule(".rc-card-face__label"), /11px/);
   assert.equal(/\.rc-card-face__label[^{]*\{[^}]*font-size: ?[0-9](\.[0-9]+)?px/.test(css), false, "label never below 10px");
 });
@@ -56,4 +56,25 @@ test("the relationship spread board is a triangle on desktop and a column on pho
   assert.match(css, /\.spread-board--relationship \{ grid-template-columns: repeat\(2, auto\); column-gap: 40px; row-gap: 32px; \}/);
   assert.match(css, /\.spread-board--timeline \.tarot-card \{ width: clamp\(160px, 18vw, 220px\) !important; \}/);
   assert.ok(page.includes("spread-motif motif-${item.id}"), "spread choices draw their own position diagram");
+});
+
+test("post theme: parchment texture, border-image frame, no deep purple surfaces", async () => {
+  const post = await read("app/styles/zola-post.css");
+  assert.match(post, /url\('\/textures\/parchment\.webp'\)/);
+  assert.match(post, /border-image: url\('\/textures\/post-frame\.svg'\) 140 \/ var\(--post-frame-w\) \/ 0 round/);
+  assert.match(post, /pointer-events: none !important;/);
+  // deep purple = hue 230–335°, saturation ≥ 12 %, lightness ≤ 38 %
+  const deep = (hex) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
+    if (max === min) return false;
+    const d = max - min, s = l > .5 ? d / (2 - max - min) : d / (max + min);
+    let h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    h *= 60;
+    return h >= 230 && h <= 335 && s >= .12 && l <= .38;
+  };
+  for (const file of ["app/styles/zola-post.css", "app/styles/rococo-tarot.css", "app/styles/rococo-tokens.css", "app/astro-dice/astro-dice.css", "app/astrology-exploration/astrology-exploration.css", "app/healing-room/healing-room.css", "app/rococo-membership.css"]) {
+    const found = ((await read(file)).match(/#[0-9a-fA-F]{6}\b/g) || []).filter(deep);
+    assert.deepEqual(found, [], file);
+  }
 });
