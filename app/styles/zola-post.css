@@ -847,6 +847,22 @@ html body :is(#top, #draw, #explore, #consult, .pendulum-page, .astro-dice-page,
   background: #ead0a6 !important;
   color: #5c1f2c !important;
 }
+/* Clerk's own buttons (sign-in and sign-up pages, the "Email 登入" pop-up, the account window)
+   get the same light plate; Clerk's default primary button is near-black. */
+html body .cl-formButtonPrimary.cl-formButtonPrimary {
+  border: 1px solid #b08a5a !important;
+  background: linear-gradient(180deg, #fffaf0 0%, #f4e4c6 100%) !important;
+  outline: 1px solid rgba(176, 138, 90, .55) !important;
+  outline-offset: -5px !important;
+  box-shadow: none !important;
+  color: #74283a !important;
+  text-shadow: none !important;
+}
+html body .cl-formButtonPrimary.cl-formButtonPrimary::after { background: none !important; box-shadow: none !important; }
+@media (hover: hover) {
+  html body .cl-formButtonPrimary.cl-formButtonPrimary:hover:not(:disabled) { background: linear-gradient(180deg, #fdf3e2 0%, #eed8b2 100%) !important; color: #5c1f2c !important; }
+}
+html body .cl-formButtonPrimary.cl-formButtonPrimary:active:not(:disabled) { background: #ead0a6 !important; color: #5c1f2c !important; }
 html body #draw .spread-recommended { background: #f6e3d6 !important; border: 1px solid #c79a86 !important; color: #74283a !important; }
 /* the cover button sits on the painting's shade: keep it bright, add a soft gold halo line */
 html body main .hero .primary { outline-color: rgba(176, 138, 90, .7) !important; }

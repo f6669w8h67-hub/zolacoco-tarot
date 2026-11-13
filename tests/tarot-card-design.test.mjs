@@ -89,3 +89,13 @@ test("maintenance notice is on every page and can be dismissed; the draw section
   assert.match(notice, /aria-label="關閉網站維護公告"/);
   assert.match(css, /#draw, #draw \*:not\(:focus-visible\), #draw \*::before, #draw \*::after \{\s*box-shadow: none !important;/);
 });
+
+test("sign-in buttons are light plates, not dark fills (owner: 不要深色按鈕)", async () => {
+  const post = await read("app/styles/zola-post.css");
+  const membership = await read("app/rococo-membership.css");
+  const clerk = post.slice(post.indexOf("html body .cl-formButtonPrimary.cl-formButtonPrimary {"));
+  assert.match(clerk, /^html body \.cl-formButtonPrimary\.cl-formButtonPrimary \{[^}]*background: linear-gradient\(180deg, #fffaf0 0%, #f4e4c6 100%\) !important;[^}]*color: #74283a !important;/);
+  const shell = membership.match(/\.rococo-shell \.cl-formButtonPrimary\{[^}]*\}/)[0];
+  assert.match(shell, /#fffaf0,#f4e4c6/);
+  assert.doesNotMatch(shell, /#5e4128|color:white/);
+});
