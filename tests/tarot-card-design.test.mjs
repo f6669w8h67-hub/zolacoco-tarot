@@ -73,7 +73,7 @@ test("post theme: parchment texture, border-image frame, no deep purple surfaces
     h *= 60;
     return h >= 230 && h <= 335 && s >= .12 && l <= .38;
   };
-  for (const file of ["app/styles/zola-post.css", "app/styles/rococo-tarot.css", "app/styles/rococo-tokens.css", "app/astro-dice/astro-dice.css", "app/astrology-exploration/astrology-exploration.css", "app/healing-room/healing-room.css", "app/rococo-membership.css"]) {
+  for (const file of ["app/styles/zola-post.css", "app/styles/rococo-tarot.css", "app/styles/rococo-tokens.css", "app/astro-dice/astro-dice.css", "app/astrology-exploration/astrology-exploration.css", "app/healing-room/healing-room.css", "app/rococo-membership.css", "app/styles/rococo-pearl.css", "app/pendulum/pendulum-v1.css"]) {
     const found = ((await read(file)).match(/#[0-9a-fA-F]{6}\b/g) || []).filter(deep);
     assert.deepEqual(found, [], file);
   }
@@ -94,8 +94,8 @@ test("sign-in buttons are light plates, not dark fills (owner: 不要深色按�
   const post = await read("app/styles/zola-post.css");
   const membership = await read("app/rococo-membership.css");
   const clerk = post.slice(post.indexOf("html body .cl-formButtonPrimary.cl-formButtonPrimary {"));
-  assert.match(clerk, /^html body \.cl-formButtonPrimary\.cl-formButtonPrimary \{[^}]*background: linear-gradient\(180deg, #fffaf0 0%, #f4e4c6 100%\) !important;[^}]*color: #74283a !important;/);
+  assert.match(clerk, /^html body \.cl-formButtonPrimary\.cl-formButtonPrimary \{[^}]*background: linear-gradient\(180deg, #fff2f8 0%, #f4dfe9 100%\) !important;[^}]*color: #843450 !important;/);
   const shell = membership.match(/\.rococo-shell \.cl-formButtonPrimary\{[^}]*\}/)[0];
-  assert.match(shell, /#fffaf0,#f4e4c6/);
+  assert.match(shell, /#fff2f8,#f4dfe9/);
   assert.doesNotMatch(shell, /#5e4128|color:white/);
 });

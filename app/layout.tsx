@@ -6,6 +6,7 @@ import "./rococo-membership.css";
 import "./styles/rococo-tokens.css";
 import "./styles/rococo-tarot.css";
 import "./styles/zola-post.css";
+import "./styles/rococo-pearl.css";
 import MembershipGate, { UnconfiguredMembershipGate } from "./membership-gate";
 import { allowsMembershipPreview, isClerkConfigured } from "@/lib/membership-access";
 import { clerkLocalization } from "@/lib/clerk-localization";

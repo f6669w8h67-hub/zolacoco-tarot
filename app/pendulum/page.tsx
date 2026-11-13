@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
+import "./pendulum-v1.css";
+import { choicesFromQuestion, questionQuality } from "./question-quality";
 
 type Result = "yes" | "no" | "unclear";
 type ModeKey = "general" | "higher" | "subconscious";
@@ -16,7 +18,7 @@ type Outcome = { resultKey:Result; result:string; label:string; en:string; detai
 const modes = [
   { key:"general" as const, icon:"✦", label:"一般模式", en:"GENERAL", description:"用清楚、中性的方式整理當下方向。" },
   { key:"higher" as const, icon:"☉", label:"高靈模式", en:"HIGHER SELF", description:"依個人信念，將答案視為一段儀式性訊息。" },
-  { key:"subconscious" as const, icon:"☾", label:"潛意識模式", en:"SUBCONSCIOUS", description:"觀察答案出現時，你最先浮現的真實反應。" },
+  { key:"subconscious" as const, icon:"☾", label:"潛意識模式", en:"SUBCONSCIOUS", description:"觀察答案出現時，妳最先浮現的真實反應。" },
 ];
 const PENDULUM_STORAGE_KEY = "zolacoco-pendulum-records-v1";
 
@@ -31,7 +33,7 @@ const categories = [
 const tools: Array<{key:ToolKey;icon:string;label:string;en:string;description:string;group:string}> = [
   {key:"yesno",icon:"↔",label:"Yes／No 快速占卜",en:"YES / NO",description:"六種回應，不只單純的是與否",group:"核心問答"},
   {key:"choices",icon:"Ⅲ",label:"多選一模式",en:"A — F",description:"輸入 2～6 個選項，讓靈擺停在其中一項",group:"核心問答"},
-  {key:"custom",icon:"✎",label:"自訂問題模式",en:"CUSTOM QUESTION",description:"寫下你真正想確認的一件事",group:"核心問答"},
+  {key:"custom",icon:"✎",label:"自訂問題模式",en:"CUSTOM QUESTION",description:"寫下妳真正想確認的一件事",group:"核心問答"},
   {key:"number",icon:"№",label:"數字靈擺",en:"1 — 100",description:"自訂 1～10、30 或 100 的範圍",group:"數字符號"},
   {key:"letter",icon:"A",label:"字母模式",en:"A — Z",description:"為名稱、地點或靈感抽一個字母",group:"數字符號"},
   {key:"percentage",icon:"%",label:"百分比模式",en:"PERCENTAGE",description:"用娛樂與覺察角度看此刻狀態",group:"數字符號"},
@@ -41,7 +43,7 @@ const tools: Array<{key:ToolKey;icon:string;label:string;en:string;description:s
   {key:"action",icon:"➝",label:"今日行動指引",en:"TODAY'S ACTION",description:"找出今天可以落地的一小步",group:"每日行動"},
   {key:"avoid",icon:"!",label:"今日避免事項",en:"PAUSE & NOTICE",description:"提醒今天適合放慢的地方",group:"每日行動"},
   {key:"meditation",icon:"☾",label:"今日冥想主題",en:"MEDITATION",description:"帶走一個今天適合練習的主題",group:"每日行動"},
-  {key:"message",icon:"❝",label:"每日一句訊息",en:"DAILY MESSAGE",description:"一句溫柔但不替你做決定的提醒",group:"每日行動"},
+  {key:"message",icon:"❝",label:"每日一句訊息",en:"DAILY MESSAGE",description:"一句溫柔但不替妳做決定的提醒",group:"每日行動"},
   {key:"direction",icon:"✥",label:"今日幸運方向",en:"DIRECTION",description:"抽一個可作為儀式感的方位",group:"每日幸運"},
   {key:"color",icon:"◐",label:"今日幸運色",en:"COLOR",description:"用一個色彩陪伴今天的狀態",group:"每日幸運"},
   {key:"luckyNumber",icon:"#",label:"今日幸運數字",en:"LUCKY NUMBER",description:"抽出今天的象徵數字",group:"每日幸運"},
@@ -102,11 +104,11 @@ const lifestylePools: Record<"food"|"drink"|"outfit"|"outing"|"home", Array<[str
   ],
   drink: [
     ["溫熱茶飲","WARM TEA","選一杯溫熱的茶，讓今天的節奏稍微慢下來。"],
-    ["咖啡香氣","COFFEE","今天適合用一杯咖啡陪你開始或完成一件事。"],
+    ["咖啡香氣","COFFEE","今天適合用一杯咖啡陪妳開始或完成一件事。"],
     ["清爽氣泡飲","SPARKLING","想要一點輕盈感，可以選無酒精氣泡飲或氣泡水。"],
     ["果香飲品","FRUIT DRINK","今天適合帶有自然果香、酸甜清爽的飲品。"],
     ["溫柔奶香","MILKY","選一杯奶茶、鮮奶或植物奶飲，給自己一點柔軟的照顧。"],
-    ["先喝一杯水","PURE WATER","身體也許只是在提醒你補充水分，先喝水，再決定還想喝什麼。"],
+    ["先喝一杯水","PURE WATER","身體也許只是在提醒妳補充水分，先喝水，再決定還想喝什麼。"],
   ],
   outfit: [
     ["奶杏柔光","CREAM & BEIGE","用奶油白、燕麥或杏色，穿出溫柔乾淨的氣氛。"],
@@ -135,12 +137,12 @@ const lifestylePools: Record<"food"|"drink"|"outfit"|"outing"|"home", Array<[str
 };
 
 const quickAnswers: Array<Outcome> = [
-  {resultKey:"yes",result:"yes",label:"是",en:"YES",detail:"此刻的方向比較靠近肯定，可以先從一個小而可驗證的行動開始。",reflection:"如果真的選擇前進，你願意先做哪一步？"},
-  {resultKey:"no",result:"no",label:"否",en:"NO",detail:"此刻更適合暫緩、調整或重新確認界線；這個否不代表永遠不行。",reflection:"你現在最需要保護的是時間、情緒，還是資源？"},
-  {resultKey:"unclear",result:"not-yet",label:"暫時不是時候",en:"NOT YET",detail:"先不用急著推動結果，讓資訊與情緒再沉澱一些。",reflection:"晚一點再決定，會讓你多看見什麼？"},
+  {resultKey:"yes",result:"yes",label:"是",en:"YES",detail:"此刻的方向比較靠近肯定，可以先從一個小而可驗證的行動開始。",reflection:"如果真的選擇前進，妳願意先做哪一步？"},
+  {resultKey:"no",result:"no",label:"否",en:"NO",detail:"此刻更適合暫緩、調整或重新確認界線；這個否不代表永遠不行。",reflection:"妳現在最需要保護的是時間、情緒，還是資源？"},
+  {resultKey:"unclear",result:"not-yet",label:"暫時不是時候",en:"NOT YET",detail:"先不用急著推動結果，讓資訊與情緒再沉澱一些。",reflection:"晚一點再決定，會讓妳多看見什麼？"},
   {resultKey:"unclear",result:"rephrase",label:"問題需要重新描述",en:"REPHRASE",detail:"問題裡可能同時放進了多個條件，縮小範圍後會更容易覺察。",reflection:"如果一次只問一件事，真正核心的是哪一件？"},
-  {resultKey:"no",result:"timing",label:"時機未到",en:"TIMING",detail:"方向未必錯，但現階段仍有條件尚未成熟。",reflection:"在行動前，你還缺哪一項現實資訊？"},
-  {resultKey:"unclear",result:"unknown",label:"不建議現在知道答案",en:"LET IT UNFOLD",detail:"有些答案需要透過經驗慢慢浮現，現在先回到可以掌握的部分。",reflection:"如果暫時沒有答案，你仍能照顧好自己的哪一部分？"},
+  {resultKey:"no",result:"timing",label:"時機未到",en:"TIMING",detail:"方向未必錯，但現階段仍有條件尚未成熟。",reflection:"在行動前，妳還缺哪一項現實資訊？"},
+  {resultKey:"unclear",result:"unknown",label:"不建議現在知道答案",en:"LET IT UNFOLD",detail:"有些答案需要透過經驗慢慢浮現，現在先回到可以掌握的部分。",reflection:"如果暫時沒有答案，妳仍能照顧好自己的哪一部分？"},
 ];
 
 const soundscapes: Record<Soundscape,{icon:string;label:string;en:string;videoId:string}> = {
@@ -152,11 +154,18 @@ const soundscapes: Record<Soundscape,{icon:string;label:string;en:string;videoId
 function pick<T>(items:T[]){ return items[Math.floor(Math.random()*items.length)]; }
 function clamp(value:number,min:number,max:number){ return Math.min(max,Math.max(min,value)); }
 
+// The pendulum hangs from this fraction of the stage height (see pendulum-v1.css).
+const PENDULUM_TOP=.105;
+const quickTools:ToolKey[]=["yesno","choices","action","food"];
+const quickLabels:Partial<Record<ToolKey,string>>={yesno:"Yes／No",choices:"多選一",action:"今日行動",food:"今天吃什麼"};
+
 export default function PendulumPage(){
   const [tool,setTool]=useState<ToolKey>("yesno");
   const [mode,setMode]=useState<ModeKey>("general");
   const [category,setCategory]=useState<CategoryKey>("love");
   const [picker,setPicker]=useState<Picker>(null);
+  const [libraryOpen,setLibraryOpen]=useState(false);
+  const [libraryGroup,setLibraryGroup]=useState(0);
   const [question,setQuestion]=useState("");
   const [choices,setChoices]=useState("A 火鍋\nB 義大利麵\nC 拉麵\nD 壽司");
   const [numberRange,setNumberRange]=useState<10|30|100>(10);
@@ -166,17 +175,28 @@ export default function PendulumPage(){
   const [moving,setMoving]=useState(false);
   const [calibrated,setCalibrated]=useState(false);
   const [calibrating,setCalibrating]=useState(false);
-  const [saved,setSaved]=useState<"idle"|"saved"|"error">("idle");
+  const [savedId,setSavedId]=useState<number|null>(null);
+  const [saveError,setSaveError]=useState(false);
   const [history,setHistory]=useState<Entry[]>([]);
-  const [pendulumStyle,setPendulumStyle]=useState<PendulumStyle>("teal");
+  const [historyOpen,setHistoryOpen]=useState(false);
+  const [highlightId,setHighlightId]=useState<number|null>(null);
+  const [pendulumStyle,setPendulumStyle]=useState<PendulumStyle>("aquamarine");
   const [soundEnabled,setSoundEnabled]=useState(false);
   const [soundscape,setSoundscape]=useState<Soundscape>("forest");
   const [dragging,setDragging]=useState(false);
   const [manualAngle,setManualAngle]=useState(0);
   const stageRef=useRef<HTMLDivElement|null>(null);
+  const ritualRef=useRef<HTMLElement|null>(null);
+  const toolTitleRef=useRef<HTMLHeadingElement|null>(null);
+  const resultRef=useRef<HTMLDivElement|null>(null);
+  const questionRef=useRef<HTMLTextAreaElement|null>(null);
+  const libraryRef=useRef<HTMLElement|null>(null);
+  const libraryTriggerRef=useRef<HTMLButtonElement|null>(null);
   const manualAngleRef=useRef(0);
   const dragRef=useRef({angle:0,time:0,velocity:0,active:false});
   const animationRef=useRef<number|null>(null);
+  const scrollRef=useRef<number|null>(null);
+  const timersRef=useRef<number[]>([]);
 
   const selectedMode=modes.find(item=>item.key===mode)??modes[0];
   const selectedCategory=categories.find(item=>item.key===category)??categories[0];
@@ -185,20 +205,47 @@ export default function PendulumPage(){
   const duration=4600;
 
   useEffect(()=>{try{setHistory(JSON.parse(localStorage.getItem(PENDULUM_STORAGE_KEY)??"[]"))}catch{setHistory([])}},[]);
-  useEffect(()=>{ if(!picker)return; const close=(event:KeyboardEvent)=>{if(event.key==="Escape")setPicker(null)}; document.addEventListener("keydown",close); const previous=document.body.style.overflow; document.body.style.overflow="hidden"; return()=>{document.removeEventListener("keydown",close);document.body.style.overflow=previous}; },[picker]);
-  useEffect(()=>()=>{ if(animationRef.current)cancelAnimationFrame(animationRef.current); },[]);
+  useEffect(()=>{ if(!picker&&!libraryOpen)return; const close=(event:KeyboardEvent)=>{if(event.key==="Escape"){setPicker(null);if(libraryOpen)closeLibrary()}}; document.addEventListener("keydown",close); const previous=document.body.style.overflow; document.body.style.overflow="hidden"; return()=>{document.removeEventListener("keydown",close);document.body.style.overflow=previous}; },[picker,libraryOpen]);
+  // Library dialog: focus the current way to play, keep Tab inside, give focus back on close.
+  useEffect(()=>{
+    if(!libraryOpen)return;
+    const dialog=libraryRef.current;
+    (dialog?.querySelector<HTMLElement>(".pv-library-list button.selected")??dialog?.querySelector<HTMLElement>("button"))?.focus();
+    const trap=(event:KeyboardEvent)=>{
+      if(event.key!=="Tab"||!dialog)return;
+      const items=[...dialog.querySelectorAll<HTMLElement>("button:not(:disabled)")];
+      if(!items.length)return;
+      const first=items[0],last=items[items.length-1];
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+      else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
+    };
+    document.addEventListener("keydown",trap);
+    return()=>document.removeEventListener("keydown",trap);
+  },[libraryOpen]);
+  useEffect(()=>()=>{ if(animationRef.current)cancelAnimationFrame(animationRef.current); if(scrollRef.current)cancelAnimationFrame(scrollRef.current); timersRef.current.forEach(id=>window.clearTimeout(id)); },[]);
 
-  const quality=useMemo(()=>{
-    const q=question.trim();
-    if(!q) return {ok:false,text:"先寫下一個問題"};
-    if(q.length<8) return {ok:false,text:"問題可以再具體一點"};
-    if(/[、，,]|還是|以及|又/.test(q)) return {ok:false,text:"一次只問一件事，會比較容易感受答案"};
-    if(/為什麼|怎麼|何時|什麼時候|他.*想/.test(q)) return {ok:false,text:"請改成能用『是／否』回答的句子"};
-    return {ok:true,text:"這是一個清楚的是非題，可以開始"};
-  },[question]);
+  const quality=useMemo(()=>questionQuality(question,tool),[question,tool]);
 
   const choiceList=useMemo(()=>choices.split("\n").map(item=>item.trim()).filter(Boolean).slice(0,6),[choices]);
   const monthCount=useMemo(()=>{const now=new Date();return history.filter(item=>{const date=new Date(item.created_at);return date.getFullYear()===now.getFullYear()&&date.getMonth()===now.getMonth()}).length},[history]);
+
+  function later(run:()=>void,ms:number){const id=window.setTimeout(()=>{timersRef.current=timersRef.current.filter(item=>item!==id);run()},ms);timersRef.current.push(id)}
+  function clearTimers(){timersRef.current.forEach(id=>window.clearTimeout(id));timersRef.current=[]}
+  function reducedMotion(){return typeof window!=="undefined"&&window.matchMedia?.("(prefers-reduced-motion: reduce)").matches===true}
+  function headerBottom(){const header=document.querySelector<HTMLElement>(".global-site-header");return header?Math.max(0,header.getBoundingClientRect().bottom):0}
+  // 300 ms eased scroll so the stage arrives before the swing starts; instant with reduced motion.
+  function scrollToTop(element:HTMLElement|null):number{
+    if(!element)return 0;
+    const target=Math.max(0,element.getBoundingClientRect().top+window.scrollY-headerBottom()-16);
+    if(Math.abs(target-window.scrollY)<2)return 0;
+    if(scrollRef.current)cancelAnimationFrame(scrollRef.current);
+    if(reducedMotion()){window.scrollTo(0,target);return 0}
+    const from=window.scrollY,started=performance.now(),span=300;
+    const step=(now:number)=>{const t=clamp((now-started)/span,0,1);const eased=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;window.scrollTo(0,from+(target-from)*eased);scrollRef.current=t<1?requestAnimationFrame(step):null};
+    scrollRef.current=requestAnimationFrame(step);
+    return span;
+  }
+  function fullyVisible(element:HTMLElement|null){if(!element)return true;const rect=element.getBoundingClientRect();return rect.top>=headerBottom()&&rect.bottom<=window.innerHeight}
 
   function toggleSoundscape(nextSoundscape:Soundscape){
     if(soundEnabled&&soundscape===nextSoundscape){setSoundEnabled(false);return}
@@ -211,24 +258,24 @@ export default function PendulumPage(){
     if(tool==="choices"){
       if(choiceList.length<2)return null;
       const chosen=pick(choiceList).replace(/^[A-Fa-f][\.、:\s-]*/,"");
-      return {resultKey:pick<Result>(["yes","no"]),result:"choice",label:chosen,en:"SELECTED",detail:`靈擺這次停在「${chosen}」。把它當成觀察偏好的入口，再用距離、預算與現實條件確認。`,reflection:"看到這個選項時，你是放鬆、期待，還是有一點抗拒？"};
+      return {resultKey:pick<Result>(["yes","no"]),result:"choice",label:chosen,en:"SELECTED",detail:`靈擺這次停在「${chosen}」。把它當成觀察偏好的入口，再用距離、預算與現實條件確認。`,reflection:"看到這個選項時，妳是放鬆、期待，還是有一點抗拒？"};
     }
     if(tool==="number"){
       const value=Math.floor(Math.random()*numberRange)+1;
-      return {resultKey:pick<Result>(["yes","no"]),result:"number",label:String(value),en:`1 — ${numberRange}`,detail:`今天抽到的象徵數字是 ${value}。它適合用於排序、遊戲或儀式感，不代表機率預測。`,reflection:"這個數字讓你聯想到什麼人、時間或下一步？"};
+      return {resultKey:pick<Result>(["yes","no"]),result:"number",label:String(value),en:`1 — ${numberRange}`,detail:`今天抽到的象徵數字是 ${value}。它適合用於排序、遊戲或儀式感，不代表機率預測。`,reflection:"這個數字讓妳聯想到什麼人、時間或下一步？"};
     }
     if(tool==="letter"){
       const letter=String.fromCharCode(65+Math.floor(Math.random()*26));
-      return {resultKey:pick<Result>(["yes","no"]),result:"letter",label:letter,en:"A — Z",detail:`這次停在字母 ${letter}。可作為名稱、地點、品牌或創作時的聯想起點。`,reflection:"先不要急著猜答案，這個字母最先讓你想到什麼？"};
+      return {resultKey:pick<Result>(["yes","no"]),result:"letter",label:letter,en:"A — Z",detail:`這次停在字母 ${letter}。可作為名稱、地點、品牌或創作時的聯想起點。`,reflection:"先不要急著猜答案，這個字母最先讓妳想到什麼？"};
     }
     if(tool==="percentage"){
       const value=Math.floor(Math.random()*61)+35;
-      return {resultKey:value>70?"yes":value<50?"no":"unclear",result:"percentage",label:`${value}%`,en:"REFLECTION SCALE",detail:"這是娛樂與自我覺察式的呈現，不是對事件、關係或能量的客觀測量。",reflection:"如果由你自己評分，直覺會給幾分？為什麼？"};
+      return {resultKey:value>70?"yes":value<50?"no":"unclear",result:"percentage",label:`${value}%`,en:"REFLECTION SCALE",detail:"這是娛樂與自我覺察式的呈現，不是對事件、關係或能量的客觀測量。",reflection:"如果由妳自己評分，直覺會給幾分？為什麼？"};
     }
     if(tool==="energy"){
       const mind=Math.floor(Math.random()*46)+50,body=Math.floor(Math.random()*46)+45,soul=Math.floor(Math.random()*46)+50;
       const average=(mind+body+soul)/3;
-      return {resultKey:average>75?"yes":average<58?"no":"unclear",result:"energy",label:average>75?"能量充足":average<58?"建議休息":"能量普通",en:`心 ${mind} · 身 ${body} · 靈 ${soul}`,detail:"數值只是一種覺察遊戲，不代表身心狀態的客觀檢測或健康判斷。",reflection:"三個數值中，你最想先照顧哪一項？"};
+      return {resultKey:average>75?"yes":average<58?"no":"unclear",result:"energy",label:average>75?"能量充足":average<58?"建議休息":"能量普通",en:`心 ${mind} · 身 ${body} · 靈 ${soul}`,detail:"數值只是一種覺察遊戲，不代表身心狀態的客觀檢測或健康判斷。",reflection:"三個數值中，妳最想先照顧哪一項？"};
     }
     if(tool==="chakra"){
       const item=pick(chakraData);
@@ -236,11 +283,11 @@ export default function PendulumPage(){
     }
     if(tool==="crystal"){
       const item=pick(crystalData);
-      return {resultKey:pick<Result>(["yes","unclear"]),result:"crystal",label:item[0],en:"CRYSTAL RITUAL",detail:`${item[1]}。用途依身心靈領域常見說法整理，不取代醫療或專業建議。`,reflection:"即使手邊沒有這顆水晶，你仍能如何實踐它象徵的提醒？"};
+      return {resultKey:pick<Result>(["yes","unclear"]),result:"crystal",label:item[0],en:"CRYSTAL RITUAL",detail:`${item[1]}。用途依身心靈領域常見說法整理，不取代醫療或專業建議。`,reflection:"即使手邊沒有這顆水晶，妳仍能如何實踐它象徵的提醒？"};
     }
     if(tool==="food"||tool==="drink"||tool==="outfit"||tool==="outing"||tool==="home"){
       const item=pick(lifestylePools[tool]);
-      const reflections={food:"看到這個答案時，你腦中第一個浮現的是哪一道料理？",drink:"這杯飲品符合你現在的身體感受與今天的天氣嗎？",outfit:"衣櫃裡哪一件單品最接近這個氣氛？",outing:"想到這個地方時，你是期待，還是其實更想休息？",home:"只花十分鐘，你最想先整理哪一小塊？"} as const;
+      const reflections={food:"看到這個答案時，妳腦中第一個浮現的是哪一道料理？",drink:"這杯飲品符合妳現在的身體感受與今天的天氣嗎？",outfit:"衣櫃裡哪一件單品最接近這個氣氛？",outing:"想到這個地方時，妳是期待，還是其實更想休息？",home:"只花十分鐘，妳最想先整理哪一小塊？"} as const;
       return {resultKey:pick<Result>(["yes","no","unclear"]),result:tool,label:item[0],en:item[1],detail:item[2],reflection:reflections[tool]};
     }
     const pools:Record<Exclude<ToolKey,"yesno"|"choices"|"number"|"letter"|"percentage"|"energy"|"chakra"|"crystal"|"custom"|"food"|"drink"|"outfit"|"outing"|"home">,Array<[string,string]>>={
@@ -251,11 +298,11 @@ export default function PendulumPage(){
       luckyNumber:[["3","表達、創意與新的組合"],["8","資源、責任與穩定累積"],["18","穿越不確定，保留觀察"],["22","帶著經驗重新出發"],["77","安靜辨認自己的直覺"]],
       element:[["花","讓美感與溫柔回到日常"],["水","允許情緒流動，也保持彈性"],["太陽","看見、行動與補充活力"],["月亮","休息、感受與內在節奏"],["森林","穩定、呼吸與長期累積"],["火","決心、轉化與勇敢開始"],["風","溝通、鬆動與新的想法"]],
       oil:[["薰衣草","適合搭配放鬆與睡前儀式"],["佛手柑","為沉重情緒加入一點明亮感"],["乳香","適合安靜、呼吸與冥想片刻"],["檸檬","為整理與開始增加清新感"],["茶樹","象徵清理、界線與俐落感"],["依蘭","練習柔軟、感受與慢下來"],["雪松","回到穩定、踏實與身體感"]],
-      meditation:[["放下","把不能控制的部分暫時放回原位"],["原諒","原諒不是合理化，而是停止反覆消耗自己"],["豐盛","先看見已經擁有與正在累積的部分"],["相信自己","把選擇權收回，完成一個可驗證的小決定"],["愛自己","用你對重要的人那樣，照顧今天的自己"],["感恩","記下三件具體而微小的好事"],["療癒","允許修復有自己的速度，不要求立刻變好"]],
-      message:[["今天請停止懷疑自己。","先完成一個小行動，答案會比想像更清楚。"],["相信你的直覺。","同時也用現實資訊替直覺找到落點。"],["事情正在慢慢靠近。","不催促結果，先整理自己能掌握的部分。"],["你比想像中勇敢。","勇敢不一定是衝出去，也可以是誠實地停下來。"]],
+      meditation:[["放下","把不能控制的部分暫時放回原位"],["原諒","原諒不是合理化，而是停止反覆消耗自己"],["豐盛","先看見已經擁有與正在累積的部分"],["相信自己","把選擇權收回，完成一個可驗證的小決定"],["愛自己","用妳對重要的人那樣，照顧今天的自己"],["感恩","記下三件具體而微小的好事"],["療癒","允許修復有自己的速度，不要求立刻變好"]],
+      message:[["今天請停止懷疑自己。","先完成一個小行動，答案會比想像更清楚。"],["相信妳的直覺。","同時也用現實資訊替直覺找到落點。"],["事情正在慢慢靠近。","不催促結果，先整理自己能掌握的部分。"],["妳比想像中勇敢。","勇敢不一定是衝出去，也可以是誠實地停下來。"]],
     };
     const item=pick(pools[tool as keyof typeof pools]);
-    return {resultKey:pick<Result>(["yes","no","unclear"]),result:tool,label:item[0],en:selectedTool.en,detail:item[1],reflection:"看到這個結果時，你第一個想採取的小行動是什麼？"};
+    return {resultKey:pick<Result>(["yes","no","unclear"]),result:tool,label:item[0],en:selectedTool.en,detail:item[1],reflection:"看到這個結果時，妳第一個想採取的小行動是什麼？"};
   }
 
   function stopActiveMotion(){
@@ -297,37 +344,67 @@ export default function PendulumPage(){
     animationRef.current=requestAnimationFrame(tick);
   }
 
-  function reset(clearQuestion=true){stopActiveMotion();setOutcome(null);setMotionTarget(null);updateManualAngle(0);if(clearQuestion)setQuestion("");setNote("");setSaved("idle")}
-  function activateTool(next:ToolKey){setTool(next);reset(false);window.setTimeout(()=>document.getElementById("ritual")?.scrollIntoView({behavior:"smooth",block:"start"}),40)}
+  function reset(clearQuestion=true){stopActiveMotion();clearTimers();setMoving(false);setCalibrating(false);setOutcome(null);setMotionTarget(null);updateManualAngle(0);if(clearQuestion)setQuestion("");setNote("");setSavedId(null);setSaveError(false)}
+  function selectTool(next:ToolKey){if(next===tool&&!outcome)return;setTool(next);reset(false)}
+  function chooseFromLibrary(next:ToolKey){
+    selectTool(next);setLibraryOpen(false);
+    later(()=>{scrollToTop(ritualRef.current);toolTitleRef.current?.focus({preventScroll:true})},40);
+  }
+  function closeLibrary(){setLibraryOpen(false);later(()=>libraryTriggerRef.current?.focus({preventScroll:true}),0)}
+  function openLibrary(){setLibraryGroup(Math.max(0,toolGroups.findIndex(group=>group.keys.includes(tool))));setLibraryOpen(true)}
+  // Switching from a hint keeps what she typed (spec v1 §5).
+  function switchTo(next:ToolKey){
+    if(next==="choices"){const parts=choicesFromQuestion(question);if(parts.length)setChoices(parts.join("\n"))}
+    setTool(next);reset(false);
+  }
 
   function calibrate(){
-    setCalibrating(true);setCalibrated(false);setOutcome(null);setMotionTarget(null);updateManualAngle(0);
-    runNaturalMotion("unclear",3000,()=>{setCalibrating(false);setCalibrated(true)});
+    if(moving||calibrating)return;
+    clearTimers();setCalibrating(true);setCalibrated(false);setOutcome(null);setMotionTarget(null);setSavedId(null);updateManualAngle(0);
+    const done=()=>{setCalibrating(false);setCalibrated(true)};
+    if(reducedMotion()){later(done,150);return}
+    runNaturalMotion("unclear",1800,done);
+  }
+
+  function revealResult(){
+    later(()=>{const heading=resultRef.current?.querySelector("h2") as HTMLElement|null;if(!heading)return;const rect=heading.getBoundingClientRect();if(rect.top<headerBottom()||rect.bottom>window.innerHeight-24)scrollToTop(heading)},60);
   }
 
   function ask(){
-    if(moving)return;
-    if((tool==="yesno"||tool==="custom")&&!quality.ok)return;
+    if(moving||calibrating)return;
+    if(needsQuestion&&!quality.canAsk){questionRef.current?.focus();return}
     const next=createOutcome();if(!next)return;
-    setOutcome(null);setMotionTarget(next.resultKey);setMoving(true);setSaved("idle");updateManualAngle(0);
-    runNaturalMotion(next.resultKey,duration,()=>{setOutcome(next);setMotionTarget(null);setMoving(false);navigator.vibrate?.(18)});
+    clearTimers();setOutcome(null);setMotionTarget(next.resultKey);setMoving(true);setCalibrated(false);setSavedId(null);setSaveError(false);updateManualAngle(0);
+    const finish=()=>{setOutcome(next);setMotionTarget(null);setMoving(false);navigator.vibrate?.(18);revealResult()};
+    const swing=()=>{
+      if(reducedMotion()){stopActiveMotion();updateManualAngle(next.resultKey==="yes"?-24:next.resultKey==="no"?24:0);later(finish,150);return}
+      runNaturalMotion(next.resultKey,duration,finish);
+    };
+    // Bring the whole stage on screen first, then swing (spec v1 §6).
+    const wait=fullyVisible(stageRef.current)?0:scrollToTop(stageRef.current);
+    if(wait)later(swing,wait+100);else swing();
   }
 
   function save(){
-    if(!outcome)return;
-    const prompt=question.trim()||`${selectedTool.label}｜${new Date().toLocaleDateString("zh-TW")}`;
-    try{const item:Entry={id:Date.now(),question:prompt,result:outcome.result,result_label:outcome.label,category:`${selectedTool.label}・${selectedCategory.label}`,note,created_at:new Date().toISOString()};const next=[item,...history].slice(0,80);localStorage.setItem(PENDULUM_STORAGE_KEY,JSON.stringify(next));setHistory(next);setSaved("saved")}catch{setSaved("error")}
+    if(!outcome||savedId!==null)return;
+    const prompt=question.trim()&&needsQuestion?question.trim():`${selectedTool.label}｜${new Date().toLocaleDateString("zh-TW")}`;
+    try{const item:Entry={id:Date.now(),question:prompt,result:outcome.result,result_label:outcome.label,category:needsQuestion?`${selectedTool.label}・${selectedCategory.label}`:selectedTool.label,note,created_at:new Date().toISOString()};const next=[item,...history].slice(0,80);localStorage.setItem(PENDULUM_STORAGE_KEY,JSON.stringify(next));setHistory(next);setSavedId(item.id);setSaveError(false)}catch{setSaveError(true)}
+  }
+  function viewRecord(){
+    if(savedId===null)return;
+    setHistoryOpen(true);setHighlightId(savedId);
+    later(()=>scrollToTop(document.getElementById(`pendulum-entry-${savedId}`)),60);
   }
 
   function updateManualAngle(value:number){manualAngleRef.current=value;setManualAngle(value)}
   function beginDrag(event:ReactPointerEvent<HTMLDivElement>){
     if(moving||calibrating)return;
     stopActiveMotion();
-    event.currentTarget.setPointerCapture(event.pointerId);dragRef.current={angle:manualAngleRef.current,time:performance.now(),velocity:0,active:true};setDragging(true);setOutcome(null);setMotionTarget(null);
+    event.currentTarget.setPointerCapture(event.pointerId);dragRef.current={angle:manualAngleRef.current,time:performance.now(),velocity:0,active:true};setDragging(true);
   }
   function moveDrag(event:ReactPointerEvent<HTMLDivElement>){
     if(!dragRef.current.active||!stageRef.current)return;
-    const rect=stageRef.current.getBoundingClientRect();const dx=event.clientX-(rect.left+rect.width/2);const dy=Math.max(38,event.clientY-(rect.top+52));const angle=clamp(Math.atan2(dx,dy)*180/Math.PI,-46,46);const now=performance.now();const dt=Math.max(12,now-dragRef.current.time);const velocity=(angle-dragRef.current.angle)/(dt/1000);dragRef.current={angle,time:now,velocity,active:true};updateManualAngle(angle);
+    const rect=stageRef.current.getBoundingClientRect();const dx=event.clientX-(rect.left+rect.width/2);const dy=Math.max(38,event.clientY-(rect.top+rect.height*PENDULUM_TOP));const angle=clamp(Math.atan2(dx,dy)*180/Math.PI,-46,46);const now=performance.now();const dt=Math.max(12,now-dragRef.current.time);const velocity=(angle-dragRef.current.angle)/(dt/1000);dragRef.current={angle,time:now,velocity,active:true};updateManualAngle(angle);
   }
   function releaseDrag(event:ReactPointerEvent<HTMLDivElement>){
     if(!dragRef.current.active)return;
@@ -337,82 +414,134 @@ export default function PendulumPage(){
     animationRef.current=requestAnimationFrame(tick);
   }
 
+
   const needsQuestion=tool==="yesno"||tool==="custom";
-  const actionDisabled=moving||(needsQuestion&&!quality.ok)||(tool==="choices"&&choiceList.length<2);
-  const questionPlaceholder=tool==="custom"?"例如：我現在適合開始規劃下一份工作嗎？":selectedCategory.example;
+  const startDisabled=moving||calibrating||(needsQuestion&&!quality.canAsk)||(tool==="choices"&&choiceList.length<2);
+  const questionPlaceholder=tool==="custom"?"例如：我現在適合開始規劃下一份工作嗎？":`例如：${selectedCategory.example}`;
   const swingEnergy=Math.min(1,Math.abs(manualAngle)/36);
-  const stageStyle={"--manual-angle":`${manualAngle}deg`,"--shadow-offset":`${manualAngle*1.12}px`,"--shadow-scale":String(1.08-swingEnergy*.28),"--shadow-opacity":String(.72-swingEnergy*.27),"--light-shift":`${manualAngle*.22}px`,"--swing-energy":String(swingEnergy),"--swing-duration":`${duration}ms`,"--result-accent":outcome?.accent??"#d9b675"} as CSSProperties;
+  const stageStyle={"--manual-angle":`${manualAngle}deg`,"--shadow-offset":`${manualAngle*1.12}px`,"--shadow-scale":String(1.08-swingEnergy*.28),"--shadow-opacity":String(.72-swingEnergy*.27),"--swing-energy":String(swingEnergy)} as CSSProperties;
+  const step=outcome?(savedId!==null?3:2):1;
+  const stageHint=calibrating?"正在校準，感受靈擺的擺動節奏。":moving?"靈擺正在回應，請讓問題在心裡停留一下。":calibrated?"校準完成，可以開始提問了。":outcome?"可以寫下感受、儲存，或換一個問題再問。":needsQuestion&&!quality.canAsk?"先寫下想問的問題，就可以開始。":tool==="choices"&&choiceList.length<2?"請至少輸入兩個選項。":"也可以先拖曳靈擺，放手後感受它的擺動。";
+  const inputsTitle=tool==="choices"?"輸入妳的選項":tool==="number"?"選擇數字範圍":tool==="custom"?"寫下妳想問的問題":needsQuestion?"寫下妳想問的是非題":"讓今天的訊息慢慢浮現";
 
   return <main className="pendulum-page">
-    <nav className="pendulum-nav site-nav"><Link className="brand" href="/">ZOLACOCO <span>TAROT</span></Link><div className="pendulum-menu"><Link href="/#draw">塔羅抽牌</Link><Link href="/pendulum#centre">占卜玩法</Link><Link href="/pendulum#membership">會員方案</Link><Link className="login-link" href="/admin">我的存檔</Link></div></nav>
-    <header className="pendulum-hero">
-      <div className="pendulum-hero-copy"><p className="eyebrow">THE PENDULUM DIVINATION CENTRE</p><h1>靈擺占卜<br/><em>中心</em></h1><p>從 Yes／No、多選一到每日指引，用一場有儀式感的擺動整理直覺。答案是自我反思的入口，不是替你決定人生的命令。</p><a href="#centre" className="primary">選擇占卜玩法 <span>↓</span></a></div>
-      <div className="pendulum-hero-image"><img src="/pendulum-hero.png" alt="暖光中的藍綠水晶與古董黃銅靈擺"/><span>CRYSTAL · BRASS · INTUITION</span></div>
+    <nav className="pendulum-nav site-nav"><Link className="brand" href="/">ZOLACOCO <span>TAROT</span></Link><div className="pendulum-menu"><Link href="/#draw">塔羅抽牌</Link><Link href="/pendulum#ritual">占卜玩法</Link><Link className="login-link" href="/admin">我的存檔</Link></div></nav>
+    <header className="pv-hero">
+      <picture className="pv-hero-art" aria-hidden="true"><source media="(max-width: 700px)" srcSet="/pendulum/hero-mobile.webp"/><img src="/pendulum/hero-desktop.webp" alt=""/></picture>
+      <div className="pv-hero-panel">
+        <span className="pv-hero-crest" aria-hidden="true"/>
+        <p className="pv-hero-kicker">the pendulum divination centre</p>
+        <h1>靈擺占卜</h1>
+        <p>從 Yes／No、多選一到每日指引，用一場有儀式感的擺動整理直覺。答案是自我反思的入口，不是替妳決定人生的命令。</p>
+        <a href="#ritual" className="pv-hero-cta">開始靈擺占卜 <span aria-hidden="true">↓</span></a>
+      </div>
     </header>
 
-    <section className="divination-centre" id="centre">
-      <div className="centre-heading"><p className="eyebrow">23 WAYS TO ASK</p><h2>今天，想用哪種方式問？</h2><p>選擇一種玩法後，會直接帶你進入下方的靈擺儀式。</p></div>
-      <div className="tool-groups">{toolGroups.map((group,index)=><section className="tool-group" key={group.name}>
-        <header><span>{String(index+1).padStart(2,"0")}</span><div><small>{group.en}</small><h3>{group.name}</h3><p>{group.description}</p></div></header>
-        <div className="tool-library">{group.keys.map(key=>tools.find(item=>item.key===key)).filter((item):item is (typeof tools)[number]=>Boolean(item)).map(item=><button key={item.key} type="button" className={tool===item.key?"selected":""} onClick={()=>activateTool(item.key)}><i aria-hidden="true">{item.icon}</i><span><small>{item.en}</small><b>{item.label}</b><em>{item.description}</em></span><strong>{tool===item.key?"已選擇":"開始 ›"}</strong></button>)}</div>
-      </section>)}</div>
-    </section>
+    <section className="pv-ritual" id="ritual" ref={ritualRef} aria-labelledby="pv-tool-title">
+      <span className="pv-scroll left" aria-hidden="true"/><span className="pv-scroll right" aria-hidden="true"/>
+      <div className="pv-layout">
+        <header className="pv-tool">
+          <p className="pv-kicker"><span>目前玩法</span><small>{selectedTool.group} · {selectedTool.en}</small></p>
+          <h2 id="pv-tool-title" ref={toolTitleRef} tabIndex={-1}><i aria-hidden="true">{selectedTool.icon}</i>{selectedTool.label}</h2>
+          <p className="pv-tool-desc">{selectedTool.description}</p>
+          <div className="pv-quick" role="group" aria-label="常用玩法">
+            {quickTools.map(key=>{const item=tools.find(entry=>entry.key===key)!;return <button key={key} type="button" className={tool===key?"selected":""} aria-pressed={tool===key} disabled={moving} onClick={()=>selectTool(key)}>{quickLabels[key]??item.label}</button>})}
+            <button type="button" ref={libraryTriggerRef} className="pv-all" disabled={moving} onClick={openLibrary} aria-haspopup="dialog">全部 23 種玩法 ›</button>
+          </div>
+        </header>
 
-    <section className="pendulum-ritual" id="ritual">
-      <div className="ritual-heading"><p className="eyebrow">YOUR SELECTED RITUAL</p><h2>{selectedTool.label}</h2><p>{selectedTool.description}。涉及未來、健康、法律、投資或重大決策時，請把結果當作反思參考，並結合專業與現實資訊評估。</p></div>
-      <div className="pendulum-workspace">
-        <aside className="ritual-sidebar">
-          <div className="ritual-steps">
-            <article className={calibrated?"done":"active"}><b>01</b><div><small>CALIBRATE</small><h3>校準靈擺</h3><p>熟悉擺動，也可以直接拖曳後放手。</p></div></article>
-            <article className={calibrated?"active":""}><b>02</b><div><small>ASK</small><h3>選擇與提問</h3><p>一次整理一個方向，讓問題保持單純。</p></div></article>
-            <article className={outcome?"active":""}><b>03</b><div><small>REFLECT</small><h3>記錄感受</h3><p>答案後的第一反應，往往比答案本身更重要。</p></div></article>
-          </div>
-          <div className="cabinet-card"><small>HISTOIRE NATURELLE · CRYSTAL PLATE</small><h3>古董水晶圖鑑</h3><p>{selectedPendulum.description}</p><div>{pendulumStyles.map(item=><button key={item.key} type="button" className={pendulumStyle===item.key?"active":""} onClick={()=>setPendulumStyle(item.key)}><sup>{item.no}</sup><i className={`material-swatch ${item.key}`}><span/></i><span><b>{item.label}</b><small>{item.en}</small></span></button>)}</div></div>
-        </aside>
-        <div className="pendulum-console">
-          <div className="pendulum-toolbar">
-            <div className="piano-music-control"><span>沉浸療癒音景</span><div className="soundscape-options">{(["forest","cafe","meditation"] as Soundscape[]).map(item=>{const content=soundscapes[item];return <button type="button" key={item} className={soundEnabled&&soundscape===item?"piano-button active":"piano-button"} onClick={()=>toggleSoundscape(item)} aria-pressed={soundEnabled&&soundscape===item}><i aria-hidden="true">{content.icon}</i><b>{soundEnabled&&soundscape===item?"停止播放":content.label}</b><small>{content.en}</small></button>})}</div></div>
-            <p className="music-status" aria-live="polite">{soundEnabled?`正在播放「${soundscapes[soundscape].label}」，再次點擊即可停止。`:"點選一種音景即可播放聲音。"}</p>
-          </div>
-          {soundEnabled&&<div className="audio-only-player" aria-hidden="true"><iframe key={soundscape} src={`https://www.youtube-nocookie.com/embed/${soundscapes[soundscape].videoId}?autoplay=1&loop=1&playlist=${soundscapes[soundscape].videoId}&controls=0&rel=0`} title={`${soundscapes[soundscape].label}背景音樂`} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" tabIndex={-1}/></div>}
-          <div ref={stageRef} style={stageStyle} className={`crystal-stage material-${pendulumStyle} ${dragging?"is-dragging":""} ${moving&&motionTarget?`motion-${motionTarget}`:""} ${calibrating?"is-calibrating":""} ${outcome?`result-${outcome.resultKey}`:""}`} aria-live="polite">
-            <div className="antique-frame" aria-hidden="true"><i/><i/><i/><i/><span>❦</span><span>❦</span></div>
-            <div className="prism-specks" aria-hidden="true"><i/><i/><i/><i/><i/><i/><i/><i/></div>
-            <div className="pendulum-anchor" aria-hidden="true"><i/><span/></div>
-            <div className="crystal-chain" onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={releaseDrag} onPointerCancel={releaseDrag} aria-label="可拖曳的靈擺"><img className="crystal-pendulum-image" src="/crystal-pendulum-web.png" alt="" draggable={false}/></div>
-            <div className="crystal-glow" aria-hidden="true"/>
-            <div className="pendulum-status">{dragging?"RELEASE TO SWING":calibrating?"CALIBRATING":moving?"LISTENING":outcome?outcome.en:"DRAG OR BEGIN"}</div>
-            <div className="stage-live-light" aria-hidden="true"/>
-            <button type="button" className="image-start-hitbox" disabled={calibrating||moving||(calibrated&&actionDisabled)} onClick={calibrated?ask:calibrate} aria-label={calibrated?"開始靈擺占卜":"開始校準靈擺"}><span>{calibrated?"開始靈擺占卜":"開始擺動"}</span></button>
-          </div>
+        <ol className="pv-steps" aria-label="占卜進度">
+          {["選玩法","開始擺動","記錄感受"].map((label,index)=>{const state=index<step?"done":index===step?"current":"todo";return <li key={label} className={state} aria-current={state==="current"?"step":undefined}><span aria-hidden="true">{state==="done"?"✓":state==="current"?"●":"○"}</span>{label}{state==="done"&&<em className="pv-sr">（已完成）</em>}</li>})}
+        </ol>
 
-          {!calibrated?<div className="calibration-panel"><h2>{calibrating?"正在認識擺動方向……":"先進行一次校準"}</h2><p>直接點擊畫面中央的「開始擺動」，讓水晶光影慢慢回應；也可以使用下方按鈕開始。</p><button className="pendulum-cta" disabled={calibrating} onClick={calibrate}>{calibrating?"校準中…":"開始校準"}</button></div>:
-          <div className="question-panel">
-            {!outcome&&<div className="pendulum-selectors">
-              <button type="button" className="selector-card" onClick={()=>setPicker("mode")}><span className="selector-symbol" aria-hidden="true">{selectedMode.icon}</span><span className="selector-kicker">回應模式</span><b>{selectedMode.label}</b><small>{selectedMode.en}</small><i>選擇 ›</i></button>
-              <button type="button" className="selector-card" onClick={()=>setPicker("category")}><span className="selector-symbol" aria-hidden="true">{selectedCategory.icon}</span><span className="selector-kicker">提問類別</span><b>{selectedCategory.label}</b><small>{selectedCategory.description}</small><i>選擇 ›</i></button>
-            </div>}
-            {!outcome?<>
-              <p className="active-tool-label"><span>{selectedTool.group}</span>{selectedTool.en}</p>
-              <h2>{tool==="choices"?"輸入你的選項":tool==="number"?"選擇數字範圍":needsQuestion?"寫下一個清楚的問題":"讓今天的訊息慢慢浮現"}</h2>
-              {needsQuestion&&<><textarea maxLength={180} value={question} onChange={e=>setQuestion(e.target.value)} placeholder={questionPlaceholder}/><p className={`question-quality ${quality.ok?"good":""}`}>{quality.ok?"✓":"✦"} {quality.text}</p></>}
-              {tool==="choices"&&<><textarea className="choice-input" maxLength={240} value={choices} onChange={e=>setChoices(e.target.value)} placeholder={"A 第一個選項\nB 第二個選項\n最多可輸入六項"}/><p className={`question-quality ${choiceList.length>=2?"good":""}`}>{choiceList.length>=2?"✓ 已準備好選項":"✦ 請至少輸入兩個選項"}</p></>}
-              {tool==="number"&&<div className="range-picker">{([10,30,100] as const).map(value=><button key={value} onClick={()=>setNumberRange(value)} className={numberRange===value?"active":""}>1 ～ {value}</button>)}</div>}
-              {!needsQuestion&&tool!=="choices"&&tool!=="number"&&<p className="ritual-ready-copy">這個模式不需要輸入問題。先在心裡停留幾秒，再讓靈擺為你抽出一個象徵結果。</p>}
-              <button className="pendulum-cta" disabled={actionDisabled} onClick={ask}>{moving?"靈擺回應中…":"開始靈擺占卜"}</button>
-            </>:<div className="result-panel" style={{"--result-accent":outcome.accent??"#c29659"} as CSSProperties}><div className="result-crown" aria-hidden="true">❦</div><span>{outcome.en} · {selectedMode.en}</span><h2>{outcome.label}</h2><blockquote><small>靈擺訊息</small><p>{outcome.detail}</p></blockquote><div className="reflection-card"><small>給自己的覺察題</small><p>{outcome.reflection}</p></div><label className="result-note-label" htmlFor="pendulum-note">寫下此刻的感受</label><textarea id="pendulum-note" maxLength={500} value={note} onChange={e=>setNote(e.target.value)} placeholder="看到這個答案時，我第一個浮現的感受是……"/><div className="result-actions"><button onClick={()=>reset(false)}>清除並重問</button><button className="pendulum-cta" onClick={save}>儲存結果與感受</button></div>{saved==="saved"&&<small>已儲存到目前手機或電腦的個人紀錄。</small>}{saved==="error"&&<small>目前未能儲存，請確認瀏覽器允許網站儲存資料。</small>}</div>}
+        {!outcome&&<div className="pv-inputs">
+          {needsQuestion&&<div className="pv-selects">
+            <button type="button" onClick={()=>setPicker("mode")}><small>回應模式</small><b>{selectedMode.label}</b><i aria-hidden="true">›</i></button>
+            <button type="button" onClick={()=>setPicker("category")}><small>提問類別</small><b>{selectedCategory.label}</b><i aria-hidden="true">›</i></button>
           </div>}
+          <label className="pv-label" htmlFor={needsQuestion?"pv-question":tool==="choices"?"pv-choices":undefined}>{inputsTitle}</label>
+          {needsQuestion&&<>
+            <textarea id="pv-question" ref={questionRef} maxLength={180} rows={3} value={question} onChange={event=>setQuestion(event.target.value)} placeholder={questionPlaceholder}/>
+            <p className={`pv-quality ${quality.tone}`} aria-live="polite"><span aria-hidden="true">{quality.tone==="good"?"✓":"✦"}</span>{quality.text}</p>
+            {quality.suggest&&<button type="button" className="pv-switch" onClick={()=>switchTo(quality.suggest!)}>{quality.suggest==="choices"?"改用多選一":"改用自訂問題"}</button>}
+          </>}
+          {tool==="choices"&&<>
+            <textarea id="pv-choices" className="choice-input" rows={4} maxLength={240} value={choices} onChange={event=>setChoices(event.target.value)} placeholder={"A 第一個選項\nB 第二個選項\n最多可輸入六項"}/>
+            <p className={`pv-quality ${choiceList.length>=2?"good":"block"}`} aria-live="polite"><span aria-hidden="true">{choiceList.length>=2?"✓":"✦"}</span>{choiceList.length>=2?`已準備好 ${choiceList.length} 個選項`:"請至少輸入兩個選項"}</p>
+          </>}
+          {tool==="number"&&<div className="pv-range" role="group" aria-label="數字範圍">{([10,30,100] as const).map(value=><button key={value} type="button" onClick={()=>setNumberRange(value)} className={numberRange===value?"selected":""} aria-pressed={numberRange===value}>1 ～ {value}</button>)}</div>}
+          {!needsQuestion&&tool!=="choices"&&tool!=="number"&&<p className="pv-ready">這個玩法不需要輸入問題。先在心裡停留幾秒，再讓靈擺抽出一個象徵結果。</p>}
+        </div>}
+
+        <div className="pv-stage-card">
+          <div ref={stageRef} style={stageStyle} className={`pv-stage material-${pendulumStyle} ${dragging?"is-dragging":""} ${moving||calibrating?"is-swinging":""} ${outcome?`result-${outcome.resultKey}`:""}`}>
+                        <div className="pv-pendulum" onPointerDown={beginDrag} onPointerMove={moveDrag} onPointerUp={releaseDrag} onPointerCancel={releaseDrag} aria-label={`可拖曳的${selectedPendulum.label}靈擺`} role="img"><img className="pv-crystal" src="/pendulum/crystal.webp" alt="" draggable={false}/><img className="pv-metal" src="/pendulum/metal.webp" alt="" draggable={false}/></div>
+            <span className="pv-glow" aria-hidden="true"/>
+          </div>
+          <div className="pv-stage-actions">
+            {outcome?<button type="button" className="pv-start" onClick={()=>{reset(false);later(()=>{scrollToTop(ritualRef.current);questionRef.current?.focus({preventScroll:true})},40)}}>換一個問題再問</button>
+              :<button type="button" className="pv-start" disabled={startDisabled} onClick={ask}>{moving?"靈擺回應中…":"開始擺動 ✦"}</button>}
+            <p className="pv-stage-hint" aria-live="polite">{stageHint}</p>
+            {!outcome&&!moving&&<button type="button" className="pv-calibrate" disabled={calibrating} onClick={calibrate}>{calibrating?"校準中…":"想先熟悉靈擺？開始校準"}</button>}
+          </div>
         </div>
+
+        {outcome&&<div className="result-panel pv-result" ref={resultRef} style={{"--result-accent":outcome.accent??"#c29659"} as CSSProperties}>
+          <div className="result-crown" aria-hidden="true">❦</div>
+          <span>{outcome.en} · {selectedMode.en}</span>
+          <h2 tabIndex={-1}>{outcome.label}</h2>
+          <blockquote><small>靈擺訊息</small><p>{outcome.detail}</p></blockquote>
+          <div className="reflection-card"><small>給自己的覺察題</small><p>{outcome.reflection}</p></div>
+          <label className="result-note-label" htmlFor="pendulum-note">寫下此刻的感受</label>
+          <textarea id="pendulum-note" maxLength={500} value={note} disabled={savedId!==null} onChange={event=>setNote(event.target.value)} placeholder="看到這個答案時，我第一個浮現的感受是……"/>
+          <div className="result-actions">
+            <button type="button" onClick={()=>reset(false)}>清除並重問</button>
+            <button type="button" className="pv-save" disabled={savedId!==null} onClick={save}>{savedId!==null?"已儲存":"儲存結果與感受"}</button>
+          </div>
+          {savedId!==null&&<div className="pv-saved" role="status"><p>這次的靈擺結果已保存 ✨</p><button type="button" onClick={viewRecord}>查看我的靈擺紀錄</button></div>}
+          {saveError&&<p className="pv-save-error" role="alert">目前未能儲存，請確認瀏覽器允許網站儲存資料；妳寫的內容都還在。</p>}
+        </div>}
       </div>
+
+      <div className="pv-extras">
+        <details className="pv-fold">
+          <summary><span>水晶圖鑑</span><small>目前：{selectedPendulum.label}</small></summary>
+          <p className="pv-fold-note">{selectedPendulum.description}</p>
+          <div className="pv-crystals">{pendulumStyles.map(item=><button key={item.key} type="button" className={pendulumStyle===item.key?"selected":""} aria-pressed={pendulumStyle===item.key} disabled={moving||calibrating} onClick={()=>setPendulumStyle(item.key)}><i className={`material-swatch ${item.key}`}><span/></i><span><b>{item.label}</b><small>{item.en}</small></span></button>)}</div>
+        </details>
+        <details className="pv-fold">
+          <summary><span>背景音景</span><small>{soundEnabled?`播放中：${soundscapes[soundscape].label}`:"未播放"}</small></summary>
+          <div className="pv-sounds">{(["forest","cafe","meditation"] as Soundscape[]).map(item=>{const content=soundscapes[item];const playing=soundEnabled&&soundscape===item;return <button type="button" key={item} className={playing?"selected":""} onClick={()=>toggleSoundscape(item)} aria-pressed={playing}><i aria-hidden="true">{content.icon}</i><span><b>{playing?"停止播放":content.label}</b><small>{content.en}</small></span></button>})}</div>
+          <p className="pv-fold-note" aria-live="polite">{soundEnabled?`正在播放「${soundscapes[soundscape].label}」，再按一次即可停止。`:"點選一種音景即可播放聲音。"}</p>
+        </details>
+      </div>
+      {soundEnabled&&<div className="audio-only-player" aria-hidden="true"><iframe key={soundscape} src={`https://www.youtube-nocookie.com/embed/${soundscapes[soundscape].videoId}?autoplay=1&loop=1&playlist=${soundscapes[soundscape].videoId}&controls=0&rel=0`} title={`${soundscapes[soundscape].label}背景音樂`} allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" tabIndex={-1}/></div>}
     </section>
 
     {picker&&<div className="picker-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setPicker(null)}}><section className="picker-dialog" role="dialog" aria-modal="true" aria-labelledby="picker-title"><button className="picker-close" type="button" aria-label="關閉選擇視窗" onClick={()=>setPicker(null)}>×</button><p className="eyebrow">{picker==="mode"?"CHOOSE A MODE":"CHOOSE A CATEGORY"}</p><h2 id="picker-title">{picker==="mode"?"選擇回應模式":"這次想整理哪個方向？"}</h2><p>{picker==="mode"?"一般、高靈與潛意識模式只改變反思語氣，不改變隨機機制。":"選擇類別後，會帶入適合的提問方向與範例。"}</p><div className={`picker-grid ${picker==="category"?"category-grid":""}`}>{picker==="mode"?modes.map(item=><button type="button" key={item.key} className={item.key===mode?"selected":""} onClick={()=>{setMode(item.key);setPicker(null)}}><i>{item.icon}</i><span><small>{item.en}</small><b>{item.label}</b><em>{item.description}</em></span><strong>{item.key===mode?"✓":"›"}</strong></button>):categories.map(item=><button type="button" key={item.key} className={item.key===category?"selected":""} onClick={()=>{setCategory(item.key);setPicker(null)}}><i>{item.icon}</i><span><b>{item.label}</b><em>{item.description}</em><small>例：{item.example}</small></span><strong>{item.key===category?"✓":"›"}</strong></button>)}</div></section></div>}
 
-    <section className="pendulum-guide"><div><p className="eyebrow">ASK WITH CLARITY</p><h2>怎麼問，答案會比較有幫助？</h2></div><div className="guide-grid"><article><b>適合提問</b><p>「我現在適合主動約對方談談嗎？」</p><p>「這週先完成作品集，對我比較有幫助嗎？」</p></article><article><b>先換個問法</b><p>「他到底在想什麼？」</p><p>「我什麼時候一定會成功？」</p></article><article><b>不要只交給靈擺</b><p>健康、法律、投資、安全或生死等高風險決策，請尋求專業資訊並自行評估。</p></article></div></section>
+    {libraryOpen&&<div className="picker-backdrop pv-library-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)closeLibrary()}}><section className="pv-library" ref={libraryRef} role="dialog" aria-modal="true" aria-labelledby="pv-library-title">
+      <button className="picker-close" type="button" aria-label="關閉玩法選單" onClick={closeLibrary}>×</button>
+      <p className="pv-kicker"><span>23 WAYS TO ASK</span></p>
+      <h2 id="pv-library-title">全部 23 種玩法</h2>
+      <div className="pv-library-tabs" role="group" aria-label="玩法分類">{toolGroups.map((group,index)=><button key={group.name} type="button" className={libraryGroup===index?"selected":""} aria-pressed={libraryGroup===index} onClick={()=>setLibraryGroup(index)}>{group.name}<small>{group.keys.length}</small></button>)}</div>
+      <p className="pv-library-note">{toolGroups[libraryGroup].description}</p>
+      <div className="pv-library-list">{toolGroups[libraryGroup].keys.map(key=>{const item=tools.find(entry=>entry.key===key)!;return <button key={key} type="button" className={tool===key?"selected":""} aria-pressed={tool===key} onClick={()=>chooseFromLibrary(key)}><i aria-hidden="true">{item.icon}</i><span><b>{item.label}</b><em>{item.description}</em></span><strong>{tool===key?"使用中":"選擇"}</strong></button>})}</div>
+    </section></div>}
 
-    <section className="premium-room" id="membership"><div className="premium-intro"><p className="eyebrow">ZOLACOCO PENDULUM MEMBERSHIP</p><h2>完整會員體驗</h2><p>占卜玩法、收藏櫃、聲光效果與個人紀錄已整合在同一頁；正式收費價格與付款入口確認後即可接上，不先替你設定費用。</p></div><div className="premium-dashboard"><article><small>本月紀錄</small><strong>{monthCount}</strong><p>目前裝置已可查看個人靈擺歷史</p></article><article><small>目前靈擺</small><strong>{selectedPendulum.label}</strong><p>可隨時切換透明水晶、金屬與木質外觀</p></article><article><small>AI 式反思引導</small><strong>每次都有</strong><p>依結果提供覺察問題，不把內容包裝成絕對預言</p></article></div><div className="premium-features"><span>✓ 全部 23 種模式</span><span>✓ 12 款靈擺外觀</span><span>✓ 三種沉浸音景</span><span>✓ 自然擺動效果</span><span>✓ 個人歷史紀錄</span><span>✓ 每月使用統計</span><span>✓ 無廣告沉浸介面</span><span>✓ 塔羅抽牌流程串接</span></div><div className="premium-actions"><a href="#ritual">繼續今天的靈擺儀式</a><Link href="/">搭配塔羅牌一起整理</Link></div></section>
+    <section className="pv-history" id="pendulum-records">
+      <details open={historyOpen} onToggle={event=>setHistoryOpen((event.currentTarget as HTMLDetailsElement).open)}>
+        <summary><span>我的近期紀錄</span><small>{history.length===0?"還沒有紀錄":`共 ${history.length} 筆・本月 ${monthCount} 次`}</small></summary>
+        {history.length===0?<p className="pv-fold-note">完成並儲存第一題後，紀錄會出現在這裡。紀錄只存在這台裝置。</p>:<div className="history-list">{history.map(entry=><article key={entry.id} id={`pendulum-entry-${entry.id}`} className={highlightId===entry.id?"is-new":""}><div><span>{entry.category}</span><time>{new Date(entry.created_at).toLocaleString("zh-TW")}</time></div><h3>{entry.question}</h3><b>{entry.result_label}</b>{entry.note&&<p>{entry.note}</p>}</article>)}</div>}
+      </details>
+    </section>
 
-    <section className="pendulum-history"><p className="eyebrow">MY PENDULUM JOURNAL</p><h2>我的近期紀錄</h2>{history.length===0?<p>完成並儲存第一題後，紀錄會出現在這裡。</p>:<div className="history-list">{history.map(entry=><article key={entry.id}><div><span>{entry.category}</span><time>{new Date(entry.created_at).toLocaleString("zh-TW")}</time></div><h3>{entry.question}</h3><b>{entry.result_label}</b>{entry.note&&<p>{entry.note}</p>}</article>)}</div>}</section>
-    <footer><div className="brand">ZOLACOCO <span>TAROT</span></div><p>答案不是命令，而是讓你更靠近自己的入口。</p><Link href="/">返回塔羅抽牌首頁</Link></footer>
+    <section className="pv-guide">
+      <details>
+        <summary><span>怎麼問，答案會比較有幫助？</span><small>使用指南</small></summary>
+        <div className="guide-grid"><article><b>適合提問</b><p>「我現在適合主動約對方談談嗎？」</p><p>「這週先完成作品集，對我比較有幫助嗎？」</p></article><article><b>可以換個問法</b><p>「他到底在想什麼？」可以改成「我現在適合主動問他嗎？」</p><p>「我什麼時候一定會成功？」可以改用自訂問題模式慢慢整理。</p></article><article><b>不要只交給靈擺</b><p>健康、法律、投資、安全或生死等高風險決策，請尋求專業資訊並自行評估。</p></article></div>
+      </details>
+    </section>
+    <footer><div className="brand">ZOLACOCO <span>TAROT</span></div><p>答案不是命令，而是讓妳更靠近自己的入口。</p><Link href="/">返回塔羅抽牌首頁</Link></footer>
   </main>;
 }
