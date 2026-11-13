@@ -612,3 +612,23 @@ html body main .hero .hero-copy { width: auto !important; }
 .site-notice button { color: var(--post-gold-text) !important; }
 html body #draw, html body #draw *:not(:focus-visible) { box-shadow: none !important; text-shadow: none !important; }
 html body #draw :is(.rc-card-face, .card-back, .pick-card, .tarot-back, .tarot-front) { box-shadow: 0 0 0 1px rgba(176, 138, 90, .55) !important; }
+
+/* ---------- New card back (owner request 2026-11-13): Ryan and Shrimp medallion, gold scrolls,
+   roses; painted by ChatGPT, symmetric so it reads the same both ways. ---------- */
+html body :is(.card-back, .pick-card, .tarot-back, .practice-tarot-back, .card-back-art) {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  background: #f8e9e4 !important;
+  overflow: hidden;
+}
+html body :is(.card-back, .pick-card, .tarot-back, .practice-tarot-back, .card-back-art) .back-frame {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  border-radius: 14px !important;
+  background: url('/textures/card-back.webp') center / cover no-repeat !important;
+  box-shadow: inset 0 0 0 1px rgba(176, 138, 90, .55) !important;
+}
+html body .back-frame::before,
+html body .back-frame::after { display: none !important; content: none !important; }
