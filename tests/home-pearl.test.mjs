@@ -63,12 +63,43 @@ test("on a phone the cat cards read centred: photo on top, title and story centr
   assert.doesNotMatch(css, /\.cat-profile p \{ text-align: left/);
 });
 
-test("roses in all four corners of both sections, behind the content and never in the way (PR #26 review B2)", () => {
-  assert.equal(page.match(/<span className="pearl-corners" aria-hidden="true" \/>/g)?.length, 2);
-  assert.match(css, /:is\(#cat-story, #explore\)::before \{ left: 6px !important; \}/, "top left");
-  assert.match(css, /:is\(#cat-story, #explore\)::after \{ right: 6px !important; transform: scaleX\(-1\) !important; \}/, "top right");
+test("roses in all four corners of every pearl section, behind the content and never in the way (PR #26 review B2)", () => {
+  assert.equal(page.match(/<span className="pearl-corners" aria-hidden="true" \/>/g)?.length, 4, "hero, cats, explore, consult");
+  assert.match(css, /:is\(#top, #cat-story, #explore, #consult\)::before \{ left: 6px !important; \}/, "top left");
+  assert.match(css, /:is\(#top, #cat-story, #explore, #consult\)::after \{ right: 6px !important; transform: scaleX\(-1\) !important; \}/, "top right");
   assert.match(css, /> \.pearl-corners::before \{ left: 6px; transform: scaleY\(-1\); \}/, "bottom left");
   assert.match(css, /> \.pearl-corners::after \{ right: 6px; transform: scale\(-1, -1\); \}/, "bottom right");
   assert.match(css, /> \.pearl-corners \{ position: absolute; inset: 0; z-index: 0; pointer-events: none; \}/);
   assert.match(css, /> :not\(\.pearl-corners\) \{ position: relative; z-index: 1; \}/);
+});
+
+// 第 2 步 (ChatGPT spec, 2026-11-14): the rest of the home page, the header and the notice.
+test("the whole home page opts into the pearl ground, header and notice", () => {
+  assert.match(page, /<main className="home-pearl pearl-page">/);
+  assert.match(page, /import "\.\/styles\/pearl-page\.css";/);
+  for (const id of ["top", "consult"]) assert.match(css, new RegExp(`:is\\(#top, #cat-story, #explore, #consult\\)`), id);
+  assert.match(css, /main\.home-pearl #about \{/);
+  assert.match(css, /main\.home-pearl > footer \{/);
+});
+
+test("hero: free draw first, consultation second, both 44px or taller; the portrait is unchanged", () => {
+  const actions = page.slice(page.indexOf('<div className="hero-actions">'), page.indexOf('<p className="ritual">'));
+  assert.ok(actions.indexOf('href="#draw"') < actions.indexOf('href="#consult"'), "開始免費抽牌 comes first");
+  assert.match(actions, /開始免費抽牌/);
+  assert.match(actions, /預約一對一諮詢/);
+  assert.match(page, /<img src="\/zolacoco-hero-v2\.png" alt="Zolacoco Tarot 主理人 Zola" \/>/);
+  assert.match(css, /#top \.visitor-status a \{ display: inline-flex !important; align-items: center; min-height: 44px;/);
+});
+
+test("consultation keeps its copy and the official LINE link", () => {
+  assert.match(page, /<a href=\{ZOLA_LINE_URL\} target="_blank" rel="noreferrer">前往官方 LINE 預約/);
+  assert.match(page, /同一個問題已經反覆困擾很久/);
+});
+
+test("the unreachable home pendulum panel is gone; the pendulum page is untouched", async () => {
+  for (const gone of ["pendulumMeanings", "askPendulum", "pendulum-tool", "PENDULUM_STORAGE_KEY", 'exploreTool === "pendulum"']) assert.ok(!page.includes(gone), `${gone} removed`);
+  const globals = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  assert.doesNotMatch(globals, /\.pendulum-tool\{|@keyframes pendulumSwing/);
+  const pendulum = await readFile(new URL("../app/pendulum/page.tsx", import.meta.url), "utf8");
+  assert.match(pendulum, /\/pendulum\/crystal\.webp/);
 });
