@@ -24,7 +24,7 @@ test("the stage comes on screen before the 1.2s roll; reduced motion shows the d
   assert.match(page, /const wait=fullyVisible\(stageRef\.current\)\?0:scrollToTop\(stageRef\.current\);/);
   assert.match(css, /animation: ad2Tumble 1\.2s cubic-bezier\(\.22, 1, \.36, 1\) both; animation-delay: calc\(var\(--i, 0\) \* 80ms\);/);
   assert.match(css, /25% \{ transform: translateY\(-18px\) rotate\(-18deg\); \}/);
-  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\n  \.ad2-page \.ad2-die\.is-rolling \.ad2-die-body, \.ad2-page \.ad2-die\.is-rolling \.ad2-symbol \{ animation: none; \}/);
+  assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{\n  \.ad2-page \.ad2-die\.is-rolling \.ad2-die-body, \.ad2-page \.ad2-die\.is-rolling \.ad2-glyph \{ animation: none; \}/);
 });
 
 test("result: summary, current, friction, action and reflection open; the full reading folds", () => {
@@ -52,9 +52,11 @@ test("porcelain dice art with the symbol drawn by the page; small symbol font; n
   for (const file of ["die.webp", "stage.webp", "stage-800.webp", "hero-desktop.webp", "hero-mobile.webp"]) {
     assert.ok(existsSync(new URL(`../public/astro-dice/${file}`, import.meta.url)), file);
   }
-  assert.match(page, /<img src="\/astro-dice\/die\.webp" alt="" draggable=\{false\}\/><span className="ad2-symbol" aria-hidden="true">/);
-  assert.match(css, /src: url\("\/fonts\/zolacoco-astro-symbols-subset\.woff2"\) format\("woff2"\);/);
-  assert.ok(statSync(new URL("../public/fonts/zolacoco-astro-symbols-subset.woff2", import.meta.url)).size < 20000);
+  assert.match(page, /<img src="\/astro-dice\/die\.webp" alt="" draggable=\{false\}\/><span className="ad2-cartouche" aria-hidden="true">/);
+  for (const font of ["astro-serif-subset.woff2", "cormorant-numerals-600.woff2"]) {
+    assert.match(css, new RegExp(`src: url\\("/fonts/${font.replace(".", "\\.")}"\\) format\\("woff2"\\);`));
+    assert.ok(statSync(new URL(`../public/fonts/${font}`, import.meta.url)).size < 20000, font);
+  }
   assert.doesNotMatch(page, /ad-table-rings/);
   assert.match(css, /\.ad2-page \.ad2-stage \{[^}]*overflow: clip;/);
 });
@@ -68,7 +70,8 @@ test("pearl palette: no browns, khaki, deep purple or dark buttons", () => {
     let h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
     return [h * 60, s, l];
   };
-  const ornamentGold = new Set(["#c5a46f", "#d8be8a"]);
+  // gold ornaments, and the gold-foil shading tones used only inside the engraved die glyphs (骰面符號 v2)
+  const ornamentGold = new Set(["#c5a46f", "#d8be8a", "#f8e7be", "#b99258", "#f3e3ba", "#a77a43"]);
   for (const hex of (css.match(/#[0-9a-fA-F]{6}\b/g) || []).map((value) => value.toLowerCase())) {
     if (ornamentGold.has(hex)) continue;
     const [h, s, l] = hsl(hex);
@@ -98,4 +101,15 @@ test("result and record come from one snapshot; question and topic are locked un
   assert.match(page, /\{!locked&&<details className="ad2-ideas"/);
   assert.match(page, /const asked=reading\?\{question:reading\.question,category:reading\.category\}/);
   assert.match(page, /function newQuestion\(\)\{clearTimers\(\);busyRef\.current=false;setBusy\(false\);setRolling\(false\);setReading\(null\);/);
+});
+
+test("骰面符號 v2: gold engraved glyphs in an ivory cartouche, Latin numerals for houses", async () => {
+  assert.match(page, /const ROMAN=\["","I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"\];/);
+  assert.match(page, /type==="house"\?<span className="ad2-glyph roman">\{ROMAN\[Number\(item\.key\)\]\?\?item\.symbol\}<\/span>/);
+  assert.equal((page.match(/className="ad2-cartouche"/g) || []).length, 3, "die, result card and full reading");
+  assert.doesNotMatch(page + css, /ad2-symbol|zolacoco-astro-symbols-subset/);
+  assert.match(css, /background: linear-gradient\(180deg, #f8e7be 0%, #d8be8a 38%, #b99258 72%, #f3e3ba 100%\);\n  -webkit-background-clip: text; background-clip: text; color: transparent;/);
+  assert.match(css, /transform: translate\(-50%, -50%\) perspective\(200px\) rotateX\(5deg\) rotateY\(-4deg\) scale\(\.98\);/);
+  const fonts = await read("public/fonts/README-fonts.txt");
+  assert.match(fonts, /GNU FreeFont font exception/);
 });

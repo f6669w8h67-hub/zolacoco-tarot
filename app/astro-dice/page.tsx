@@ -118,12 +118,17 @@ const dieLabels:Record<DieType,{name:string;role:string;short:string}> = {
 function Die({item,type,rolling,index}:{item:AstroItem|null;type:DieType;rolling:boolean;index:number}){
   const label=dieLabels[type];
   return <figure className={`ad2-die ${rolling?"is-rolling":""} ${item?"has-value":""}`} style={{"--i":index} as React.CSSProperties}>
-    <div className="ad2-die-body"><img src="/astro-dice/die.webp" alt="" draggable={false}/><span className="ad2-symbol" aria-hidden="true">{item?`${item.symbol}︎`:"✦"}</span></div>
+    <div className="ad2-die-body"><img src="/astro-dice/die.webp" alt="" draggable={false}/><span className="ad2-cartouche" aria-hidden="true">{item?<Glyph item={item} type={type}/>:<span className="ad2-glyph">✦</span>}</span></div>
     <figcaption><small>{label.name}</small><b>{item?.name??label.short}</b></figcaption>
   </figure>;
 }
 
 const ROLL_MS=1200;
+const ROMAN=["","I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
+// Houses read as Latin numerals in Cormorant (骰面符號 v2); planets and signs use FreeSerif glyphs.
+function Glyph({item,type}:{item:AstroItem;type:DieType}){
+  return type==="house"?<span className="ad2-glyph roman">{ROMAN[Number(item.key)]??item.symbol}</span>:<span className="ad2-glyph">{`${item.symbol}︎`}</span>;
+}
 
 export default function AstroDicePage(){
   const [category,setCategory]=useState(categories[0]);
@@ -246,9 +251,9 @@ export default function AstroDicePage(){
     {reading&&roll&&specific&&<section className="ad2-result" id="astro-result" ref={resultRef} aria-labelledby="ad2-result-title">
       <span className="ad2-result-crest" aria-hidden="true"/>
       <p className="ad2-kicker small">your astro dice message · {reading.category}</p>
-      <h2 id="ad2-result-title" tabIndex={-1}>{roll.planet.name} × {roll.sign.name} × {roll.house.name}</h2>
+      <h2 id="ad2-result-title" tabIndex={-1}><span>{roll.planet.name}</span> × <span>{roll.sign.name}</span> × <span>{roll.house.name}</span></h2>
       <p className="ad2-question">「{reading.question}」</p>
-      <div className="ad2-mini" aria-label="三顆星骰">{dice.map(([type,item])=><div key={type}><span className="ad2-symbol" aria-hidden="true">{item!.symbol}{"︎"}</span><small>{dieLabels[type].name}</small><b>{item!.name}</b></div>)}</div>
+      <div className="ad2-mini" aria-label="三顆星骰">{dice.map(([type,item])=><div key={type}><span className="ad2-cartouche" aria-hidden="true"><Glyph item={item!} type={type}/></span><small>{dieLabels[type].name}</small><b>{item!.name}</b></div>)}</div>
       <article className="ad2-block lead"><h3>整體訊息</h3><p>{synthesis}</p></article>
       <article className="ad2-block"><h3>目前狀況</h3><p>{specific.current}</p></article>
       <article className="ad2-block"><h3>需要留意</h3><p>{specific.friction}</p></article>
@@ -256,7 +261,7 @@ export default function AstroDicePage(){
       <details className="ad2-more">
         <summary>完整星骰解析</summary>
         <div className="ad2-more-body">
-          {dice.map(([type,item])=><article key={type}><span className="ad2-symbol" aria-hidden="true">{item!.symbol}{"︎"}</span><div><small>{dieLabels[type].name} · {dieLabels[type].role}</small><h4>{item!.name}</h4><p>{item!.meaning}</p><b>{item!.prompt}</b></div></article>)}
+          {dice.map(([type,item])=><article key={type}><span className="ad2-cartouche" aria-hidden="true"><Glyph item={item!} type={type}/></span><div><small>{dieLabels[type].name} · {dieLabels[type].role}</small><h4>{item!.name}</h4><p>{item!.meaning}</p><b>{item!.prompt}</b></div></article>)}
           <p className="ad2-lead-note">{categoryLead[reading.category]}</p>
         </div>
       </details>
