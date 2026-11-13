@@ -48,6 +48,10 @@ test("the ritual is one block: way to play, question, stage, result; calibration
   assert.match(page, /if\(!outcome\|\|savedId!==null\)return;/);
   assert.match(page, /查看我的靈擺紀錄/);
   assert.match(page, /id=\{`pendulum-entry-\$\{entry\.id\}`\}/);
+  // library dialog: focus starts inside, Tab stays inside, closing gives focus back to the trigger
+  assert.match(page, /role="dialog" aria-modal="true" aria-labelledby="pv-library-title"/);
+  assert.match(page, /function closeLibrary\(\)\{setLibraryOpen\(false\);later\(\(\)=>libraryTriggerRef\.current\?\.focus/);
+  assert.match(page, /if\(event\.key!=="Tab"\|\|!dialog\)return;/);
   // soundscape iframe exists only while playing
   assert.match(page, /\{soundEnabled&&<div className="audio-only-player"/);
 });

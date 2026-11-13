@@ -190,6 +190,8 @@ export default function PendulumPage(){
   const toolTitleRef=useRef<HTMLHeadingElement|null>(null);
   const resultRef=useRef<HTMLDivElement|null>(null);
   const questionRef=useRef<HTMLTextAreaElement|null>(null);
+  const libraryRef=useRef<HTMLElement|null>(null);
+  const libraryTriggerRef=useRef<HTMLButtonElement|null>(null);
   const manualAngleRef=useRef(0);
   const dragRef=useRef({angle:0,time:0,velocity:0,active:false});
   const animationRef=useRef<number|null>(null);
@@ -203,7 +205,23 @@ export default function PendulumPage(){
   const duration=4600;
 
   useEffect(()=>{try{setHistory(JSON.parse(localStorage.getItem(PENDULUM_STORAGE_KEY)??"[]"))}catch{setHistory([])}},[]);
-  useEffect(()=>{ if(!picker&&!libraryOpen)return; const close=(event:KeyboardEvent)=>{if(event.key==="Escape"){setPicker(null);setLibraryOpen(false)}}; document.addEventListener("keydown",close); const previous=document.body.style.overflow; document.body.style.overflow="hidden"; return()=>{document.removeEventListener("keydown",close);document.body.style.overflow=previous}; },[picker,libraryOpen]);
+  useEffect(()=>{ if(!picker&&!libraryOpen)return; const close=(event:KeyboardEvent)=>{if(event.key==="Escape"){setPicker(null);if(libraryOpen)closeLibrary()}}; document.addEventListener("keydown",close); const previous=document.body.style.overflow; document.body.style.overflow="hidden"; return()=>{document.removeEventListener("keydown",close);document.body.style.overflow=previous}; },[picker,libraryOpen]);
+  // Library dialog: focus the current way to play, keep Tab inside, give focus back on close.
+  useEffect(()=>{
+    if(!libraryOpen)return;
+    const dialog=libraryRef.current;
+    (dialog?.querySelector<HTMLElement>(".pv-library-list button.selected")??dialog?.querySelector<HTMLElement>("button"))?.focus();
+    const trap=(event:KeyboardEvent)=>{
+      if(event.key!=="Tab"||!dialog)return;
+      const items=[...dialog.querySelectorAll<HTMLElement>("button:not(:disabled)")];
+      if(!items.length)return;
+      const first=items[0],last=items[items.length-1];
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus()}
+      else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus()}
+    };
+    document.addEventListener("keydown",trap);
+    return()=>document.removeEventListener("keydown",trap);
+  },[libraryOpen]);
   useEffect(()=>()=>{ if(animationRef.current)cancelAnimationFrame(animationRef.current); if(scrollRef.current)cancelAnimationFrame(scrollRef.current); timersRef.current.forEach(id=>window.clearTimeout(id)); },[]);
 
   const quality=useMemo(()=>questionQuality(question,tool),[question,tool]);
@@ -332,6 +350,7 @@ export default function PendulumPage(){
     selectTool(next);setLibraryOpen(false);
     later(()=>{scrollToTop(ritualRef.current);toolTitleRef.current?.focus({preventScroll:true})},40);
   }
+  function closeLibrary(){setLibraryOpen(false);later(()=>libraryTriggerRef.current?.focus({preventScroll:true}),0)}
   function openLibrary(){setLibraryGroup(Math.max(0,toolGroups.findIndex(group=>group.keys.includes(tool))));setLibraryOpen(true)}
   // Switching from a hint keeps what she typed (spec v1 §5).
   function switchTo(next:ToolKey){
@@ -420,7 +439,7 @@ export default function PendulumPage(){
           <p className="pv-tool-desc">{selectedTool.description}</p>
           <div className="pv-quick" role="group" aria-label="常用玩法">
             {quickTools.map(key=>{const item=tools.find(entry=>entry.key===key)!;return <button key={key} type="button" className={tool===key?"selected":""} aria-pressed={tool===key} disabled={moving} onClick={()=>selectTool(key)}>{quickLabels[key]??item.label}</button>})}
-            <button type="button" className="pv-all" disabled={moving} onClick={openLibrary}>全部 23 種玩法 ›</button>
+            <button type="button" ref={libraryTriggerRef} className="pv-all" disabled={moving} onClick={openLibrary} aria-haspopup="dialog">全部 23 種玩法 ›</button>
           </div>
         </header>
 
@@ -494,8 +513,8 @@ export default function PendulumPage(){
 
     {picker&&<div className="picker-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setPicker(null)}}><section className="picker-dialog" role="dialog" aria-modal="true" aria-labelledby="picker-title"><button className="picker-close" type="button" aria-label="關閉選擇視窗" onClick={()=>setPicker(null)}>×</button><p className="eyebrow">{picker==="mode"?"CHOOSE A MODE":"CHOOSE A CATEGORY"}</p><h2 id="picker-title">{picker==="mode"?"選擇回應模式":"這次想整理哪個方向？"}</h2><p>{picker==="mode"?"一般、高靈與潛意識模式只改變反思語氣，不改變隨機機制。":"選擇類別後，會帶入適合的提問方向與範例。"}</p><div className={`picker-grid ${picker==="category"?"category-grid":""}`}>{picker==="mode"?modes.map(item=><button type="button" key={item.key} className={item.key===mode?"selected":""} onClick={()=>{setMode(item.key);setPicker(null)}}><i>{item.icon}</i><span><small>{item.en}</small><b>{item.label}</b><em>{item.description}</em></span><strong>{item.key===mode?"✓":"›"}</strong></button>):categories.map(item=><button type="button" key={item.key} className={item.key===category?"selected":""} onClick={()=>{setCategory(item.key);setPicker(null)}}><i>{item.icon}</i><span><b>{item.label}</b><em>{item.description}</em><small>例：{item.example}</small></span><strong>{item.key===category?"✓":"›"}</strong></button>)}</div></section></div>}
 
-    {libraryOpen&&<div className="picker-backdrop pv-library-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setLibraryOpen(false)}}><section className="pv-library" role="dialog" aria-modal="true" aria-labelledby="pv-library-title">
-      <button className="picker-close" type="button" aria-label="關閉玩法選單" onClick={()=>setLibraryOpen(false)}>×</button>
+    {libraryOpen&&<div className="picker-backdrop pv-library-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)closeLibrary()}}><section className="pv-library" ref={libraryRef} role="dialog" aria-modal="true" aria-labelledby="pv-library-title">
+      <button className="picker-close" type="button" aria-label="關閉玩法選單" onClick={closeLibrary}>×</button>
       <p className="pv-kicker"><span>23 WAYS TO ASK</span></p>
       <h2 id="pv-library-title">全部 23 種玩法</h2>
       <div className="pv-library-tabs" role="group" aria-label="玩法分類">{toolGroups.map((group,index)=><button key={group.name} type="button" className={libraryGroup===index?"selected":""} aria-pressed={libraryGroup===index} onClick={()=>setLibraryGroup(index)}>{group.name}<small>{group.keys.length}</small></button>)}</div>
