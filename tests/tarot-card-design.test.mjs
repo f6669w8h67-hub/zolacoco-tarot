@@ -68,3 +68,34 @@ test("maintenance notice is on every page and can be dismissed; the draw section
   assert.match(notice, /aria-label="關閉網站維護公告"/);
   assert.match(css, /#draw, #draw \*:not\(:focus-visible\), #draw \*::before, #draw \*::after \{\s*box-shadow: none !important;/);
 });
+
+test("draw section in pearl Rococo: Ryan × Shrimp faces, plain pearl back, draw table, no earth tones (owner 2026-11-13)", async () => {
+  const draw = await read("app/styles/draw-pearl.css");
+  const { existsSync } = await import("node:fs");
+  assert.match(page, /import "\.\/styles\/draw-pearl\.css";/);
+  assert.match(page, /<PearlFonts \/>\n      <section className="draw-section" id="draw">/);
+  for (const file of ["textures/card-back.webp", "tarot-table/table.webp", "tarot-table/table-800.webp"]) {
+    assert.ok(existsSync(new URL(`../public/${file}`, import.meta.url)), file);
+  }
+  // every rule is scoped to the draw section
+  for (const selector of draw.replace(/\/\*[\s\S]*?\*\//g, "").match(/^[^@{}\n][^{}]*\{/gm) ?? []) {
+    if (/^\s*(from|to|\d+%)/.test(selector)) continue;
+    assert.match(selector, /#draw/, selector);
+  }
+  const hsl = (hex) => {
+    const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+    const max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2;
+    if (max === min) return [0, 0, l];
+    const d = max - min, s = l > .5 ? d / (2 - max - min) : d / (max + min);
+    let h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return [h * 60, s, l];
+  };
+  for (const hex of (draw.match(/#[0-9a-fA-F]{6}\b/g) || []).map((value) => value.toLowerCase())) {
+    if (hex === "#c5a46f" || hex === "#d8be8a") continue;
+    const [h, s, l] = hsl(hex);
+    assert.ok(!(h >= 15 && h <= 55 && s >= .12 && (l < .55 || (s < .45 && l < .9))), `earthy ${hex}`);
+    assert.ok(!(h >= 230 && h <= 335 && s >= .12 && l <= .38), `deep purple ${hex}`);
+  }
+  assert.match(draw, /background: linear-gradient\(180deg, #fff2f8 0%, #f4dfe9 100%\) !important;/);
+  assert.match(draw, /background: url\("\/textures\/card-back\.webp"\) center \/ cover no-repeat !important;/);
+});
