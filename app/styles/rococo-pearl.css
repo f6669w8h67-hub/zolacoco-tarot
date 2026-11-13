@@ -1,0 +1,89 @@
+/* ===== 珍珠粉藍洛可可 · design system v1 (ChatGPT, 2026-11-13) =====
+   Owner, 2026-11-13: 「整體網頁設計請gpt落實 洛可可風設計 不要大地色」.
+   Pearl white, rose pink, porcelain blue, champagne gold ornaments; deep blue-grey
+   text, deep rose titles. No parchment, browns, khaki, deep purple or dark buttons.
+   Imported last in app/layout.tsx so it outranks the parchment theme. */
+:root {
+  --pearl-bg: #f8faff;
+  --pearl-surface: #ffffff;
+  --pearl-blush: #fce9f1;
+  --pearl-lavender: #f5eaf4;
+  --pearl-blue: #e8f2fc;
+  --pearl-ink: #263449;
+  --pearl-muted: #33445f;
+  --pearl-title: #843450;
+  --pearl-accent: #8e3457;
+  --pearl-lilac: #a482b0;
+  --pearl-gold: #c5a46f;
+  --pearl-gold-light: #d8be8a;
+  --pearl-border: #d8dce8;
+  --pearl-selected: #f4dfe9;
+  --pearl-hover: #eecfdd;
+  --pearl-pressed: #e5bed0;
+  --pearl-chip-border: #b9c7d8;
+  --pearl-secondary-border: #b78ead;
+  --pearl-damask: #d6c5de;
+
+  /* the parchment theme's own tokens now resolve to the pearl palette */
+  --post-parchment: #f8faff;
+  --post-paper: #ffffff;
+  --post-rose: #f4dfe9;
+  --post-wine: #843450;
+  --post-wine-deep: #6e2a43;
+  --post-ink: #263449;
+  --post-sub: #33445f;
+  --post-gold: #c5a46f;
+  --post-gold-text: #33445f;
+  --post-line: #d8dce8;
+}
+
+/* cool pearl ground with a barely-there French damask line (lilac at low opacity) */
+html body {
+  background-color: var(--pearl-bg) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='200' viewBox='0 0 160 200'%3E%3Cg fill='none' stroke='%23d6c5de' stroke-width='1.1' stroke-opacity='.4' stroke-linecap='round'%3E%3Cpath d='M80 22c13 16 13 38 0 54c-13-16-13-38 0-54z'/%3E%3Cpath d='M80 76c-9 10-25 13-37 7M80 76c9 10 25 13 37 7M80 76v18'/%3E%3Ccircle cx='80' cy='100' r='2.6'/%3E%3Cpath d='M0 122c13 16 13 38 0 54M160 122c-13 16-13 38 0 54'/%3E%3Cpath d='M0 176c9 10 25 13 37 7M160 176c-9 10-25 13-37 7'/%3E%3C/g%3E%3C/svg%3E") !important;
+  background-size: 160px 200px !important;
+  background-repeat: repeat !important;
+  color: var(--pearl-ink);
+}
+
+/* ---------- header and menu ---------- */
+html body .global-site-header {
+  border-bottom: 1px solid var(--pearl-border) !important;
+  background: rgba(255, 255, 255, .93) !important;
+  box-shadow: 0 6px 22px rgba(38, 52, 73, .05) !important;
+}
+html body .global-brand { color: var(--pearl-title) !important; }
+html body .global-brand span { color: var(--pearl-muted) !important; }
+html body :is(.global-menu-trigger, .global-account-link) {
+  border: 1px solid var(--pearl-chip-border) !important;
+  background: var(--pearl-surface) !important;
+  color: var(--pearl-ink) !important;
+}
+html body .global-function-menu {
+  border: 1px solid var(--pearl-border) !important;
+  background: var(--pearl-surface) !important;
+  box-shadow: 0 18px 44px rgba(38, 52, 73, .1) !important;
+  color: var(--pearl-ink) !important;
+}
+html body .global-menu-heading { border-bottom-color: var(--pearl-border) !important; }
+html body .global-menu-heading small, html body .global-menu-groups h3 { color: var(--pearl-muted) !important; }
+html body .global-menu-heading h2 { color: var(--pearl-title) !important; }
+html body .global-menu-groups a { border-color: var(--pearl-border) !important; color: var(--pearl-ink) !important; background: transparent !important; }
+html body .global-menu-groups a b { color: var(--pearl-ink) !important; }
+html body .global-menu-groups a small { color: var(--pearl-muted) !important; }
+html body .global-menu-groups a i { color: var(--pearl-gold) !important; }
+html body .global-menu-groups section { border-color: var(--pearl-border) !important; }
+html body .global-account-panel { border-color: var(--pearl-border) !important; background: var(--pearl-blue) !important; }
+html body .global-account-panel b, html body .global-account-panel a, html body .global-admin-link { color: var(--pearl-title) !important; }
+html body .global-account-panel small { color: var(--pearl-muted) !important; }
+
+/* ---------- maintenance notice ---------- */
+html body .site-notice {
+  border: 1px solid var(--pearl-border) !important;
+  background: var(--pearl-surface) !important;
+  box-shadow: 0 6px 22px rgba(38, 52, 73, .08) !important;
+  color: var(--pearl-ink) !important;
+}
+html body .site-notice b { color: var(--pearl-title) !important; }
+html body .site-notice button { color: var(--pearl-muted) !important; }
+html body .site-notice button:focus-visible { outline-color: var(--pearl-title) !important; }
