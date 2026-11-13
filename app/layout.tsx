@@ -5,11 +5,14 @@ import "./globals.css";
 import "./rococo-membership.css";
 import "./styles/rococo-tokens.css";
 import "./styles/rococo-tarot.css";
+import "./styles/card-face.css";
+import "./styles/serif-all.css";
 import MembershipGate, { UnconfiguredMembershipGate } from "./membership-gate";
 import { allowsMembershipPreview, isClerkConfigured } from "@/lib/membership-access";
 import { clerkLocalization } from "@/lib/clerk-localization";
 import SiteHeader from "./site-header";
 import SiteNotice from "./site-notice";
+import PearlFonts from "./pearl-fonts";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +43,7 @@ export default function RootLayout({
 }>) {
   const authConfigured = isClerkConfigured(process.env);
   const content = <>
+    <PearlFonts />
     <SiteHeader />
     <SiteNotice />
     {authConfigured ? (

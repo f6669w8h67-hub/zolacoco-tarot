@@ -1,0 +1,41 @@
+/* ===== One card face everywhere: full-bleed art, name plate below (owner, 2026-11-13: 「牌面要滿版 像第二張」) =====
+   The draw result already shows the Ryan × Shrimp art edge to edge; the intuition practice on the home
+   page and the healing room still showed the old framed face with an English label and side bars.
+   The same face and the same plain pearl back now apply wherever a card appears. */
+html body .rc-card-face {
+  grid-template-rows: minmax(0, 1fr) 46px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 1px rgba(197, 164, 111, .7) !important;
+  overflow: hidden;
+}
+html body .rc-card-face::before,
+html body .rc-card-face::after { display: none !important; content: none !important; }
+html body .rc-card-face .rc-card-face__label { display: none !important; }
+html body .rc-card-face .rc-card-face__art {
+  margin: 0 !important; padding: 0 !important; border: 0 !important;
+  border-radius: 16px 16px 0 0 !important; background: #e8f2fc !important; overflow: hidden;
+}
+html body .rc-card-face .rc-card-face__art img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+html body .rc-card-face .rc-card-face__name {
+  border-top: 1px solid rgba(197, 164, 111, .6) !important;
+  color: #843450 !important; font-weight: 900 !important; font-size: 18px !important;
+}
+html body .practice-tarot-front.rc-card-face { grid-template-rows: minmax(0, 1fr) 40px !important; padding: 0 !important; }
+html body .practice-tarot-front .rc-card-face__name { font-size: 16px !important; }
+html body .heal-tarot.rc-card-face { grid-template-rows: minmax(0, 1fr) 44px !important; }
+
+/* the plain pearl back with the two-cat medallion, wherever a card is face down */
+html body :is(.card-back, .pick-card, .tarot-back, .practice-tarot-back, .card-back-art) {
+  padding: 0 !important; border: 0 !important; border-radius: 14px !important;
+  background: #fff9fe !important; overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(197, 164, 111, .7) !important;
+}
+html body :is(.card-back, .pick-card, .tarot-back, .practice-tarot-back, .card-back-art) .back-frame {
+  width: 100% !important; height: 100% !important; margin: 0 !important; border: 0 !important; border-radius: 14px !important;
+  background: url("/textures/card-back.webp") center / cover no-repeat !important; box-shadow: none !important;
+}
+html body :is(.card-back, .pick-card, .tarot-back, .practice-tarot-back, .card-back-art) .back-frame::before,
+html body :is(.card-back, .pick-card, .tarot-back, .practice-tarot-back, .card-back-art) .back-frame::after { display: none !important; content: none !important; }

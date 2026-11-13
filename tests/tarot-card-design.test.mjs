@@ -73,7 +73,6 @@ test("draw section in pearl Rococo: Ryan × Shrimp faces, plain pearl back, draw
   const draw = await read("app/styles/draw-pearl.css");
   const { existsSync } = await import("node:fs");
   assert.match(page, /import "\.\/styles\/draw-pearl\.css";/);
-  assert.match(page, /<PearlFonts \/>\n      <section className="draw-section" id="draw">/);
   for (const file of ["textures/card-back.webp", "tarot-table/table.webp", "tarot-table/table-800.webp"]) {
     assert.ok(existsSync(new URL(`../public/${file}`, import.meta.url)), file);
   }
@@ -98,4 +97,14 @@ test("draw section in pearl Rococo: Ryan × Shrimp faces, plain pearl back, draw
   }
   assert.match(draw, /background: linear-gradient\(180deg, #fff2f8 0%, #f4dfe9 100%\) !important;/);
   assert.match(draw, /background: url\("\/textures\/card-back\.webp"\) center \/ cover no-repeat !important;/);
+});
+
+test("every card face is full-bleed with the name plate below, everywhere (owner: 牌面要滿版)", async () => {
+  const face = await read("app/styles/card-face.css");
+  const layout = await read("app/layout.tsx");
+  assert.match(layout, /import "\.\/styles\/card-face\.css";/);
+  assert.match(face, /html body \.rc-card-face \{\n  grid-template-rows: minmax\(0, 1fr\) 46px !important;\n  padding: 0 !important;/);
+  assert.match(face, /html body \.rc-card-face \.rc-card-face__label \{ display: none !important; \}/);
+  assert.match(face, /object-fit: cover !important;/);
+  assert.match(face, /background: url\("\/textures\/card-back\.webp"\) center \/ cover no-repeat !important;/);
 });

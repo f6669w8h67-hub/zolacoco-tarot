@@ -104,13 +104,14 @@ test("background v2: salon hero, damask wallpaper, ornaments only on hero, ritua
   assert.match(page, /<span className="pv-scroll left" aria-hidden="true"\/>/);
 });
 
-test("pearl pages load their own serif fonts (Noto Serif TC and Cormorant Garamond are not on iPhone)", async () => {
+test("the whole site loads its serif fonts once, from the root layout (owner: 全部網站文字都是宋體)", async () => {
   const fonts = await read("app/pearl-fonts.tsx");
-  assert.match(fonts, /family=Cormorant\+Garamond:ital,wght@1,500;1,600&family=Noto\+Serif\+TC:wght@500;600;700;900&display=swap/);
+  const layout = await read("app/layout.tsx");
+  assert.match(fonts, /family=Cormorant\+Garamond:ital,wght@1,500;1,600&family=Noto\+Serif\+TC:wght@400;500;600;700;900&display=swap/);
   assert.match(fonts, /<link rel="stylesheet" href=\{PEARL_FONTS_HREF\} precedence="default" \/>/);
-  for (const file of ["app/pendulum/page.tsx", "app/astro-dice/page.tsx"]) {
-    const source = await read(file);
-    assert.match(source, /import PearlFonts from "\.\.\/pearl-fonts";/, file);
-    assert.match(source, /pearl-page">\n    <PearlFonts\/>/, file);
-  }
+  assert.match(layout, /<PearlFonts \/>\n    <SiteHeader \/>/);
+  assert.match(layout, /import "\.\/styles\/serif-all\.css";/);
+  const serif = await read("app/styles/serif-all.css");
+  assert.match(serif, /html body :is\(\*, #serif#serif#serif#serif\),[\s\S]*font-family: "Noto Serif TC", "Songti TC"/);
+  for (const file of ["app/pendulum/page.tsx", "app/astro-dice/page.tsx", "app/page.tsx"]) assert.doesNotMatch(await read(file), /PearlFonts/, file);
 });
