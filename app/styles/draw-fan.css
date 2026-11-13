@@ -1,0 +1,89 @@
+/* Draw interaction v4 (ChatGPT spec, 2026-11-13): the fan, the spread slots and the card flight.
+   Positions are written by app/draw-fan.tsx as inline transforms; this file only says how
+   they move. Pearl palette: ivory backs, gold line, rose title. */
+
+html body #draw .fan4 { width: 100%; display: grid; justify-items: center; gap: 4px; }
+
+/* ---------- the spread above the fan: one slot per position ---------- */
+html body #draw .fan4-slots { display: flex; justify-content: center; gap: 14px; margin: 0 auto 2px; padding: 0; list-style: none; }
+html body #draw .fan4-slots li { width: 96px; display: grid; justify-items: center; gap: 6px; }
+html body #draw .fan4-slot-card {
+  width: 52px; height: 84px; display: grid; place-items: center; border-radius: 9px;
+  border: 1.5px dashed var(--dp-gold); background: rgba(255, 255, 255, .78);
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+html body #draw .fan4-slot-card b { color: var(--dp-title); font: italic 600 20px/1 "Cormorant Garamond", "Noto Serif TC", serif !important; }
+html body #draw .fan4-slots li.is-next .fan4-slot-card { border-style: solid; animation: fan4Glow 1.8s ease-in-out infinite; }
+html body #draw .fan4-slots li.is-filled .fan4-slot-card {
+  overflow: hidden; border: 0; background: #fff9fe;
+  box-shadow: 0 0 0 1px rgba(197, 164, 111, .85), 0 6px 14px rgba(132, 52, 80, .12);
+}
+html body #draw .fan4-slots p { margin: 0; color: var(--dp-muted); font-size: 12px; line-height: 1.45; text-align: center; }
+html body #draw .fan4-slots li.is-next p { color: var(--dp-title); font-weight: 600; }
+@keyframes fan4Glow { 0%, 100% { box-shadow: 0 0 0 3px rgba(216, 190, 138, .22); } 50% { box-shadow: 0 0 0 6px rgba(216, 190, 138, .38); } }
+
+/* ---------- the fan ---------- */
+html body #draw .fan4-stage {
+  position: relative; width: 100%; height: 204px; overflow: hidden;
+  touch-action: pan-y; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+html body #draw .fan4-card {
+  position: absolute; left: 50%; top: 46px; width: 76px; height: 122px; margin: 0 0 0 -38px;
+  padding: 0; border: 0; border-radius: 12px; background: transparent; box-shadow: none;
+  transform-origin: 50% 100%; will-change: transform; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+html body #draw .fan4-tilt {
+  display: block; width: 100%; height: 100%; overflow: hidden; border-radius: 12px; background: #fff9fe;
+  box-shadow: 0 0 0 1px rgba(197, 164, 111, .75), 0 8px 18px rgba(38, 52, 73, .12);
+  transition: scale 90ms ease, translate 200ms cubic-bezier(.22, 1, .36, 1), box-shadow 200ms ease, transform 160ms ease;
+}
+html body #draw .fan4--phone .fan4-card:active .fan4-tilt { scale: .96; }
+html body #draw .fan4-card:focus-visible { outline: 0 !important; }
+html body #draw .fan4-card:focus-visible .fan4-tilt { box-shadow: 0 0 0 2px var(--dp-title), 0 8px 18px rgba(38, 52, 73, .16); }
+
+html body #draw .fan4-stage[data-motion="stacked"] .fan4-card { opacity: 0; transition: none; }
+html body #draw .fan4-stage[data-motion="opening"] .fan4-card {
+  transition: transform 310ms cubic-bezier(.22, 1, .36, 1), opacity 220ms ease;
+  transition-delay: calc(var(--rank, 0) * 35ms);
+}
+html body #draw .fan4-stage[data-motion="settling"] .fan4-card { transition: transform 280ms cubic-bezier(.22, 1, .36, 1); }
+
+/* on a phone the fan runs to the edges of the screen, not to the edge of a box */
+html body #draw .fan4--phone .fan4-stage { width: 100vw; max-width: none; margin-inline: calc(50% - 50vw); }
+html body #draw .fan4-hint { margin: 0; color: var(--dp-muted); font-size: 13px; line-height: 1.6; text-align: center; }
+html body #draw .fan4 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- desktop: an arc, the card under the mouse lifts and tilts ---------- */
+html body #draw .fan4--desk .fan4-slots { gap: 22px; }
+html body #draw .fan4--desk .fan4-slot-card { width: 64px; height: 102px; }
+html body #draw .fan4--desk .fan4-stage { height: 272px; perspective: 900px; }
+html body #draw .fan4--desk .fan4-card { top: 44px; width: 104px; height: 168px; margin-left: -52px; transform-origin: 50% 130%; }
+@media (hover: hover) {
+  html body #draw .fan4--desk .fan4-card:hover { z-index: 200 !important; }
+  html body #draw .fan4--desk .fan4-card:hover .fan4-tilt { translate: 0 -20px; box-shadow: 0 0 0 1.5px var(--dp-gold), 0 16px 28px rgba(132, 52, 80, .18); }
+}
+
+/* ---------- the card on its way to the spread (lives on <body>) ---------- */
+.fan4-flight {
+  position: fixed; z-index: 1000; pointer-events: none; overflow: hidden; border-radius: 12px; background: #fff9fe;
+  box-shadow: 0 0 0 1px rgba(197, 164, 111, .85), 0 14px 26px rgba(132, 52, 80, .2); will-change: transform;
+}
+/* the two-cat back, everywhere in the fan, the slots and the flight */
+.fan4-back { display: block; width: 100%; height: 100%; background: #fff9fe url("/textures/card-back.webp") center / cover no-repeat; }
+
+/* ---------- shuffle: cut the deck in two and merge it back (840ms) ---------- */
+html body #draw .deck-stage.shuffling .card-back { animation: fan4CutLeft 840ms cubic-bezier(.45, 0, .2, 1) both !important; }
+html body #draw .deck-stage.shuffling .card-back:nth-child(2n) { animation-name: fan4CutRight !important; }
+html body #draw .deck-stage.shuffling .card-back:nth-child(2) { animation-delay: 30ms !important; }
+html body #draw .deck-stage.shuffling .card-back:nth-child(3) { animation-delay: 60ms !important; }
+html body #draw .deck-stage.shuffling .card-back:nth-child(4) { animation-delay: 90ms !important; }
+html body #draw .deck-stage.shuffling .card-back:nth-child(5) { animation-delay: 120ms !important; animation-duration: 720ms !important; }
+@keyframes fan4CutLeft { 0% { translate: 0 0; rotate: 0deg; } 32%, 52% { translate: -52px -8px; rotate: -8deg; } 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes fan4CutRight { 0% { translate: 0 0; rotate: 0deg; } 32%, 52% { translate: 52px -8px; rotate: 8deg; } 100% { translate: 0 0; rotate: 0deg; } }
+
+@media (prefers-reduced-motion: reduce) {
+  html body #draw .fan4-stage .fan4-card,
+  html body #draw .fan4-tilt,
+  html body #draw .deck-stage.shuffling .card-back { transition: none !important; animation: none !important; }
+  html body #draw .fan4-slots li.is-next .fan4-slot-card { animation: none; box-shadow: 0 0 0 3px rgba(216, 190, 138, .3); }
+}
