@@ -11,6 +11,8 @@ const readings = (await Promise.all(FILES.map(async (name) => JSON.parse(await r
 const byId = new Map(readings.map((reading) => [reading.id, reading]));
 const length = (text) => text.replace(/\s/g, "").length;
 const CONNECTIVES = ["因此", "所以", "這時", "這也", "而這", "而且", "但這", "這樣", "於是", "此外", "同時", "然而", "不過"];
+// a card is not a promise: no "the worst is over", no "most people don't really mind" (PR #24 review B2)
+const CERTAINTIES = ["正在過去", "大部分的人其實", "一定會好轉", "注定"];
 
 test("every one of the 78 cards has exactly one reading, and nothing else does", () => {
   assert.equal(readings.length, 78);
@@ -18,36 +20,40 @@ test("every one of the 78 cards has exactly one reading, and nothing else does",
   for (const card of tarotCards) assert.ok(byId.has(card.id), `${card.id} has a reading`);
 });
 
+// Lengths count every character but whitespace, punctuation included (spec v4: energy 65–90,
+// other and outward 45–70, three sentences 110–150). The bounds are exact (PR #24 review B1).
 test("energy, other and outward lines are within the agreed lengths; the last two never speak for her", () => {
   for (const reading of readings) {
-    assert.ok(length(reading.energy) >= 55 && length(reading.energy) <= 100, `${reading.id} energy ${length(reading.energy)}`);
+    assert.ok(length(reading.energy) >= 65 && length(reading.energy) <= 90, `${reading.id} energy ${length(reading.energy)}`);
     for (const field of ["other", "outward"]) {
-      assert.ok(length(reading[field]) >= 35 && length(reading[field]) <= 80, `${reading.id} ${field} ${length(reading[field])}`);
+      assert.ok(length(reading[field]) >= 45 && length(reading[field]) <= 70, `${reading.id} ${field} ${length(reading[field])}`);
       assert.ok(!reading[field].includes("妳"), `${reading.id} ${field} describes what can be seen, not her`);
     }
   }
 });
 
-test("each topic reading is three whole sentences of 110–150 characters that can stand alone", () => {
+test("each topic reading is three whole sentences of 110–150 characters that can stand alone, never a certainty about others", () => {
   for (const reading of readings) {
     assert.deepEqual(Object.keys(reading.topicReadings).sort(), [...READING_TOPICS].sort(), reading.id);
     for (const topic of READING_TOPICS) {
       const sentences = reading.topicReadings[topic];
       assert.equal(sentences.length, 3, `${reading.id} ${topic}`);
       const total = sentences.reduce((sum, sentence) => sum + length(sentence), 0);
-      assert.ok(total >= 100 && total <= 160, `${reading.id} ${topic} is ${total} characters`);
+      assert.ok(total >= 110 && total <= 150, `${reading.id} ${topic} is ${total} characters`);
       for (const sentence of sentences) {
         assert.ok(sentence.endsWith("。"), `${reading.id} ${topic} ends with 。: ${sentence}`);
         assert.ok(!CONNECTIVES.some((word) => sentence.startsWith(word)), `${reading.id} ${topic} stands alone: ${sentence}`);
+        assert.ok(!CERTAINTIES.some((phrase) => sentence.includes(phrase)), `${reading.id} ${topic} reads a symbol as a certainty: ${sentence}`);
       }
     }
   }
 });
 
 test("no sentence is reused anywhere in the deck", () => {
+  // every energy, other, outward and topic sentence is unique across all 78 cards
   const seen = new Set();
   for (const reading of readings) {
-    for (const text of [reading.energy, reading.outward, ...Object.values(reading.topicReadings).flat()]) {
+    for (const text of [reading.energy, reading.other, reading.outward, ...Object.values(reading.topicReadings).flat()]) {
       assert.ok(!seen.has(text), `repeated: ${text}`);
       seen.add(text);
     }
