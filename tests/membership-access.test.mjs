@@ -193,8 +193,11 @@ test("root layout selects a closed fallback in production and retains developmen
       "./rococo-membership.css": {},
       "./styles/rococo-tokens.css": {},
       "./styles/rococo-tarot.css": {},
+      "./styles/serif-all.css": {},
+      "./styles/card-face.css": {},
       "./site-header": { default: () => null },
       "./site-notice": { default: () => null },
+      "./pearl-fonts": { default: () => null },
       "./membership-gate": { default: wrapper("authenticated"), UnconfiguredMembershipGate: wrapper("closed") },
     } });
     const html = renderToStaticMarkup(React.createElement(mod.default, null, "VIP_SENTINEL"));

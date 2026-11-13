@@ -1,0 +1,20 @@
+/* ===== Every text on the site in 宋體 (owner, 2026-11-13: 「字體都用宋體 全部網站文字都是」) =====
+   Noto Serif TC (loaded for every page in app/pearl-fonts.tsx), with the system Songti as fallback.
+   :is(*, #serif#serif#serif#serif) lifts this rule above every page stylesheet, including their
+   !important font rules. Kept as they are: the English italic labels in Cormorant Garamond (a serif)
+   and the astro dice glyph fonts. Imported last in app/layout.tsx. */
+html body :is(*, #serif#serif#serif#serif),
+html body :is(*, #serif#serif#serif#serif)::before,
+html body :is(*, #serif#serif#serif#serif)::after,
+html body :is(*, #serif#serif#serif#serif)::placeholder {
+  font-family: "Noto Serif TC", "Songti TC", "STSong", "Source Han Serif TC", "Noto Serif CJK TC", serif !important;
+}
+html body :is(.pv-kicker small, .pv-hero-kicker, .ad2-kicker, #draw .section-heading > p, #serif#serif#serif#serif#serif) {
+  font-family: "Cormorant Garamond", "Noto Serif TC", "Songti TC", serif !important;
+}
+html body :is(.ad2-glyph, #serif#serif#serif#serif#serif) {
+  font-family: "Zolacoco Astro Serif", "FreeSerif", serif !important;
+}
+html body :is(.ad2-glyph.roman, #serif#serif#serif#serif#serif#serif) {
+  font-family: "Zolacoco Numerals", "Cormorant Garamond", serif !important;
+}

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { tarotCards, topicLens, type TarotCard } from "./tarot-data";
 import { TarotCardBack, TarotCardFace } from "./tarot-card";
-import PearlFonts from "./pearl-fonts";
 import "./styles/draw-pearl.css";
 import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
 import { loadMemberProfile } from "@/lib/member-client";
@@ -491,7 +490,6 @@ export default function Home() {
         </div>
       </section>
 
-      <PearlFonts />
       <section className="draw-section" id="draw">
         <div className="section-heading">
           <span>01</span><p>CHOOSE YOUR FOCUS</p>

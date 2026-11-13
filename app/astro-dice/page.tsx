@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import PearlFonts from "../pearl-fonts";
 import "../styles/pearl-page.css";
 import "./astro-dice-v1.css";
 
@@ -209,7 +208,6 @@ export default function AstroDicePage(){
   const dice:Array<[DieType,AstroItem|null]>=[["planet",roll?.planet??null],["sign",roll?.sign??null],["house",roll?.house??null]];
 
   return <main className="astro-dice-page ad2-page pearl-page">
-    <PearlFonts/>
     <header className="ad2-hero">
       <picture className="ad2-hero-art" aria-hidden="true"><source media="(max-width: 700px)" srcSet="/astro-dice/hero-mobile.webp"/><img src="/astro-dice/hero-desktop.webp" alt=""/></picture>
       <div className="ad2-hero-panel">

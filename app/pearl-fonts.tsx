@@ -1,8 +1,8 @@
-// The pearl Rococo pages set titles in Noto Serif TC and English labels in Cormorant Garamond italic.
-// Neither ships on iPhone, so the pages that use them load them here; React 19 hoists the
-// stylesheet into <head>. Other pages are unaffected until they are restyled.
+// The whole site is set in Noto Serif TC (owner: 「字體都用宋體 全部網站文字都是」), with English labels
+// in Cormorant Garamond italic. Neither ships on iPhone, so the root layout loads them for every page;
+// React 19 hoists the stylesheet into <head>.
 export const PEARL_FONTS_HREF =
-  "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Noto+Serif+TC:wght@500;600;700;900&display=swap";
+  "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@1,500;1,600&family=Noto+Serif+TC:wght@400;500;600;700;900&display=swap";
 
 export default function PearlFonts() {
   return <>
