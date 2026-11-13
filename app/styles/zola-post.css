@@ -825,3 +825,31 @@ html body #draw .reading-actions-list p { margin: 4px 0 0; color: #3e2716; font-
 }
 @media (min-width: 851px) { html body #draw .reading-sequence.count-3 { align-items: start; } }
 @media (max-width: 600px) { html body #draw .spread-deck.is-opening .pick-card { animation-delay: calc(var(--m-order, 0) * 55ms) !important; } }
+
+/* ===== Owner 2026-11-13 13:24: "不要深色按鈕" — primary buttons become light champagne plates
+   with a gold edge, an inner gold rule and wine lettering; no dark fills anywhere. ===== */
+html body :is(#top, #draw, #explore, #consult, .pendulum-page, .astro-dice-page, .astro-page, .healing-room, .admin-page, .account-page) :is(.primary, .draw-button, .flow-button.primary-flow, .tool-primary, .learning-bridge a:first-child, .consult-card a, .archetype-result button, a.primary, .pendulum-cta, .piano-button, .ad-cast, .astro-primary, button.gold),
+html body #membership .premium-actions a:first-child {
+  border: 1px solid #b08a5a !important;
+  background: linear-gradient(180deg, #fffaf0 0%, #f4e4c6 100%) !important;
+  outline: 1px solid rgba(176, 138, 90, .55) !important;
+  outline-offset: -5px !important;
+  color: #74283a !important;
+}
+@media (hover: hover) {
+  html body :is(#top, #draw, #explore, #consult, .pendulum-page, .astro-dice-page, .astro-page, .healing-room, .admin-page, .account-page) :is(.primary, .draw-button, .flow-button.primary-flow, .tool-primary, .learning-bridge a:first-child, .consult-card a, .archetype-result button, a.primary, .pendulum-cta, .piano-button, .ad-cast, .astro-primary, button.gold):hover:not(:disabled),
+  html body #membership .premium-actions a:first-child:hover {
+    background: linear-gradient(180deg, #fdf3e2 0%, #eed8b2 100%) !important;
+    color: #5c1f2c !important;
+  }
+}
+html body :is(#top, #draw, #explore, #consult, .pendulum-page, .astro-dice-page, .astro-page, .healing-room, .admin-page, .account-page) :is(.primary, .draw-button, .flow-button.primary-flow, .tool-primary, .learning-bridge a:first-child, .consult-card a, .archetype-result button, a.primary, .pendulum-cta, .piano-button, .ad-cast, .astro-primary, button.gold):active:not(:disabled) {
+  background: #ead0a6 !important;
+  color: #5c1f2c !important;
+}
+html body #draw .spread-recommended { background: #f6e3d6 !important; border: 1px solid #c79a86 !important; color: #74283a !important; }
+/* the cover button sits on the painting's shade: keep it bright, add a soft gold halo line */
+html body main .hero .primary { outline-color: rgba(176, 138, 90, .7) !important; }
+/* plain card back (owner 2026-11-13: "牌背面可以素一點"): ivory paper, thin gold line, small cat medallion */
+html body :is(.card-back, .pick-card, .tarot-back, .practice-tarot-back, .card-back-art) { background: #fbeee0 !important; }
+html body :is(.card-back, .pick-card, .tarot-back, .practice-tarot-back, .card-back-art) .back-frame { box-shadow: inset 0 0 0 1px rgba(176, 138, 90, .45) !important; }
