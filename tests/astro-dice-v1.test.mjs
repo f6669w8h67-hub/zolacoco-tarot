@@ -34,18 +34,18 @@ test("result: summary, current, friction, action and reflection open; the full r
   assert.deepEqual([...order].sort((a, b) => a - b), order);
   assert.match(result, /<details className="ad2-more">/);
   assert.match(result, /\{item!\.meaning\}<\/p><b>\{item!\.prompt\}<\/b>/);
-  assert.match(result, /\{categoryLead\[category\]\}/);
+  assert.match(result, /\{categoryLead\[reading\.category\]\}/);
 });
 
 test("save once, say so, and open the record; the storage format is unchanged", () => {
   assert.match(page, /const ASTRO_STORAGE_KEY = "zolacoco-astro-dice-records-v1";/);
-  assert.match(page, /if\(!roll\|\|savedId!==null\)return;/);
+  assert.match(page, /if\(!reading\|\|savedId!==null\)return;/);
   assert.match(page, /\.slice\(0,80\)/);
   assert.match(page, /這次星骰結果已保存 ✨/);
   assert.match(page, /已儲存 ✓/);
   assert.match(page, /查看我的星骰紀錄/);
   assert.match(page, /id=\{`astro-entry-\$\{item\.id\}`\}/);
-  assert.match(page, /planet_name:roll\.planet\.name,sign_name:roll\.sign\.name,house_name:roll\.house\.name,note/);
+  assert.match(page, /planet_name:reading\.roll\.planet\.name,sign_name:reading\.roll\.sign\.name,house_name:reading\.roll\.house\.name,note/);
 });
 
 test("porcelain dice art with the symbol drawn by the page; small symbol font; no overflow ring", () => {
@@ -76,4 +76,26 @@ test("pearl palette: no browns, khaki, deep purple or dark buttons", () => {
     assert.ok(!(h >= 230 && h <= 335 && s >= .12 && l <= .38), `deep purple ${hex}`);
   }
   assert.match(css, /background: linear-gradient\(180deg, #fff2f8 0%, #f4dfe9 100%\);/);
+});
+
+test("a roll locks at once, before scrolling, so a second tap cannot start another roll (review B1)", () => {
+  const cast = page.slice(page.indexOf("  function cast(){"), page.indexOf("  function save(){"));
+  assert.match(cast, /if\(!question\.trim\(\)\|\|busyRef\.current\)return;\n    busyRef\.current=true;setBusy\(true\);/);
+  assert.ok(cast.indexOf("busyRef.current=true") < cast.indexOf("scrollToTop(stageRef.current)"));
+  assert.match(page, /className="ad2-cast" disabled=\{!question\.trim\(\)\|\|busy\}/);
+});
+
+test("result and record come from one snapshot; question and topic are locked until 換一個問題 (review B2)", () => {
+  assert.match(page, /const \[reading,setReading\]=useState<\{roll:Roll;question:string;category:string\}\|null>\(null\);/);
+  assert.match(page, /const specific=useMemo\(\(\)=>reading\?detailedReading\(reading\.roll,reading\.category\):null,\[reading\]\);/);
+  assert.match(page, /妳問的是「\$\{reading\.question\}」/);
+  const save = page.slice(page.indexOf("  function save(){"), page.indexOf("  function viewRecord(){"));
+  assert.match(save, /question:reading\.question,category:reading\.category,planet_name:reading\.roll\.planet\.name/);
+  assert.doesNotMatch(save, /question\.trim\(\)|question:question|,category,/);
+  assert.match(page, /const locked=busy\|\|reading!==null;/);
+  assert.match(page, /value=\{question\} disabled=\{locked\}/);
+  assert.match(page, /aria-pressed=\{category===item\} disabled=\{locked\}/);
+  assert.match(page, /\{!locked&&<details className="ad2-ideas"/);
+  assert.match(page, /const asked=reading\?\{question:reading\.question,category:reading\.category\}/);
+  assert.match(page, /function newQuestion\(\)\{clearTimers\(\);busyRef\.current=false;setBusy\(false\);setRolling\(false\);setReading\(null\);/);
 });

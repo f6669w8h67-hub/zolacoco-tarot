@@ -264,3 +264,5 @@
 }
 html body .ad2-page > footer.ad2-footer { background: transparent !important; border: 0 !important; }
 @media (max-width: 899px) { .ad2-page .ad2-steps { gap: 2px 4px; font-size: 12.5px; } .ad2-page .ad2-steps li + li::before { margin-right: 2px; } }
+.ad2-page .ad2-locked-note { margin: 0; padding: 10px 14px; border-radius: 12px; background: var(--ad-blue); color: var(--ad-muted); font-size: 14px; line-height: 1.6; }
+.ad2-page .ad2-form textarea:disabled { background: #f6f7fb; color: var(--ad-muted); }

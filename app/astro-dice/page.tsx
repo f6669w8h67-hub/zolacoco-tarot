@@ -128,8 +128,12 @@ const ROLL_MS=1200;
 export default function AstroDicePage(){
   const [category,setCategory]=useState(categories[0]);
   const [question,setQuestion]=useState("");
-  const [roll,setRoll]=useState<Roll|null>(null);
+  // One reading = one snapshot of question, topic and dice; the result and the saved record read only from it.
+  const [reading,setReading]=useState<{roll:Roll;question:string;category:string}|null>(null);
+  const roll=reading?.roll??null;
+  const [busy,setBusy]=useState(false);
   const [rolling,setRolling]=useState(false);
+  const busyRef=useRef(false);
   const [note,setNote]=useState("");
   const [savedId,setSavedId]=useState<number|null>(null);
   const [saveError,setSaveError]=useState(false);
@@ -147,8 +151,8 @@ export default function AstroDicePage(){
   useEffect(()=>{try{setHistory(JSON.parse(localStorage.getItem(ASTRO_STORAGE_KEY)??"[]"))}catch{setHistory([])}},[]);
   useEffect(()=>()=>{timersRef.current.forEach(id=>window.clearTimeout(id));if(scrollRef.current)cancelAnimationFrame(scrollRef.current)},[]);
 
-  const synthesis=useMemo(()=>roll?`妳問的是「${question.trim()}」。${roll.planet.name}顯示此刻真正推動事情的是「${roll.planet.meaning}」；它會透過${roll.sign.name}的「${roll.sign.meaning}」呈現，並在${roll.house.name}所代表的「${roll.house.meaning}」裡最明顯。先處理這個領域裡可由妳選擇的部分，事情才會開始有新的變化。`:"",[roll,question]);
-  const specific=useMemo(()=>roll?detailedReading(roll,category):null,[roll,category]);
+  const synthesis=useMemo(()=>{if(!reading)return "";const r=reading.roll;return `妳問的是「${reading.question}」。${r.planet.name}顯示此刻真正推動事情的是「${r.planet.meaning}」；它會透過${r.sign.name}的「${r.sign.meaning}」呈現，並在${r.house.name}所代表的「${r.house.meaning}」裡最明顯。先處理這個領域裡可由妳選擇的部分，事情才會開始有新的變化。`;},[reading]);
+  const specific=useMemo(()=>reading?detailedReading(reading.roll,reading.category):null,[reading]);
 
   function later(run:()=>void,ms:number){const id=window.setTimeout(()=>{timersRef.current=timersRef.current.filter(item=>item!==id);run()},ms);timersRef.current.push(id)}
   function clearTimers(){timersRef.current.forEach(id=>window.clearTimeout(id));timersRef.current=[]}
@@ -169,27 +173,32 @@ export default function AstroDicePage(){
   function fullyVisible(element:HTMLElement|null){if(!element)return true;const rect=element.getBoundingClientRect();return rect.top>=headerBottom()&&rect.bottom<=window.innerHeight}
 
   function cast(){
-    if(!question.trim()||rolling)return;
-    clearTimers();setRoll(null);setSavedId(null);setSaveError(false);setNote("");
-    const next:Roll={planet:randomItem(planets),sign:randomItem(signs),house:randomItem(houses)};
-    const show=()=>{setRoll(next);setRolling(false);navigator.vibrate?.(18);later(()=>{const heading=resultRef.current?.querySelector("h2") as HTMLElement|null;if(heading)scrollToTop(heading)},80)};
+    // lock at once, before any scrolling, so a second tap can never start another roll
+    if(!question.trim()||busyRef.current)return;
+    busyRef.current=true;setBusy(true);
+    // 再擲一次 keeps the locked question and topic of the reading on screen
+    const asked=reading?{question:reading.question,category:reading.category}:{question:question.trim(),category};
+    clearTimers();setReading(null);setSavedId(null);setSaveError(false);setNote("");
+    const snapshot={roll:{planet:randomItem(planets),sign:randomItem(signs),house:randomItem(houses)} as Roll,...asked};
+    const show=()=>{setReading(snapshot);setRolling(false);busyRef.current=false;setBusy(false);navigator.vibrate?.(18);later(()=>{const heading=resultRef.current?.querySelector("h2") as HTMLElement|null;if(heading)scrollToTop(heading)},80)};
     const start=()=>{setRolling(true);later(show,reducedMotion()?200:ROLL_MS)};
     // Bring the whole stage on screen first, then roll (星骰互動 v1).
     const wait=fullyVisible(stageRef.current)?0:scrollToTop(stageRef.current);
     if(wait)later(start,wait+100);else start();
   }
   function save(){
-    if(!roll||savedId!==null)return;
-    try{const item:HistoryItem={id:Date.now(),question:question.trim(),category,planet_name:roll.planet.name,sign_name:roll.sign.name,house_name:roll.house.name,note,created_at:new Date().toISOString()};const next=[item,...history].slice(0,80);localStorage.setItem(ASTRO_STORAGE_KEY,JSON.stringify(next));setHistory(next);setSavedId(item.id);setSaveError(false)}catch{setSaveError(true)}
+    if(!reading||savedId!==null)return;
+    try{const item:HistoryItem={id:Date.now(),question:reading.question,category:reading.category,planet_name:reading.roll.planet.name,sign_name:reading.roll.sign.name,house_name:reading.roll.house.name,note,created_at:new Date().toISOString()};const next=[item,...history].slice(0,80);localStorage.setItem(ASTRO_STORAGE_KEY,JSON.stringify(next));setHistory(next);setSavedId(item.id);setSaveError(false)}catch{setSaveError(true)}
   }
   function viewRecord(){
     if(savedId===null)return;
     setHistoryOpen(true);setHighlightId(savedId);
     later(()=>scrollToTop(document.getElementById(`astro-entry-${savedId}`)),60);
   }
-  function newQuestion(){clearTimers();setRoll(null);setQuestion("");setNote("");setSavedId(null);setSaveError(false);later(()=>{scrollToTop(ritualRef.current);questionRef.current?.focus({preventScroll:true})},40)}
+  function newQuestion(){clearTimers();busyRef.current=false;setBusy(false);setRolling(false);setReading(null);setQuestion("");setNote("");setSavedId(null);setSaveError(false);later(()=>{scrollToTop(ritualRef.current);questionRef.current?.focus({preventScroll:true})},40)}
   function chooseIdea(idea:string){setQuestion(idea);setIdeasOpen(false);questionRef.current?.focus({preventScroll:true})}
 
+  const locked=busy||reading!==null;
   const step=roll?(savedId!==null?3:2):question.trim()?1:0;
   const dice:Array<[DieType,AstroItem|null]>=[["planet",roll?.planet??null],["sign",roll?.sign??null],["house",roll?.house??null]];
 
@@ -213,31 +222,32 @@ export default function AstroDicePage(){
           <ol className="ad2-steps" aria-label="星骰進度">
             {["選主題","寫問題","擲星骰","記錄感受"].map((label,index)=>{const state=index<step?"done":index===step?"current":"todo";return <li key={label} className={state} aria-current={state==="current"?"step":undefined}><span aria-hidden="true">{state==="done"?"✓":state==="current"?"●":"○"}</span>{label}</li>})}
           </ol>
-          <div className="ad2-chips" role="group" aria-label="問題主題">{categories.map(item=><button key={item} type="button" className={category===item?"selected":""} aria-pressed={category===item} disabled={rolling} onClick={()=>setCategory(item)}>{item}</button>)}</div>
+          <div className="ad2-chips" role="group" aria-label="問題主題">{categories.map(item=><button key={item} type="button" className={category===item?"selected":""} aria-pressed={category===item} disabled={locked} onClick={()=>setCategory(item)}>{item}</button>)}</div>
           <label className="ad2-label" htmlFor="astro-question">寫下妳想問的問題</label>
-          <textarea id="astro-question" ref={questionRef} rows={2} maxLength={180} value={question} disabled={rolling} onChange={event=>setQuestion(event.target.value)} placeholder="例如：我在目前的工作方向裡，最需要留意什麼？"/>
+          <textarea id="astro-question" ref={questionRef} rows={2} maxLength={180} value={question} disabled={locked} onChange={event=>setQuestion(event.target.value)} placeholder="例如：我在目前的工作方向裡，最需要留意什麼？"/>
           <div className="ad2-under-input"><span>{question.trim()?"問題已準備好，可以擲骰。":"先寫下一個想問的問題。"}</span><small>{question.length} / 180</small></div>
-          <details className="ad2-ideas" open={ideasOpen} onToggle={event=>setIdeasOpen((event.currentTarget as HTMLDetailsElement).open)}>
+          {!locked&&<details className="ad2-ideas" open={ideasOpen} onToggle={event=>setIdeasOpen((event.currentTarget as HTMLDetailsElement).open)}>
             <summary>不知道怎麼問？選一個範例</summary>
             <div>{questionIdeas[category].map(idea=><button type="button" key={idea} onClick={()=>chooseIdea(idea)}>{idea}</button>)}</div>
-          </details>
+          </details>}
+          {reading&&<p className="ad2-locked-note">這次的問題已鎖定，想問別的事請按「換一個問題」。</p>}
         </div>
 
         <div className="ad2-stage-card">
           <div ref={stageRef} className={`ad2-stage ${rolling?"is-rolling":""}`}>
             <div className="ad2-dice">{dice.map(([type,item],index)=><Die key={type} type={type} item={item} rolling={rolling} index={index}/>)}</div>
           </div>
-          <button type="button" className="ad2-cast" disabled={!question.trim()||rolling} onClick={cast}>{rolling?"星骰正在轉動…":roll?"再擲一次 ✦":"擲出三顆星骰 ✦"}</button>
-          <p className="ad2-hint" aria-live="polite">{rolling?"讓問題在心裡停留一下。":roll?`${roll.planet.name} × ${roll.sign.name} × ${roll.house.name}`:question.trim()?"依序讀取：核心能量 → 表現方式 → 生活領域":"先寫下問題，就可以擲骰。"}</p>
+          <button type="button" className="ad2-cast" disabled={!question.trim()||busy} onClick={cast}>{busy?"星骰正在轉動…":roll?"再擲一次 ✦":"擲出三顆星骰 ✦"}</button>
+          <p className="ad2-hint" aria-live="polite">{busy?"讓問題在心裡停留一下。":roll?`${roll.planet.name} × ${roll.sign.name} × ${roll.house.name}`:question.trim()?"依序讀取：核心能量 → 表現方式 → 生活領域":"先寫下問題，就可以擲骰。"}</p>
         </div>
       </div>
     </section>
 
-    {roll&&specific&&<section className="ad2-result" id="astro-result" ref={resultRef} aria-labelledby="ad2-result-title">
+    {reading&&roll&&specific&&<section className="ad2-result" id="astro-result" ref={resultRef} aria-labelledby="ad2-result-title">
       <span className="ad2-result-crest" aria-hidden="true"/>
-      <p className="ad2-kicker small">your astro dice message · {category}</p>
+      <p className="ad2-kicker small">your astro dice message · {reading.category}</p>
       <h2 id="ad2-result-title" tabIndex={-1}>{roll.planet.name} × {roll.sign.name} × {roll.house.name}</h2>
-      <p className="ad2-question">「{question}」</p>
+      <p className="ad2-question">「{reading.question}」</p>
       <div className="ad2-mini" aria-label="三顆星骰">{dice.map(([type,item])=><div key={type}><span className="ad2-symbol" aria-hidden="true">{item!.symbol}{"︎"}</span><small>{dieLabels[type].name}</small><b>{item!.name}</b></div>)}</div>
       <article className="ad2-block lead"><h3>整體訊息</h3><p>{synthesis}</p></article>
       <article className="ad2-block"><h3>目前狀況</h3><p>{specific.current}</p></article>
@@ -247,7 +257,7 @@ export default function AstroDicePage(){
         <summary>完整星骰解析</summary>
         <div className="ad2-more-body">
           {dice.map(([type,item])=><article key={type}><span className="ad2-symbol" aria-hidden="true">{item!.symbol}{"︎"}</span><div><small>{dieLabels[type].name} · {dieLabels[type].role}</small><h4>{item!.name}</h4><p>{item!.meaning}</p><b>{item!.prompt}</b></div></article>)}
-          <p className="ad2-lead-note">{categoryLead[category]}</p>
+          <p className="ad2-lead-note">{categoryLead[reading.category]}</p>
         </div>
       </details>
       <div className="ad2-reflect">
