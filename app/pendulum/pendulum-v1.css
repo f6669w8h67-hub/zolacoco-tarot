@@ -461,3 +461,5 @@ html body .pendulum-page .pv-result .result-crown {
   border: 0 !important; background: url('/pendulum/shell-crest.webp') center / contain no-repeat !important;
   width: 132px !important; height: 42px !important; color: transparent !important; font-size: 0 !important;
 }
+/* the theme's large h2 size must not reach the way-to-play title */
+html body .pendulum-page .pv-tool h2 { font-size: clamp(26px, 6.4vw, 34px) !important; line-height: 1.3 !important; }
