@@ -43,7 +43,22 @@ html body :is(#cat-story, #explore)::after { right: 6px !important; transform: s
   html body :is(#cat-story, #explore)::before { left: 10px !important; }
   html body :is(#cat-story, #explore)::after { right: 10px !important; }
 }
-html body :is(#cat-story, #explore) > * { position: relative; z-index: 1; }
+/* and the two lower corners, mirrored, on their own layer so nothing above them moves */
+html body :is(#cat-story, #explore) > .pearl-corners { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+html body :is(#cat-story, #explore) > .pearl-corners::before,
+html body :is(#cat-story, #explore) > .pearl-corners::after {
+  content: ""; position: absolute; bottom: 10px; width: 40px; height: 40px; opacity: .75; pointer-events: none;
+  background: url("/pendulum/rose-corner.webp") center / contain no-repeat;
+}
+html body :is(#cat-story, #explore) > .pearl-corners::before { left: 6px; transform: scaleY(-1); }
+html body :is(#cat-story, #explore) > .pearl-corners::after { right: 6px; transform: scale(-1, -1); }
+@media (min-width: 900px) {
+  html body :is(#cat-story, #explore) > .pearl-corners::before,
+  html body :is(#cat-story, #explore) > .pearl-corners::after { bottom: 16px; width: 80px; height: 80px; }
+  html body :is(#cat-story, #explore) > .pearl-corners::before { left: 10px; }
+  html body :is(#cat-story, #explore) > .pearl-corners::after { right: 10px; }
+}
+html body :is(#cat-story, #explore) > :not(.pearl-corners) { position: relative; z-index: 1; }
 
 /* ---------- headings ---------- */
 html body :is(#cat-story .cat-story-heading, #explore .explore-heading) .eyebrow {
@@ -96,7 +111,7 @@ html body #cat-story .cat-story-note {
   html body #cat-story .cat-profile { grid-template-columns: 1fr !important; gap: 16px !important; padding: 16px 16px 20px !important; text-align: center; }
   html body #cat-story .cat-photo { width: min(78%, 280px); margin: 0 auto; aspect-ratio: 4 / 5 !important; }
   html body #cat-story .cat-profile h3 { font-size: 20px !important; margin: 6px 0 8px !important; }
-  html body #cat-story .cat-profile p { text-align: left; }
+  html body #cat-story .cat-profile p { text-align: center !important; text-wrap: pretty; }
   html body #cat-story .cat-story-note { margin-top: 30px !important; padding: 16px 8px !important; }
 }
 

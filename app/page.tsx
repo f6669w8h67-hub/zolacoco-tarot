@@ -670,6 +670,7 @@ export default function Home() {
       </section>
 
       <section className="cat-story" id="cat-story">
+        <span className="pearl-corners" aria-hidden="true" />
         <div className="cat-story-heading">
           <p className="eyebrow">THE HEARTS BEHIND THE DECK</p>
           <h2>抽完牌，<span className="keep-line">再認識陪你讀牌的牠們</span></h2>
@@ -689,6 +690,7 @@ export default function Home() {
       </section>
 
       <section className="explore" id="explore">
+        <span className="pearl-corners" aria-hidden="true" />
         <div className="explore-heading">
           <p className="eyebrow">TAROT AS A MIRROR</p>
           <h2>用塔羅，<span className="keep-line">更靠近內在的自己</span></h2>

@@ -55,3 +55,20 @@ test("headings break after the comma, never leaving one character alone", () => 
   assert.match(page, /<h2>用塔羅，<span className="keep-line">更靠近內在的自己<\/span><\/h2>/);
   assert.match(css, /h2 \.keep-line \{ display: inline-block; \}/);
 });
+
+test("on a phone the cat cards read centred: photo on top, title and story centred (PR #26 review B1)", () => {
+  const phone = css.slice(css.indexOf("@media (max-width: 760px) {\n  html body #cat-story"));
+  assert.match(phone, /#cat-story \.cat-profile \{[^}]*text-align: center;/);
+  assert.match(phone, /#cat-story \.cat-profile p \{ text-align: center !important;/);
+  assert.doesNotMatch(css, /\.cat-profile p \{ text-align: left/);
+});
+
+test("roses in all four corners of both sections, behind the content and never in the way (PR #26 review B2)", () => {
+  assert.equal(page.match(/<span className="pearl-corners" aria-hidden="true" \/>/g)?.length, 2);
+  assert.match(css, /:is\(#cat-story, #explore\)::before \{ left: 6px !important; \}/, "top left");
+  assert.match(css, /:is\(#cat-story, #explore\)::after \{ right: 6px !important; transform: scaleX\(-1\) !important; \}/, "top right");
+  assert.match(css, /> \.pearl-corners::before \{ left: 6px; transform: scaleY\(-1\); \}/, "bottom left");
+  assert.match(css, /> \.pearl-corners::after \{ right: 6px; transform: scale\(-1, -1\); \}/, "bottom right");
+  assert.match(css, /> \.pearl-corners \{ position: absolute; inset: 0; z-index: 0; pointer-events: none; \}/);
+  assert.match(css, /> :not\(\.pearl-corners\) \{ position: relative; z-index: 1; \}/);
+});
