@@ -1,0 +1,71 @@
+/* ===== 珍珠粉藍洛可可 page ground, header and notice =====
+   For pages restyled one by one (owner, 2026-11-13: 「靈擺可以先上線」「抽牌 星骰 也需要改這個風格」).
+   A page opts in with <main className="… pearl-page">; every other page keeps its current look.
+   Background v2 (ChatGPT): pearl base, pink / porcelain-blue / lilac glows, damask wallpaper. */
+:root {
+  --pearl-ink: #263449; --pearl-muted: #33445f; --pearl-title: #843450; --pearl-gold: #c5a46f;
+  --pearl-surface: #ffffff; --pearl-blue: #e8f2fc; --pearl-border: #d8dce8; --pearl-chip-border: #b9c7d8;
+}
+html body:has(main.pearl-page) {
+  background-color: #f8f7ff !important;
+  background-image: none !important;
+  color: var(--pearl-ink);
+}
+html body:has(main.pearl-page)::before,
+html body:has(main.pearl-page)::after {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+}
+html body:has(main.pearl-page)::before {
+  background:
+    radial-gradient(ellipse 60% 45% at 85% 12%, rgba(252, 234, 243, .75) 0%, rgba(252, 234, 243, 0) 70%),
+    radial-gradient(ellipse 65% 50% at 8% 55%, rgba(234, 243, 255, .8) 0%, rgba(234, 243, 255, 0) 70%),
+    radial-gradient(ellipse 55% 45% at 70% 92%, rgba(248, 236, 250, .55) 0%, rgba(248, 236, 250, 0) 70%);
+}
+html body:has(main.pearl-page)::after {
+  background-image: url('/pendulum/wallpaper-tile.webp');
+  background-size: 320px 320px;
+  background-repeat: repeat;
+}
+@media (max-width: 760px) { html body:has(main.pearl-page)::after { background-size: 240px 240px; } }
+
+/* ---------- header and menu ---------- */
+html body:has(main.pearl-page) .global-site-header {
+  border-bottom: 1px solid var(--pearl-border) !important;
+  background: rgba(255, 255, 255, .93) !important;
+  box-shadow: 0 6px 22px rgba(38, 52, 73, .05) !important;
+}
+html body:has(main.pearl-page) .global-brand { color: var(--pearl-title) !important; }
+html body:has(main.pearl-page) .global-brand span { color: var(--pearl-muted) !important; }
+html body:has(main.pearl-page) :is(.global-menu-trigger, .global-account-link) {
+  border: 1px solid var(--pearl-chip-border) !important;
+  background: var(--pearl-surface) !important;
+  color: var(--pearl-ink) !important;
+}
+html body:has(main.pearl-page) .global-function-menu {
+  border: 1px solid var(--pearl-border) !important;
+  background: var(--pearl-surface) !important;
+  box-shadow: 0 18px 44px rgba(38, 52, 73, .1) !important;
+  color: var(--pearl-ink) !important;
+}
+html body:has(main.pearl-page) .global-menu-heading { border-bottom-color: var(--pearl-border) !important; }
+html body:has(main.pearl-page) .global-menu-heading small, html body:has(main.pearl-page) .global-menu-groups h3 { color: var(--pearl-muted) !important; }
+html body:has(main.pearl-page) .global-menu-heading h2 { color: var(--pearl-title) !important; }
+html body:has(main.pearl-page) .global-menu-groups a { border-color: var(--pearl-border) !important; color: var(--pearl-ink) !important; background: transparent !important; }
+html body:has(main.pearl-page) .global-menu-groups a b { color: var(--pearl-ink) !important; }
+html body:has(main.pearl-page) .global-menu-groups a small { color: var(--pearl-muted) !important; }
+html body:has(main.pearl-page) .global-menu-groups a i { color: var(--pearl-gold) !important; }
+html body:has(main.pearl-page) .global-menu-groups section { border-color: var(--pearl-border) !important; }
+html body:has(main.pearl-page) .global-account-panel { border-color: var(--pearl-border) !important; background: var(--pearl-blue) !important; }
+html body:has(main.pearl-page) .global-account-panel b, html body:has(main.pearl-page) .global-account-panel a, html body:has(main.pearl-page) .global-admin-link { color: var(--pearl-title) !important; }
+html body:has(main.pearl-page) .global-account-panel small { color: var(--pearl-muted) !important; }
+
+/* ---------- maintenance notice ---------- */
+html body:has(main.pearl-page) .site-notice {
+  border: 1px solid var(--pearl-border) !important;
+  background: var(--pearl-surface) !important;
+  box-shadow: 0 6px 22px rgba(38, 52, 73, .08) !important;
+  color: var(--pearl-ink) !important;
+}
+html body:has(main.pearl-page) .site-notice b { color: var(--pearl-title) !important; }
+html body:has(main.pearl-page) .site-notice button { color: var(--pearl-muted) !important; }
+html body:has(main.pearl-page) .site-notice button:focus-visible { outline-color: var(--pearl-title) !important; }
