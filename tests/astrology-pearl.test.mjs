@@ -19,10 +19,12 @@ test("no scene photos any more: one gold chart in line decorates every view", ()
 test("music never starts by itself, loads only after a tap, and says so when the browser blocks it", () => {
   const begin = page.slice(page.indexOf("function beginJourney()"), page.indexOf("const music ="));
   assert.doesNotMatch(begin, /setMusic|toggleMusic|startMusic/);
-  assert.match(page, /\{musicMounted \? <div className="astro-audio-only"/, "no YouTube request before the first tap");
-  assert.match(page, /if \(state === 1 && musicWanted\.current\)/, "playing only once the player says so");
-  assert.match(page, /音樂沒有開始播放，可能被瀏覽器擋下了/);
-  assert.match(page, /aria-pressed=\{musicPlaying\} aria-busy=\{musicLoading\}/);
+  assert.match(page, /\{player\.mounted \? <div className="astro-audio-only" aria-hidden="true"><iframe key=\{player\.frame\}/, "no YouTube request before the first tap");
+  assert.doesNotMatch(page, /autoplay=1/, "the player never starts on its own; play is sent once it is ready");
+  assert.match(page, /event\.source !== musicFrame\.current\.contentWindow/, "only the current player may change the button");
+  assert.match(page, /musicStep\(before, event\)/, "rules from lib/astro-music.ts (tested in astro-music.test.mjs)");
+  assert.match(page, /aria-pressed=\{player\.phase === "playing"\} aria-busy=\{player\.phase === "loading"\}/);
+  assert.match(page, /window\.clearTimeout\(musicWait\.current\);\s*window\.clearInterval\(musicHello\.current\);/, "timers cleared when she leaves");
   assert.doesNotMatch(css, /\.astro-music-toggle \{[^}]*position: fixed/);
 });
 

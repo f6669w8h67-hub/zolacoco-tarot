@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ZOLA_LINE_URL } from "@/lib/contact";
+import { MUSIC_WAIT_MS, initialMusic, musicStep, type MusicEvent, type MusicState } from "@/lib/astro-music";
 import "../styles/pearl-page.css";
 import "./astrology-exploration.css";
+
+const YT_ORIGIN = "https://www.youtube-nocookie.com";
 
 type View = "intro" | "theme" | "state" | "need" | "focus" | "result" | "service" | "records";
 type Choice = { id: string; title: string; note: string };
@@ -167,64 +170,73 @@ export default function AstrologyExplorationPage() {
     return () => window.clearTimeout(load);
   }, []);
   const [saved, setSaved] = useState(false);
-  // Music: never starts by itself; the YouTube player is only loaded after the first tap, and the
-  // button shows 播放中 only once the player reports that it is really playing.
-  const [musicPlaying, setMusicPlaying] = useState(false);
-  const [musicMounted, setMusicMounted] = useState(false);
-  const [musicNotice, setMusicNotice] = useState("");
-  const [musicLoading, setMusicLoading] = useState(false);
+  // Music: never starts by itself. The rules live in lib/astro-music.ts; this only runs its
+  // commands, keeps the wait timer and talks to the YouTube player.
+  const [player, setPlayer] = useState<MusicState>(initialMusic);
+  const playerRef = useRef<MusicState>(initialMusic);
   const musicFrame = useRef<HTMLIFrameElement | null>(null);
-  const musicWanted = useRef(false);
-  const musicCheck = useRef(0);
+  const musicWait = useRef(0);
+  const musicHello = useRef(0);
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [view]);
 
   const result = useMemo(() => theme && state && need && focus ? makeResult(theme, state, need, focus, note) : null, [theme, state, need, focus, note]);
 
-  const command = (func: string, args: unknown[] = []) => musicFrame.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), "https://www.youtube-nocookie.com");
-  useEffect(() => {
-    function onMessage(event: MessageEvent) {
-      if (event.origin !== "https://www.youtube-nocookie.com" || typeof event.data !== "string") return;
-      let data: { event?: string; info?: unknown } = {};
-      try { data = JSON.parse(event.data); } catch { return; }
-      const state = data.event === "onStateChange" ? data.info : data.event === "infoDelivery" ? (data.info as { playerState?: number } | undefined)?.playerState : undefined;
-      if (state === 1 && musicWanted.current) { window.clearTimeout(musicCheck.current); setMusicNotice(""); setMusicLoading(false); setMusicPlaying(true); }
-      if (state === 2 && !musicWanted.current) setMusicPlaying(false);
+  const dispatchMusic = useCallback((first: MusicEvent) => {
+    const send = (func: string, args: unknown[] = []) => musicFrame.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), YT_ORIGIN);
+    function apply(event: MusicEvent) {
+      const before = playerRef.current;
+      const { state: next, commands } = musicStep(before, event);
+      playerRef.current = next;
+      setPlayer(next);
+      for (const order of commands) {
+        if (order === "play") { send("unMute"); send("setVolume", [55]); send("playVideo"); }
+        else send("pauseVideo");
+      }
+      if (next.phase !== "loading") window.clearTimeout(musicWait.current);
+      else if (next.request !== before.request) {
+        window.clearTimeout(musicWait.current);
+        const request = next.request;
+        musicWait.current = window.setTimeout(() => apply({ type: "timeout", request }), MUSIC_WAIT_MS);
+      }
+      if (!next.mounted || next.ready) window.clearInterval(musicHello.current);
     }
-    window.addEventListener("message", onMessage);
-    return () => { window.removeEventListener("message", onMessage); window.clearTimeout(musicCheck.current); };
+    apply(first);
   }, []);
 
-  function startMusic() {
-    command("unMute");
-    command("setVolume", [55]);
-    command("playVideo");
-  }
-  function toggleMusic() {
-    if (musicWanted.current) {
-      musicWanted.current = false;
-      window.clearTimeout(musicCheck.current);
-      command("pauseVideo");
-      setMusicPlaying(false);
-      setMusicLoading(false);
-      return;
+  useEffect(() => {
+    function onMessage(event: MessageEvent) {
+      // Only the player that is in the page right now may change the button.
+      if (event.origin !== YT_ORIGIN || typeof event.data !== "string") return;
+      if (!musicFrame.current || event.source !== musicFrame.current.contentWindow) return;
+      let data: { event?: string; info?: unknown } = {};
+      try { data = JSON.parse(event.data); } catch { return; }
+      const frame = playerRef.current.frame;
+      if (data.event === "onReady") dispatchMusic({ type: "ready", frame });
+      const playerState = data.event === "onStateChange" ? data.info : data.event === "infoDelivery" ? (data.info as { playerState?: number } | undefined)?.playerState : undefined;
+      if (playerState === 1) dispatchMusic({ type: "playing", frame });
+      if (playerState === 2) dispatchMusic({ type: "paused", frame });
     }
-    musicWanted.current = true;
-    setMusicNotice("");
-    setMusicLoading(true);
-    if (!musicMounted) setMusicMounted(true); else startMusic();
-    window.clearTimeout(musicCheck.current);
-    musicCheck.current = window.setTimeout(() => {
-      if (!musicWanted.current) return;
-      musicWanted.current = false;
-      setMusicPlaying(false);
-      setMusicLoading(false);
-      setMusicNotice("音樂沒有開始播放，可能被瀏覽器擋下了。請確認手機不是靜音，再按一次播放。");
-    }, 6000);
-  }
+    window.addEventListener("message", onMessage);
+    return () => {
+      window.removeEventListener("message", onMessage);
+      window.clearTimeout(musicWait.current);
+      window.clearInterval(musicHello.current);
+    };
+  }, [dispatchMusic]);
+
   function onMusicLoad() {
-    musicFrame.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: "astro-music", channel: "widget" }), "https://www.youtube-nocookie.com");
-    if (musicWanted.current) startMusic();
+    // Say hello until the player answers that it is ready (as YouTube's own API does).
+    const frame = playerRef.current.frame;
+    let tries = 0;
+    const hello = () => {
+      const now = playerRef.current;
+      if (now.frame !== frame || !now.mounted || now.ready || ++tries > 40) { window.clearInterval(musicHello.current); return; }
+      musicFrame.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: "astro-music", channel: "widget" }), YT_ORIGIN);
+    };
+    window.clearInterval(musicHello.current);
+    hello();
+    musicHello.current = window.setInterval(hello, 250);
   }
 
   function beginJourney() {
@@ -232,11 +244,11 @@ export default function AstrologyExplorationPage() {
   }
 
   const music = <div className="astro-music">
-    <button className={`astro-music-toggle ${musicPlaying ? "is-playing" : ""}`} type="button" aria-pressed={musicPlaying} aria-busy={musicLoading} onClick={toggleMusic}>
+    <button className={`astro-music-toggle ${player.phase === "playing" ? "is-playing" : ""}`} type="button" aria-pressed={player.phase === "playing"} aria-busy={player.phase === "loading"} onClick={() => dispatchMusic({ type: "tap" })}>
       <i aria-hidden="true"><span /><span /><span /></i>
-      <span>{musicPlaying ? "暫停音樂" : musicLoading ? "音樂準備中…" : "播放音樂"}</span>
+      <span>{player.phase === "playing" ? "暫停音樂" : player.phase === "loading" ? "音樂準備中…" : "播放音樂"}</span>
     </button>
-    {musicNotice ? <p className="astro-music-notice" role="status">{musicNotice}</p> : null}
+    {player.notice ? <p className="astro-music-notice" role="status">{player.notice}</p> : null}
   </div>;
 
   function restart() { setTheme(null); setState(null); setNeed(null); setFocus(null); setNote(""); setSaved(false); setView("intro"); }
@@ -257,7 +269,7 @@ export default function AstrologyExplorationPage() {
   }
 
   return <main className={`astro-page pearl-page astro-view-${view}`}>
-    {musicMounted ? <div className="astro-audio-only" aria-hidden="true"><iframe ref={musicFrame} onLoad={onMusicLoad} src="https://www.youtube-nocookie.com/embed/MRQsx1-_1jc?enablejsapi=1&playsinline=1&loop=1&playlist=MRQsx1-_1jc&controls=0&rel=0&autoplay=1" title="探索妳的星盤背景音樂" allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" tabIndex={-1} /></div> : null}
+    {player.mounted ? <div className="astro-audio-only" aria-hidden="true"><iframe key={player.frame} ref={musicFrame} onLoad={onMusicLoad} src="https://www.youtube-nocookie.com/embed/MRQsx1-_1jc?enablejsapi=1&playsinline=1&loop=1&playlist=MRQsx1-_1jc&controls=0&rel=0" title="探索妳的星盤背景音樂" allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" tabIndex={-1} /></div> : null}
     {view === "intro" && <section className="astro-intro">
       <div className="astro-intro-art"><AstroChart className="astro-chart-hero" /></div>
       <div className="astro-intro-copy"><div className="astro-intro-head"><small>inner astrology journey</small>{music}</div><h1>探索妳的星盤</h1><p className="astro-subtitle">看見妳的人生課題、內在需求，<br />以及此刻最值得理解的自己。</p><div className="astro-about"><h2>這個體驗可以帶給妳什麼？</h2><p>透過四個簡單提問，整理妳目前最在意的生活主題、反覆感受與內在需要，最後找到適合帶進個人星盤解析的重點。</p><ul><li>約 3 分鐘完成</li><li>不需要先懂占星</li><li>不需要提供出生資料</li></ul></div><aside><b>開始以前，請先記得</b><p>這是自我探索引導，不是實際的本命盤計算。跟著當下最真實的感覺回答即可，妳不需要想得很完整，也不需要迎合任何理想答案。</p></aside><button className="astro-primary" onClick={beginJourney}>開始探索自己 <b>→</b></button><button className="astro-text-button" onClick={() => setView("records")}>查看過往探索紀錄</button></div>
