@@ -66,7 +66,7 @@ test("reading v4: written readings up front, the three-card message by position,
   assert.ok(page.includes('className="reading-actions-list"'));
   const unit = page.slice(page.indexOf('<div className="position-reading">'), page.indexOf('<details className="reading-more">'));
   assert.ok(unit.includes("topicReading(reading, topic)"), "the topic reading is open by default");
-  assert.ok(unit.includes("reading.outward"), "the card that stands for someone else shows only what can be seen");
+  assert.ok(unit.includes("othersLine(reading, topic)"), "the card that stands for someone else shows only what can be seen");
   assert.ok(unit.includes("{single ? energy : null}") && unit.includes("{single ? blind : null}"), "one card: energy and blind spot open");
   const folded = page.slice(page.indexOf('<details className="reading-more">'), page.indexOf("</details>", page.indexOf('<details className="reading-more">')));
   for (const part of ["{!single ? energy : null}", "{!single ? blind : null}", "card.scene", "topicLens[topic][card.suit]"]) assert.ok(folded.includes(part), `${part} is folded for three cards`);

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { tarotCards } from "../app/tarot-data.ts";
-import { READING_TOPICS, speaksForOthers, synthesisOpening, synthesisParts, topicReading } from "../lib/tarot-synthesis.ts";
+import { READING_TOPICS, othersLine, speaksForOthers, synthesisOpening, synthesisParts, topicReading } from "../lib/tarot-synthesis.ts";
 
 // Reading v4 (ChatGPT spec, 2026-11-13): 78 cards × 6 topics of written readings, plus an
 // energy note and an outward line per card, stored as JSON in batches.
@@ -18,11 +18,13 @@ test("every one of the 78 cards has exactly one reading, and nothing else does",
   for (const card of tarotCards) assert.ok(byId.has(card.id), `${card.id} has a reading`);
 });
 
-test("energy and outward lines are within the agreed lengths; outward never speaks for her", () => {
+test("energy, other and outward lines are within the agreed lengths; the last two never speak for her", () => {
   for (const reading of readings) {
     assert.ok(length(reading.energy) >= 55 && length(reading.energy) <= 100, `${reading.id} energy ${length(reading.energy)}`);
-    assert.ok(length(reading.outward) >= 35 && length(reading.outward) <= 80, `${reading.id} outward ${length(reading.outward)}`);
-    assert.ok(!reading.outward.includes("妳"), `${reading.id} outward describes what can be seen, not her`);
+    for (const field of ["other", "outward"]) {
+      assert.ok(length(reading[field]) >= 35 && length(reading[field]) <= 80, `${reading.id} ${field} ${length(reading[field])}`);
+      assert.ok(!reading[field].includes("妳"), `${reading.id} ${field} describes what can be seen, not her`);
+    }
   }
 });
 
@@ -53,7 +55,7 @@ test("no sentence is reused anywhere in the deck", () => {
 });
 
 const fake = (id) => ({
-  id, energy: `${id} energy`, outward: `${id} outward`,
+  id, energy: `${id} energy`, other: `${id} other`, outward: `${id} outward`,
   topicReadings: Object.fromEntries(READING_TOPICS.map((topic) => [topic, [`${id}-${topic}-情境。`, `${id}-${topic}-課題。`, `${id}-${topic}-下一步。`]])),
 });
 const three = [{ name: "愚人", reading: fake("a") }, { name: "魔術師", reading: fake("b") }, { name: "女祭司", reading: fake("c") }];
@@ -67,7 +69,9 @@ test("time flow: past situation, present lesson, next step — whole sentences b
 
 test("relationship: the second card only describes what can be seen, never another person's heart", () => {
   const parts = synthesisParts(three, "relationship", "感情", ["我的狀態", "對方的狀態", "關係課題"]);
-  assert.deepEqual(parts.map((part) => part.text), ["a-感情-情境。", "b outward", "c-感情-課題。c-感情-下一步。"]);
+  assert.deepEqual(parts.map((part) => part.text), ["a-感情-情境。", "b other", "c-感情-課題。c-感情-下一步。"]);
+  assert.equal(synthesisParts(three, "relationship", "金錢", ["我的資源與選擇", "外部條件", "資源平衡課題"])[1].text, "b outward", "money names outside conditions, not a person");
+  assert.deepEqual(["感情", "人際", "工作", "金錢", "創業", "今日指引"].map((topic) => othersLine(fake("x"), topic)), ["x other", "x other", "x other", "x outward", "x outward", "x outward"]);
   assert.equal(speaksForOthers("relationship", 1), true);
   assert.equal(speaksForOthers("relationship", 0), false);
   assert.equal(speaksForOthers("timeline", 1), false);

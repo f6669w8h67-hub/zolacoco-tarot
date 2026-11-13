@@ -13,7 +13,7 @@ import {
   QUESTION_LIMIT, SPREADS, TAROT_TOPICS, type SpreadId, cleanQuestion, consultMessage,
   memberExpiryLabel, recommendedSpread, relationshipLens, spreadAfterTopicChange, spreadForTopic, spreadsForTopic, tarotRecord,
 } from "@/lib/tarot-reading";
-import { type CardReading, speaksForOthers, synthesisOpening, synthesisParts, topicReading } from "@/lib/tarot-synthesis";
+import { type CardReading, othersLine, speaksForOthers, synthesisOpening, synthesisParts, topicReading } from "@/lib/tarot-synthesis";
 
 
 const exploreTools = [
@@ -600,7 +600,7 @@ export default function Home() {
                     </header>
                     <div className="position-reading">
                       {reading ? (speaksForOthers(spreadId, i)
-                        ? <div className="reading-point lead"><b>這張牌呈現的狀態</b><p>{reading.outward}</p></div>
+                        ? <div className="reading-point lead"><b>這張牌呈現的狀態</b><p>{othersLine(reading, topic)}</p></div>
                         : <div className="reading-point lead"><b>放在「{topic}」裡看</b><p>{topicReading(reading, topic)}</p></div>)
                         : !single ? <div className="reading-point"><b>這張牌的重點</b><p>{card.truth}</p></div> : null}
                       {single ? energy : null}
