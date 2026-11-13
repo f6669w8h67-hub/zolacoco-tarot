@@ -1,0 +1,300 @@
+/* ===== 塔羅抽牌區 · 珍珠粉藍洛可可 (ChatGPT spec 首頁＋抽牌區 v1, 2026-11-13) =====
+   Owner: 「抽牌 星骰 也需要改這個風格」「塔羅你沒更新上去」.
+   The draw section gets the pearl look of the live pendulum and astro dice pages, with the
+   card work finished in PR #15 (78 Ryan × Shrimp faces, plain back, motion v3, reading v3).
+   Everything here is scoped to #draw; the rest of the home page keeps its look for now. */
+
+html body #draw {
+  --dp-ink: #263449;
+  --dp-muted: #33445f;
+  --dp-title: #843450;
+  --dp-gold: #c5a46f;
+  --dp-gold-light: #d8be8a;
+  --dp-border: #d8dce8;
+  --dp-chip: #b9c7d8;
+  --dp-selected: #f4dfe9;
+  --dp-blush: #fce9f1;
+  --dp-blue: #e8f2fc;
+  position: relative;
+  isolation: isolate;
+  color: var(--dp-ink) !important;
+  background-color: #f8f7ff !important;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 88% 8%, rgba(252, 234, 243, .9) 0%, rgba(252, 234, 243, 0) 70%),
+    radial-gradient(ellipse 60% 45% at 6% 45%, rgba(234, 243, 255, .95) 0%, rgba(234, 243, 255, 0) 70%),
+    radial-gradient(ellipse 55% 40% at 70% 96%, rgba(248, 236, 250, .7) 0%, rgba(248, 236, 250, 0) 70%),
+    url("/pendulum/wallpaper-tile.webp") !important;
+  background-size: auto, auto, auto, 320px 320px !important;
+  background-repeat: no-repeat, no-repeat, no-repeat, repeat !important;
+}
+@media (max-width: 760px) { html body #draw { background-size: auto, auto, auto, 240px 240px !important; } }
+/* rose-and-gold corners, like the ritual areas of the pendulum and astro dice */
+html body #draw::before,
+html body #draw::after {
+  content: "" !important; display: block !important; position: absolute !important; z-index: 0 !important;
+  top: 10px !important; width: 40px !important; height: 40px !important; inset-inline: auto !important;
+  border: 0 !important; border-radius: 0 !important; opacity: .75 !important; transform: none !important;
+  background: url("/pendulum/rose-corner.webp") center / contain no-repeat !important;
+  pointer-events: none !important; animation: none !important;
+}
+html body #draw::before { left: 6px !important; }
+html body #draw::after { right: 6px !important; transform: scaleX(-1) !important; }
+@media (min-width: 900px) {
+  html body #draw::before, html body #draw::after { top: 16px !important; width: 80px !important; height: 80px !important; }
+  html body #draw::before { left: 10px !important; }
+  html body #draw::after { right: 10px !important; }
+}
+html body #draw > * { position: relative; z-index: 1; }
+
+/* ---------- heading ---------- */
+html body #draw .section-heading > span {
+  border-color: var(--dp-gold) !important; background: #ffffff !important; color: var(--dp-title) !important;
+}
+html body #draw .section-heading > p {
+  color: var(--dp-title) !important; font: italic 600 17px/1.4 "Cormorant Garamond", "Noto Serif TC", serif !important;
+  letter-spacing: .06em !important; text-transform: lowercase;
+}
+html body #draw .section-heading h2 { color: var(--dp-title) !important; font-family: "Noto Serif TC", serif !important; font-weight: 700 !important; }
+html body #draw .section-heading .deck-note { color: var(--dp-muted) !important; }
+
+/* ---------- soundscape, topics, spreads, question ---------- */
+html body #draw .tarot-soundscape-toggle,
+html body #draw .tarot-soundscape-options button {
+  border: 1px solid var(--dp-border) !important; border-radius: 12px !important;
+  background: #ffffff !important; color: var(--dp-ink) !important;
+}
+html body #draw .tarot-soundscape-toggle > span:first-child,
+html body #draw .tarot-soundscape-icon { border-color: var(--dp-gold) !important; background: var(--dp-blush) !important; color: var(--dp-title) !important; }
+html body #draw .tarot-soundscape-toggle :is(b, i) { color: var(--dp-title) !important; }
+html body #draw .tarot-soundscape-toggle small,
+html body #draw .tarot-soundscape-options small { color: var(--dp-muted) !important; }
+html body #draw .tarot-soundscape-options button.active { border: 2px solid var(--dp-title) !important; background: var(--dp-selected) !important; }
+
+html body #draw .topics button {
+  min-height: 44px !important; border: 1px solid var(--dp-chip) !important; border-radius: 999px !important;
+  background: #ffffff !important; color: var(--dp-ink) !important; font-weight: 600 !important;
+}
+html body #draw .topics button.active {
+  border: 2px solid var(--dp-title) !important; background: var(--dp-selected) !important; color: var(--dp-title) !important;
+}
+html body #draw .spread-options button {
+  border: 1px solid var(--dp-border) !important; border-radius: 12px !important;
+  background: #ffffff !important; color: var(--dp-ink) !important;
+}
+html body #draw .spread-options button.active {
+  border: 2px solid var(--dp-title) !important; background: var(--dp-blush) !important;
+}
+@media (hover: hover) {
+  html body #draw .spread-options button:hover { background: #fff7fb !important; }
+  html body #draw .spread-options button.active:hover { background: var(--dp-blush) !important; }
+  html body #draw .topics button:hover:not(.active) { background: #fff7fb !important; }
+}
+html body #draw .spread-options .spread-name { color: var(--dp-title) !important; font-family: "Noto Serif TC", serif !important; font-weight: 700 !important; }
+html body #draw .spread-options button > small { color: var(--dp-muted) !important; }
+html body #draw .spread-options .spread-motif b { border-color: var(--dp-gold) !important; background: #ffffff !important; }
+html body #draw .spread-options button.active .spread-motif b { background: var(--dp-selected) !important; }
+html body #draw .spread-recommended {
+  border: 1px solid #b78ead !important; border-radius: 999px !important;
+  background: var(--dp-blush) !important; color: var(--dp-title) !important;
+}
+html body #draw .spread-options button.active .spread-recommended { background: #ffffff !important; }
+html body #draw label, html body #draw .question-field > span { color: var(--dp-title) !important; }
+html body #draw textarea {
+  border: 1px solid var(--dp-chip) !important; border-radius: 12px !important;
+  background: #ffffff !important; color: var(--dp-ink) !important;
+}
+html body #draw textarea::placeholder { color: #59657a !important; }
+html body #draw textarea:focus { outline: 2px solid var(--dp-title) !important; outline-offset: 1px !important; }
+html body #draw label small { color: var(--dp-muted) !important; }
+
+/* ---------- the draw table: deck, fan and choosing ---------- */
+html body #draw .deck-stage {
+  border: 1px solid var(--dp-gold) !important; border-radius: 16px !important;
+  background: #ffffff url("/tarot-table/table-800.webp") center / cover no-repeat !important;
+}
+@media (min-width: 701px) { html body #draw .deck-stage { background-image: url("/tarot-table/table.webp") !important; } }
+@media (max-width: 700px) { html body #draw .deck-stage { background-size: 100% 100% !important; } }
+html body #draw .deck-stage > p,
+html body #draw .choose-heading p { color: var(--dp-muted) !important; }
+html body #draw .choose-heading span { color: var(--dp-title) !important; font-style: italic; }
+html body #draw .choose-heading h3 { color: var(--dp-title) !important; font-family: "Noto Serif TC", serif !important; }
+html body #draw .selection-progress .choice-slot > div { border-color: var(--dp-gold) !important; background: #ffffff !important; color: var(--dp-title) !important; }
+html body #draw .selection-progress .choice-slot.filled > div { border-color: var(--dp-title) !important; background: var(--dp-selected) !important; }
+html body #draw .selection-progress .choice-slot p { color: var(--dp-muted) !important; }
+
+/* ---------- buttons: pearl plates, never dark ---------- */
+html body #draw :is(.draw-button, .flow-button.primary-flow, .save-reading, .reading-actions button.primary) {
+  min-height: 50px !important; padding: 0 24px !important;
+  border: 1px solid var(--dp-gold) !important; border-radius: 12px !important;
+  background: linear-gradient(180deg, #fff2f8 0%, #f4dfe9 100%) !important;
+  outline: 1px solid rgba(255, 255, 255, .9) !important; outline-offset: -5px !important;
+  box-shadow: none !important; color: var(--dp-title) !important;
+  font-family: "Noto Serif TC", serif !important; font-weight: 700 !important; letter-spacing: .06em !important;
+}
+html body #draw .draw-button { min-width: 190px !important; }
+html body #draw :is(.reshuffle, .flow-button.secondary-flow, .reading-actions button:not(.primary), .reading-actions a) {
+  min-height: 48px !important; border: 1px solid #b78ead !important; border-radius: 12px !important;
+  background: #ffffff !important; box-shadow: none !important; color: var(--dp-title) !important;
+}
+@media (hover: hover) {
+  html body #draw :is(.draw-button, .flow-button.primary-flow):hover:not(:disabled) { background: #eecfdd !important; }
+  html body #draw :is(.reshuffle, .flow-button.secondary-flow):hover:not(:disabled) { background: #fff7fb !important; }
+}
+html body #draw :is(.draw-button, .flow-button.primary-flow):active:not(:disabled) { background: #e5bed0 !important; transform: translateY(1px) scale(.99); }
+html body #draw :is(button, a, textarea, summary):focus-visible { outline: 2px solid var(--dp-title) !important; outline-offset: 3px !important; }
+html body #draw :is(.draw-button, .flow-button):disabled { background: #ebebf1 !important; border-color: #c9ced9 !important; color: #59657a !important; }
+
+/* ---------- card back (plain pearl, gold line, cat medallion) and card face ---------- */
+html body #draw :is(.card-back, .pick-card, .tarot-back) {
+  padding: 0 !important; border: 0 !important; border-radius: 14px !important;
+  background: #fff9fe !important; overflow: hidden;
+  box-shadow: 0 0 0 1px rgba(197, 164, 111, .7) !important;
+}
+html body #draw :is(.card-back, .pick-card, .tarot-back) .back-frame {
+  width: 100% !important; height: 100% !important; border: 0 !important; border-radius: 14px !important;
+  background: url("/textures/card-back.webp") center / cover no-repeat !important; box-shadow: none !important;
+}
+html body #draw .back-frame::before,
+html body #draw .back-frame::after { display: none !important; content: none !important; }
+html body #draw .rc-card-face {
+  grid-template-rows: minmax(0, 1fr) 46px !important;
+  padding: 0 !important; border: 0 !important; border-radius: 16px !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 0 1px rgba(197, 164, 111, .7) !important;
+}
+html body #draw .rc-card-face::before { display: none !important; }
+html body #draw .rc-card-face .rc-card-face__label { display: none !important; }
+html body #draw .rc-card-face__art { border-radius: 16px 16px 0 0 !important; background: var(--dp-blue) !important; }
+html body #draw .rc-card-face__art img { object-fit: cover !important; }
+html body #draw .rc-card-face__name {
+  border-top: 1px solid rgba(197, 164, 111, .6) !important;
+  color: var(--dp-title) !important; font-family: "Noto Serif TC", serif !important; font-weight: 900 !important; font-size: 18px !important;
+}
+html body #draw .spread-board .tarot-card :is(.tarot-back, .tarot-front) { border-radius: 16px !important; }
+html body #draw .spread-slot__position { color: var(--dp-muted) !important; }
+html body #draw .spread-slot__position b { color: var(--dp-title) !important; }
+
+/* ===== motion v3 (ChatGPT spec, approved in PR #15): transform / opacity only ===== */
+html body #draw .deck-stage.shuffling .card-back { animation: dpShuffle 1000ms cubic-bezier(.42, 0, .25, 1) both !important; }
+html body #draw .deck-stage.shuffling .card-back:nth-child(2n) { animation-name: dpShuffleAlt !important; }
+html body #draw .deck-stage.shuffling .card-back:nth-child(3n) { animation-delay: 60ms !important; }
+@keyframes dpShuffle { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: -8px 0; rotate: -2deg; } 62% { translate: 9px 0; rotate: 2deg; } 86% { translate: -5px 0; rotate: -1deg; } 100% { translate: 0 0; rotate: 0deg; } }
+@keyframes dpShuffleAlt { 0% { translate: 0 0; rotate: 0deg; } 30% { translate: 8px 0; rotate: 2deg; } 62% { translate: -9px 0; rotate: -2deg; } 86% { translate: 5px 0; rotate: 1deg; } 100% { translate: 0 0; rotate: 0deg; } }
+/* the fan opens from the centre, 55ms apart, 300ms each */
+html body #draw .spread-deck.is-opening .pick-card {
+  animation: dpFanIn 300ms cubic-bezier(.22, 1, .36, 1) both !important;
+  animation-delay: calc(var(--order, 0) * 55ms) !important;
+  will-change: transform, opacity;
+}
+@media (max-width: 600px) { html body #draw .spread-deck.is-opening .pick-card { animation-delay: calc(var(--m-order, 0) * 55ms) !important; } }
+html body #draw .spread-deck.is-ready .pick-card { animation: none !important; will-change: auto; }
+@keyframes dpFanIn { from { opacity: 0; translate: 0 18px; } to { opacity: 1; translate: 0 0; } }
+/* the rest close the gap after a pick */
+html body #draw .spread-deck .pick-card {
+  transition: transform 280ms cubic-bezier(.22, 1, .36, 1), translate 180ms cubic-bezier(.22, 1, .36, 1), opacity 220ms ease !important;
+}
+html body #draw .spread-deck .pick-card:active:not(:disabled) { translate: 0 -6px; transition-duration: 90ms !important; }
+/* the picked card lifts 26px, grows to 1.04 and fades upward */
+html body #draw .spread-deck .pick-card.is-picked {
+  z-index: 30; pointer-events: none;
+  animation: dpPick 400ms cubic-bezier(.22, 1, .36, 1) both !important;
+}
+@keyframes dpPick { 0% { translate: 0 0; scale: 1; opacity: 1; } 45% { translate: 0 -26px; scale: 1.04; opacity: 1; } 100% { translate: 0 -48px; scale: 1.04; opacity: 0; } }
+@media (max-width: 600px) {
+  html body #draw .spread-deck .pick-card:is(:hover, :focus-visible, :active) { transform: translateX(calc(var(--m-offset) * var(--fan-step))) rotate(calc(var(--m-offset) * 2deg)) !important; }
+  html body #draw .spread-deck .pick-card:focus-visible { translate: 0 -10px; }
+}
+/* flip 620ms, 120ms pause, 160ms apart; each reading follows its card */
+html body #draw .spread-board .tarot-card .tarot-inner { transition: transform 620ms cubic-bezier(.4, 0, .2, 1) !important; transition-delay: calc(120ms + var(--slot, 0) * 160ms) !important; }
+html body #draw .spread-board .tarot-card { perspective: 1000px; }
+html body #draw .tarot-card :is(.tarot-back, .tarot-front) { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+html body #draw .reading-sequence .card-reading-unit { animation: dpReadIn 420ms ease both !important; animation-delay: calc(760ms + var(--slot, 0) * 160ms) !important; }
+@keyframes dpReadIn { from { opacity: 0; translate: 0 10px; } to { opacity: 1; translate: 0 0; } }
+@media (prefers-reduced-motion: reduce) {
+  html body #draw .deck-stage.shuffling .card-back,
+  html body #draw .spread-deck .pick-card,
+  html body #draw .spread-deck .pick-card.is-picked,
+  html body #draw .reading-sequence .card-reading-unit { animation: none !important; transition: none !important; }
+  html body #draw .spread-board .tarot-card .tarot-inner { transition: none !important; }
+}
+
+/* ===== reading v3: core message → cards → each card's point → actions → full meaning ===== */
+html body #draw .result-intro .reading-label { color: var(--dp-title) !important; font-style: italic; }
+html body #draw .result-intro h2 { color: var(--dp-title) !important; font-family: "Noto Serif TC", serif !important; font-weight: 700 !important; }
+html body #draw .reading-question { color: var(--dp-ink) !important; }
+html body #draw .reading-question b { color: var(--dp-title) !important; }
+html body #draw .core-message {
+  position: relative; margin: 26px auto 0 !important; max-width: 640px;
+  padding: 22px 20px 18px !important;
+  border: 1.5px solid var(--dp-gold) !important; border-radius: 16px !important;
+  outline: .75px solid var(--dp-gold-light); outline-offset: -7px;
+  background: #ffffff !important; box-shadow: none !important; text-align: left;
+}
+html body #draw .core-message::before {
+  content: "" !important; display: block !important; position: absolute !important;
+  left: 50% !important; top: -20px !important; width: 120px !important; height: 38px !important;
+  transform: translateX(-50%) !important; border: 0 !important; background: url("/pendulum/shell-crest.webp") center / contain no-repeat !important;
+  pointer-events: none !important;
+}
+html body #draw .core-message > span { display: block; margin-bottom: 6px; color: var(--dp-title) !important; font: 700 15px/1.5 "Noto Serif TC", serif !important; letter-spacing: .06em; }
+html body #draw .core-message p { margin: 0; color: var(--dp-ink) !important; font-size: 16px !important; font-weight: 500 !important; line-height: 1.9 !important; }
+html body #draw .card-reading-unit {
+  border: 1px solid var(--dp-border) !important; border-radius: 16px !important;
+  background: #ffffff !important; box-shadow: none !important;
+}
+html body #draw .reading-unit-head span { color: var(--dp-muted) !important; }
+html body #draw .reading-unit-head h3 { color: var(--dp-title) !important; font-family: "Noto Serif TC", serif !important; font-size: 21px !important; font-weight: 700 !important; line-height: 1.45 !important; }
+html body #draw .reading-unit-head p { color: var(--dp-muted) !important; font-size: 13px !important; font-weight: 500; line-height: 1.6; }
+html body #draw .position-reading .reading-point { margin: 12px 0 0; }
+html body #draw .position-reading .reading-point b { display: block; margin-bottom: 4px; color: var(--dp-title) !important; font: 700 15px/1.5 "Noto Serif TC", serif !important; }
+html body #draw .position-reading .reading-point p { margin: 0; color: var(--dp-ink) !important; font-size: 16px; font-weight: 500; line-height: 1.9; }
+html body #draw .reading-more { margin-top: 14px; border: 1px solid var(--dp-border); border-radius: 12px; background: var(--dp-blue); }
+html body #draw .reading-more summary {
+  min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 16px; color: var(--dp-title); font: 600 15px/1.4 "Noto Serif TC", serif; cursor: pointer; list-style: none;
+}
+html body #draw .reading-more summary::-webkit-details-marker { display: none; }
+html body #draw .reading-more summary::after { content: "＋"; color: var(--dp-gold); font-size: 18px; }
+html body #draw .reading-more[open] summary::after { content: "－"; }
+html body #draw .reading-more__body { padding: 2px 18px 18px; }
+html body #draw .reading-more__body .reading-point:first-child { margin-top: 0; }
+html body #draw .reading-actions-list {
+  margin: 28px auto 0; max-width: 900px; padding: 22px 20px;
+  border: 1px solid var(--dp-gold); border-radius: 16px; background: var(--dp-blush);
+}
+html body #draw .reading-actions-list h3 { margin: 0 0 12px; color: var(--dp-title); font: 700 21px/1.45 "Noto Serif TC", serif; text-align: center; }
+html body #draw .reading-actions-list ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 14px; }
+html body #draw .reading-actions-list li { padding-top: 14px; border-top: 1px solid rgba(197, 164, 111, .45); }
+html body #draw .reading-actions-list li:first-child { padding-top: 0; border-top: 0; }
+html body #draw .reading-actions-list b { display: block; color: var(--dp-title); font: 600 14px/1.5 "Noto Serif TC", serif; letter-spacing: .04em; }
+html body #draw .reading-actions-list p { margin: 4px 0 0; color: var(--dp-ink); font-size: 16px; font-weight: 500; line-height: 1.85; }
+@media (max-width: 600px) {
+  html body #draw .result-intro h2 { font-size: 30px !important; }
+  html body #draw .reading-sequence { gap: 20px !important; }
+  html body #draw .spread-board { margin-bottom: 24px !important; }
+}
+@media (min-width: 851px) { html body #draw .reading-sequence.count-3 { align-items: start; } }
+
+/* ---------- consult and save ---------- */
+html body #draw .tarot-consult {
+  border: 1px solid var(--dp-border) !important; border-radius: 16px !important;
+  background: #ffffff !important; box-shadow: none !important;
+}
+html body #draw .tarot-consult h3 { color: var(--dp-title) !important; font-family: "Noto Serif TC", serif !important; }
+html body #draw .tarot-consult :is(p, li, small) { color: var(--dp-ink) !important; }
+html body #draw .tarot-consult a:not(.flow-button) { color: var(--dp-title) !important; }
+html body #draw .tarot-consult details { border-color: var(--dp-border) !important; background: var(--dp-blue) !important; }
+
+/* small fixes after the first look */
+html body #draw .tarot-soundscape { border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 0 !important; }
+@media (hover: hover) {
+  html body #draw .spread-deck .pick-card:hover:not(:disabled) { box-shadow: 0 0 0 2px var(--dp-gold) !important; }
+}
+html body #draw .spread-deck .pick-card:focus-visible { box-shadow: 0 0 0 2px var(--dp-title) !important; outline: 0 !important; }
+html body #draw .position-reading { margin-top: 12px !important; padding: 14px 0 0 !important; border: 0 !important; border-top: 1px solid rgba(197, 164, 111, .4) !important; border-radius: 0 !important; background: none !important; box-shadow: none !important; }
+html body #draw .position-reading .reading-point { padding: 0 !important; border: 0 !important; background: none !important; }
+html body #draw .position-reading > .reading-point:first-child { margin-top: 0 !important; }
+html body #draw :is(.result, .reading, .result-intro, .spread-board, .reading-sequence) { background: transparent !important; box-shadow: none !important; }
+/* the outer cards of the phone fan keep a few px of air at 320px */
+@media (max-width: 600px) { html body #draw .spread-deck { --fan-step: min(42px, calc((100vw - 108px) / 6)) !important; } }
+html body #draw summary { min-height: 44px; display: flex; align-items: center; }
