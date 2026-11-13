@@ -102,7 +102,8 @@ const stateCopy: Record<string, string> = {
  */
 function AstroChart({ className = "" }: { className?: string }) {
   const planets = [18, 74, 131, 199, 262, 318];
-  const at = (deg: number, r: number) => [100 + r * Math.cos((deg * Math.PI) / 180), 100 + r * Math.sin((deg * Math.PI) / 180)];
+  // Rounded so the server and the phone print the same numbers (no hydration mismatch).
+  const at = (deg: number, r: number) => [Math.cos, Math.sin].map((f) => Math.round((100 + r * f((deg * Math.PI) / 180)) * 100) / 100);
   return <svg className={`astro-chart ${className}`} viewBox="0 0 200 200" fill="none" stroke="currentColor" aria-hidden="true">
     <circle cx="100" cy="100" r="94" strokeWidth="1.1" /><circle cx="100" cy="100" r="80" strokeWidth=".8" /><circle cx="100" cy="100" r="44" strokeWidth=".8" /><circle cx="100" cy="100" r="7" strokeWidth=".8" />
     {Array.from({ length: 72 }, (_, i) => { const [x1, y1] = at(i * 5, 80); const [x2, y2] = at(i * 5, i % 6 === 0 ? 94 : 85); return <line key={`t${i}`} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth={i % 6 === 0 ? .9 : .5} />; })}

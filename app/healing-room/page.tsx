@@ -33,7 +33,8 @@ function RoomIcon({ id }: { id: string }) {
 function ChartArt() {
   return <svg className="chart-art" viewBox="0 0 120 120" fill="none" stroke="currentColor" strokeWidth="1" aria-hidden="true">
     <circle cx="60" cy="60" r="52" /><circle cx="60" cy="60" r="40" /><circle cx="60" cy="60" r="14" />
-    {Array.from({ length: 12 }, (_, i) => { const a = (i * Math.PI) / 6; return <line key={i} x1={60 + 14 * Math.cos(a)} y1={60 + 14 * Math.sin(a)} x2={60 + 52 * Math.cos(a)} y2={60 + 52 * Math.sin(a)} />; })}
+    {/* Rounded so the server and the phone print the same numbers (no hydration mismatch). */}
+    {Array.from({ length: 12 }, (_, i) => { const a = (i * Math.PI) / 6; const at = (r: number, f: (x: number) => number) => Math.round((60 + r * f(a)) * 100) / 100; return <line key={i} x1={at(14, Math.cos)} y1={at(14, Math.sin)} x2={at(52, Math.cos)} y2={at(52, Math.sin)} />; })}
     <path d="M35 42 60 30 82 47 72 76 44 73Z" strokeDasharray="2 3" /><circle cx="35" cy="42" r="2" fill="currentColor" /><circle cx="82" cy="47" r="2" fill="currentColor" /><circle cx="72" cy="76" r="2" fill="currentColor" />
   </svg>;
 }
