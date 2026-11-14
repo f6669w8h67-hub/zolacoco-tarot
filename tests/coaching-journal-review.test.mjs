@@ -79,3 +79,50 @@ test("review #38: a hand-edited summary can take the two boxes back in; a browse
   const write = tool.slice(tool.indexOf("function writeReviewNotes("), tool.indexOf("// 七日回顧: her seven answers"));
   assert.match(write, /return true;\n  \} catch \{\n    return false;/);
 });
+
+// 寫完當天馬上有回應 (Zola 2026-11-14): the response a writer sees right after saving a day.
+const responses = await loadTypescript("lib/journal-responses.ts");
+const prompts = await loadTypescript("lib/journal-prompts.ts");
+
+test("day responses: seven days, two replies each, a small practice, warm and never a promise", () => {
+  assert.equal(responses.JOURNAL_RESPONSES.length, prompts.JOURNAL_DAYS);
+  for (const [index, day] of responses.JOURNAL_RESPONSES.entries()) {
+    assert.equal(day.replies.length, 2, `day ${index + 1}`);
+    for (const text of [...day.replies, day.practice]) {
+      assert.ok(text.length >= 15, `day ${index + 1}: ${text}`);
+      assert.doesNotMatch(text, /你/, "always 妳");
+      assert.doesNotMatch(text, /(?<!不)一定|注定|永遠|保證|診斷|治療|藥/, `day ${index + 1}: no promises, nothing medical`);
+      assert.doesNotMatch(text, /Zola/, "the site's response, never written as Zola's");
+    }
+  }
+});
+
+test("day responses: her own first sentence comes back, the same note gets the same reply, next is the first unwritten day", () => {
+  assert.equal(responses.echoOf("最近一直覺得很累，好像怎麼做都不夠好。其實我只是想被理解。"), "最近一直覺得很累，好像怎麼做都不夠好");
+  assert.equal(responses.echoOf("  我很好！\n明天再說 "), "我很好");
+  const long = "一".repeat(40);
+  assert.equal(responses.echoOf(long), `${"一".repeat(28)}…`);
+  const none = Array(7).fill(false);
+  const first = responses.journalResponse(1, "今天很平靜", [true, ...none.slice(1)]);
+  assert.equal(first.reply, responses.journalResponse(1, "今天很平靜", [true, ...none.slice(1)]).reply, "deterministic");
+  assert.ok(responses.JOURNAL_RESPONSES[0].replies.includes(first.reply));
+  assert.deepEqual(JSON.parse(JSON.stringify(first.next)), { day: 2, prompt: prompts.journalPromptFor(1, 2) });
+  const skips = responses.journalResponse(3, "寫完了", [true, true, true, true, false, false, false]);
+  assert.equal(skips.next.day, 5, "days 4 is written already: the next unwritten is 5");
+  const wraps = responses.journalResponse(7, "最後一天", [false, true, true, true, true, true, true]);
+  assert.equal(wraps.next.day, 1, "after day 7 it wraps to the first unwritten day");
+  assert.equal(responses.journalResponse(2, "全部寫完", Array(7).fill(true)).next, null, "all seven written: 七日回顧 takes over");
+  assert.equal(responses.journalResponse(1, "   ", none), null, "nothing written, no response");
+});
+
+test("the journal opens the response right after a save (device and 陪跑), hides it while editing, and labels it as the site's", () => {
+  assert.match(tool, /setLocalSave\("saved"\);\s*setResponseFor\(day\);/);
+  assert.match(tool, /setNotice\(\{ tone: "ok", text: "已儲存並同步給 Zola。" \}\);\s*setResponseFor\(day\);/);
+  assert.match(tool, /setLocalSave\("idle"\); setResponseFor\(null\);/, "typing hides the card: it answers what is saved");
+  assert.match(tool, /const dayResponse = savedNote\.trim\(\) && !unsaved \? journalResponse\(/);
+  assert.match(tool, /看這一天的回應/);
+  assert.match(tool, /<h4>謝謝妳，今天也好好看了自己<\/h4>/);
+  assert.match(tool, /href="\/awareness">抽一張覺察卡，當今天的結尾 →<\/Link>/);
+  const card = tool.slice(tool.indexOf("function DayResponseCard"));
+  assert.doesNotMatch(card, /Zola/, "never presented as Zola's reply");
+});
