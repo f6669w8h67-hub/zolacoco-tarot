@@ -155,6 +155,8 @@ test("wheel v2 (Zola 2026-11-14 盤面更細更漂亮): 1° scale, pearl rim, se
   assert.match(page, /藍線：和諧相位（六分、三分）/);
   assert.match(page, /粉線：挑戰相位（四分、對分）/);
   assert.match(page, /沒有出生時間時，月亮的位置不夠準，不畫月亮的相位。/);
+  assert.match(page, /相位要放在整張星盤裡一起看。/, "blue is not always easy, rose is not always hard (review #44)");
+  assert.match(page, /\{chart\.timeKnown \? null : <span>沒有出生時間時，月亮的位置不夠準/, "the Moon note shows even when no aspect is drawn");
 });
 
 test("music never starts by itself, loads only after a tap, and says so when the browser blocks it", () => {

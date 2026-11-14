@@ -389,7 +389,7 @@ function ChartResult({ computed, music, attachBirth, setAttachBirth, onEdit }: {
 
     <figure className="astro-wheel-wrap">
       <ChartWheel wheel={wheel} houses={chart.cusps !== null} />
-      <figcaption>{chart.timeKnown ? `外圈是十二星座，內圈是十二宮（${chart.houseSystem === "placidus" ? "Placidus 宮位制" : "等宮制"}）；日、月、水、金、火、木、土、天、海、冥、北代表各個星體。` : "沒有出生時間，所以只畫出星座與行星，不畫上升、天頂和宮位。"}{wheel.aspects.length ? <span className="astro-wheel-legend"><span><i className="is-soft" aria-hidden="true" />藍線：和諧相位（六分、三分）</span><span><i className="is-hard" aria-hidden="true" />粉線：挑戰相位（四分、對分）</span>{chart.timeKnown ? null : <span>沒有出生時間時，月亮的位置不夠準，不畫月亮的相位。</span>}</span> : null}</figcaption>
+      <figcaption>{chart.timeKnown ? `外圈是十二星座，內圈是十二宮（${chart.houseSystem === "placidus" ? "Placidus 宮位制" : "等宮制"}）；日、月、水、金、火、木、土、天、海、冥、北代表各個星體。` : "沒有出生時間，所以只畫出星座與行星，不畫上升、天頂和宮位。"}<span className="astro-wheel-legend">{wheel.aspects.length ? <><span><i className="is-soft" aria-hidden="true" />藍線：和諧相位（六分、三分）</span><span><i className="is-hard" aria-hidden="true" />粉線：挑戰相位（四分、對分）</span><span>藍線不代表一定順利，粉線也不代表一定不好，相位要放在整張星盤裡一起看。</span></> : null}{chart.timeKnown ? null : <span>沒有出生時間時，月亮的位置不夠準，不畫月亮的相位。</span>}</span></figcaption>
     </figure>
     {chart.houseSystem === "equal" ? <p className="astro-note">出生地點緯度很高，Placidus 宮位在這個時刻無法計算，這裡改用從上升起算的等宮制。</p> : null}
     {!chart.timeKnown ? <p className="astro-note">沒有出生時間時，用出生當天中午排盤：不顯示上升星座、天頂和宮位{Object.keys(chart.uncertain).length ? "；當天換了星座的星體，會列出兩個可能。" : "。"}</p> : null}

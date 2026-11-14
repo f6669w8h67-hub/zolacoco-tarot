@@ -113,7 +113,7 @@
 .astro-wheel-axis { fill: #8a3c57; font: 700 9px "Noto Serif TC", serif; letter-spacing: .06em; paint-order: stroke; stroke: #fffdfb; stroke-width: 3px; }
 .astro-wheel-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 16px; margin-top: 6px; }
 .astro-wheel-legend > span { white-space: nowrap; }
-.astro-wheel-legend > span:last-child:nth-child(3) { white-space: normal; flex-basis: 100%; }
+.astro-wheel-legend > span:nth-child(n + 3), .astro-wheel-legend > span:only-child { white-space: normal; flex-basis: 100%; }
 .astro-wheel-legend i { display: inline-block; width: 18px; height: 0; margin: 0 6px 3px 0; border-top: 1.5px solid #7f9fc8; vertical-align: middle; }
 .astro-wheel-legend i.is-hard { border-top-color: #cf7f98; }
 .astro-wheel-wrap figcaption { margin-top: 8px; color: var(--ap-muted); font-size: 13px; line-height: 1.7; text-align: center; }
