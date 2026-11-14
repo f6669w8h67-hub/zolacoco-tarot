@@ -97,8 +97,12 @@ export default function ArchivePage() {
   const archive: Archive = useMemo(() => ({ ...deviceArchive, [AWARENESS_RECORDS_PREFIX]: awareness.records }), [deviceArchive, awareness.records]);
 
   const total = useMemo(() => sources.reduce((sum, source) => sum + count(archive[source.key]), 0), [archive]);
+  // The full backup and the total wait for the member's 覺察卡 records too, so a backup made right
+  // after opening the page never leaves them out.
+  const archiveReady = ready && awarenessReady;
 
   function exportBackup() {
+    if (!archiveReady) return;
     const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), archive }, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -111,7 +115,7 @@ export default function ArchivePage() {
   return <main className="admin-page">
     <div className="admin-top"><div><p className="eyebrow">ZOLACOCO TAROT · MY ARCHIVE</p><h1>我的存檔</h1></div><div><Link href="/">返回網站</Link></div></div>
     <section className="access-card"><b>手機版與電腦版都能存檔</b><br />紀錄會保存在妳目前使用的瀏覽器；同一台裝置重新開啟網站仍可查看。換手機、換電腦或清除瀏覽器資料前，請先下載備份。</section>
-    <div className="archive-toolbar"><span>目前共 {ready ? total : "—"} 筆存檔</span><button type="button" onClick={exportBackup} disabled={!ready}>下載全部備份</button></div>
+    <div className="archive-toolbar"><span>目前共 {archiveReady ? total : "—"} 筆存檔</span><button type="button" onClick={exportBackup} disabled={!archiveReady}>{archiveReady ? "下載全部備份" : "正在讀取存檔…"}</button></div>
     {sources.map((source) => {
       const value = archive[source.key];
       const entries = Array.isArray(value) ? value : Object.entries(value ?? {}).map(([day, content]) => ({ question: `DAY ${Number(day) + 1}`, summary: content }));

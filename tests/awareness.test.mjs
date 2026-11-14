@@ -91,6 +91,9 @@ test("share image: 1080×1920 with the brand handle; 我的存檔 lists 覺察�
   assert.match(admin, /\}, \[identityKey\]\);/);
   assert.match(admin, /\[AWARENESS_RECORDS_PREFIX\]: awareness\.records/);
   assert.match(admin, /source\.key === AWARENESS_RECORDS_PREFIX && !awarenessReady/);
+  assert.match(admin, /const archiveReady = ready && awarenessReady;/);
+  assert.match(admin, /function exportBackup\(\) \{\n    if \(!archiveReady\) return;/);
+  assert.match(admin, /disabled=\{!archiveReady\}/);
   const header = await read("app/site-header.tsx");
   assert.match(header, /\{ href: "\/awareness", title: "Zolacoco 覺察卡"/);
 });
