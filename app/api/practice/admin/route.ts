@@ -1,24 +1,22 @@
 // 學員練習 (Zola only): students and their progress (GET), one student's answers (GET ?memberId=),
 // and Zola's reply to one answer (POST).
 import { membershipErrorResponse, requireAdmin } from "@/lib/membership";
-import { PRACTICE_QUESTIONS } from "@/lib/practice-bank";
-import { parseFeedbackBody, publicAnswer } from "@/lib/practice-input";
+import { shownAnswer } from "@/lib/practice-bank";
+import { parseFeedbackBody } from "@/lib/practice-input";
 import { ensurePracticeSchema, listMemberAnswers, listStudents, saveFeedback, type PracticeAnswerRow } from "@/lib/practice-store";
 
 export const dynamic = "force-dynamic";
 
 const noStore = { "Cache-Control": "no-store" };
-const versions = new Map(PRACTICE_QUESTIONS.map((question) => [question.id, question.version]));
 
 function adminAnswer(row: PracticeAnswerRow) {
   return {
-    ...publicAnswer(row),
+    // choiceText, scenarioAsked and questionUpdated come from the version this answer was written for
+    ...shownAnswer(row),
     /** never replied */
     waiting: row.feedback_at === null,
     /** the student changed the answer after Zola replied */
     changedAfterFeedback: row.feedback_at !== null && row.reviewed_revision !== null && row.revision > row.reviewed_revision,
-    /** the question has a newer version than the one this answer was written for */
-    questionUpdated: (versions.get(row.question_id) ?? row.question_version) > row.question_version,
   };
 }
 

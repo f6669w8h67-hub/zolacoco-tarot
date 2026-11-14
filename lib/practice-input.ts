@@ -85,3 +85,16 @@ export function publicAnswer(row: PracticeAnswerRow) {
 }
 
 export type PublicAnswer = ReturnType<typeof publicAnswer>;
+
+/** Added by the bank (answerContext): what the answered version of the question said. */
+export type AnswerContext = {
+  /** The option text this answer chose, from the version it answered; null when that version was not kept. */
+  choiceText: string | null;
+  /** The 問事者的問題 the answer was written for; null when there was none or the version was not kept. */
+  scenarioAsked: string | null;
+  /** The question has a newer version than the one this answer was written for. */
+  questionUpdated: boolean;
+};
+
+/** An answer as the pages receive it. */
+export type ShownAnswer = PublicAnswer & AnswerContext;
