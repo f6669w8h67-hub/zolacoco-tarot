@@ -87,17 +87,26 @@ export async function ensureCoachingSchema() {
 
 const ROUND_LIMIT = 20;
 
-/** The member's own rounds (newest first, shared or not) and every note in them. */
+type RoundWithEntries = JournalCycleRow & { entries: JournalEntryRow[] | null };
+
+/** Rows of `SELECT c.*, <entries json> AS entries` split back into rounds and notes. */
+function splitRounds(rows: RoundWithEntries[]) {
+  const cycles = rows.map((row) => Object.fromEntries(Object.entries(row).filter(([key]) => key !== "entries")) as JournalCycleRow);
+  const entries = rows.flatMap((row) => row.entries ?? []);
+  return { cycles, entries };
+}
+
+/** The member's own rounds (newest first, shared or not) and every note in them, in one statement. */
 export async function listOwnJournal(memberId: string) {
   const sql = getSql();
-  const cycles = (await sql`
-    SELECT * FROM journal_cycles WHERE member_id = ${memberId} ORDER BY cycle_number DESC LIMIT ${ROUND_LIMIT}
-  `) as JournalCycleRow[];
-  const entries = cycles.length ? (await sql`
-    SELECT * FROM journal_entries WHERE member_id = ${memberId} AND cycle_id = ANY(${cycles.map((cycle) => cycle.id)}::uuid[])
-    ORDER BY day
-  `) as JournalEntryRow[] : [];
-  return { cycles, entries };
+  const rows = (await sql`
+    SELECT c.*,
+      COALESCE((SELECT json_agg(e ORDER BY e.day) FROM journal_entries e WHERE e.cycle_id = c.id AND e.member_id = c.member_id), '[]'::json) AS entries
+    FROM journal_cycles c
+    WHERE c.member_id = ${memberId}
+    ORDER BY c.cycle_number DESC LIMIT ${ROUND_LIMIT}
+  `) as RoundWithEntries[];
+  return splitRounds(rows);
 }
 
 /**
@@ -213,7 +222,8 @@ export type CoachingMemberRow = {
 
 /**
  * 陪跑中 members, and former ones who still share notes. Counts cover shared rounds only:
- * waiting = never replied; changed = edited after a reply; unseen = a reply the member has not read.
+ * waiting = never replied; changed = edited after a reply; unseen = a reply the member has not read
+ * (same rule as publicEntry().feedbackUnread).
  * cycle_number / days describe the newest shared round.
  */
 export async function listCoachingMembers() {
@@ -224,7 +234,7 @@ export async function listCoachingMembers() {
       count(e.id)::int AS entries,
       (count(e.id) FILTER (WHERE e.feedback_at IS NULL))::int AS waiting,
       (count(e.id) FILTER (WHERE e.feedback_at IS NOT NULL AND e.revision > e.reviewed_revision))::int AS changed,
-      (count(e.id) FILTER (WHERE e.feedback_at IS NOT NULL AND e.feedback_seen_at IS NULL))::int AS unseen,
+      (count(e.id) FILTER (WHERE e.feedback_at IS NOT NULL AND (e.feedback_seen_at IS NULL OR e.feedback_seen_at < e.feedback_at)))::int AS unseen,
       max(e.updated_at) AS last_entry_at
     FROM members m
     LEFT JOIN journal_cycles c ON c.member_id = m.id AND c.share_with_zola
@@ -242,18 +252,22 @@ export async function listCoachingMembers() {
   `) as CoachingMemberRow[];
 }
 
-/** One member's shared rounds and their notes. Rounds the member did not share never leave Neon. */
+/**
+ * One member's shared rounds and their notes, read in ONE statement (one snapshot): if the member takes
+ * a round back while Zola's page is loading, that round and its notes are either both still there or
+ * both gone — never notes fetched by a round id read a moment earlier (review #36 B1).
+ * Rounds a member did not share never leave Neon.
+ */
 export async function listSharedJournal(memberId: string) {
   const sql = getSql();
-  const cycles = (await sql`
-    SELECT * FROM journal_cycles WHERE member_id = ${memberId} AND share_with_zola
-    ORDER BY cycle_number DESC LIMIT ${ROUND_LIMIT}
-  `) as JournalCycleRow[];
-  const entries = cycles.length ? (await sql`
-    SELECT * FROM journal_entries WHERE cycle_id = ANY(${cycles.map((cycle) => cycle.id)}::uuid[])
-    ORDER BY day
-  `) as JournalEntryRow[] : [];
-  return { cycles, entries };
+  const rows = (await sql`
+    SELECT c.*,
+      COALESCE((SELECT json_agg(e ORDER BY e.day) FROM journal_entries e WHERE e.cycle_id = c.id AND e.member_id = c.member_id), '[]'::json) AS entries
+    FROM journal_cycles c
+    WHERE c.member_id = ${memberId} AND c.share_with_zola
+    ORDER BY c.cycle_number DESC LIMIT ${ROUND_LIMIT}
+  `) as RoundWithEntries[];
+  return splitRounds(rows);
 }
 
 /**

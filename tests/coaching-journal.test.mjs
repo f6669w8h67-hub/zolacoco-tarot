@@ -234,11 +234,46 @@ test("store: saves never touch Zola's reply; only shared rounds are written or s
   const feedback = store.slice(store.indexOf("export async function saveEntryFeedback"));
   assert.match(feedback, /SET feedback = \$\{feedback\}, feedback_at = now\(\), reviewed_revision = e\.revision, feedback_seen_at = NULL/);
   assert.match(feedback, /c\.share_with_zola AND e\.revision = \$\{expectedRevision\}/);
-  const shared = store.slice(store.indexOf("export async function listSharedJournal"), store.indexOf("/**\n * Zola's reply"));
-  assert.match(shared, /WHERE member_id = \$\{memberId\} AND share_with_zola/);
   const members = store.slice(store.indexOf("export async function listCoachingMembers"), store.indexOf("/** One member's shared rounds"));
   assert.match(members, /LEFT JOIN journal_cycles c ON c\.member_id = m\.id AND c\.share_with_zola/);
   assert.doesNotMatch(store, /DELETE FROM/, "ending 陪跑 or stopping a round deletes nothing");
+});
+
+test("review #36 B1: Zola's read of a member's rounds is one snapshot; a round taken back never leaks its notes", async () => {
+  // A tiny database: one shared round with two notes. The member takes the round back right after
+  // Zola's first statement runs. Whatever the store does, nothing it returns may come from a round
+  // that was no longer shared when that part was read.
+  const db = { shared: true };
+  const round = { ...cycleRow };
+  const notes = [{ ...entryRow, day: 1, id: "e1" }, { ...entryRow, day: 2, id: "e2" }];
+  const calls = [];
+  const sql = (strings, ...values) => {
+    const text = strings.join("?");
+    calls.push(text);
+    let rows = [];
+    if (/FROM journal_cycles c\s+WHERE c\.member_id = \? AND c\.share_with_zola/.test(text)) {
+      rows = db.shared && values[0] === "m1" ? [{ ...round, entries: /json_agg\(e ORDER BY e\.day\)[\s\S]*WHERE e\.cycle_id = c\.id/.test(text) ? notes : null }] : [];
+    } else if (/FROM journal_entries/.test(text)) {
+      // A second statement would read notes by ids fetched earlier, after the member said stop.
+      rows = text.includes("share_with_zola") && !db.shared ? [] : notes;
+    }
+    db.shared = false; // the member taps 停止同步 right after the first statement
+    return Promise.resolve(rows);
+  };
+  const store = await loadTypescript("lib/coaching-store.ts", { mocks: { "@/lib/membership": { getSql: () => sql } } });
+  const first = await store.listSharedJournal("m1");
+  assert.equal(calls.length, 1, "rounds and notes come from one statement");
+  assert.deepEqual(first.cycles.map((cycle) => cycle.id), [CYCLE]);
+  assert.equal("entries" in first.cycles[0], false, "rounds are plain rounds again");
+  assert.deepEqual(first.entries.map((entry) => entry.id), ["e1", "e2"], "read while still shared: round and notes together");
+  const after = await store.listSharedJournal("m1");
+  assert.equal(after.cycles.length + after.entries.length, 0, "after taking it back, neither the round nor its notes come back");
+  const source = await read("lib/coaching-store.ts");
+  const shared = source.slice(source.indexOf("export async function listSharedJournal"), source.indexOf("/**\n * Zola's reply"));
+  assert.equal((shared.match(/await sql`/g) ?? []).length, 1);
+  assert.match(shared, /WHERE c\.member_id = \$\{memberId\} AND c\.share_with_zola/);
+  const members = source.slice(source.indexOf("export async function listCoachingMembers"), source.indexOf("/**\n * One member's shared rounds"));
+  assert.match(members, /e\.feedback_seen_at IS NULL OR e\.feedback_seen_at < e\.feedback_at/, "unread counts follow publicEntry().feedbackUnread");
 });
 
 test("admin API: a reply to a note changed meanwhile is a 409; an unshared or missing note is a 404", async () => {
