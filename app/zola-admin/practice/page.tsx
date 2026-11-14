@@ -7,12 +7,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { tarotCards } from "@/app/tarot-data";
 import { latestRequest } from "@/lib/latest-request";
-import type { PublicAnswer } from "@/lib/practice-input";
+import type { ShownAnswer } from "@/lib/practice-input";
 import "../../styles/pearl-page.css";
 import "../../practice/practice.css";
 
 type Student = { id: string; email: string; full_name: string | null; status: string; is_student: boolean; answers: number; waiting: number; changed: number; last_answer_at: string | null };
-type AdminAnswer = PublicAnswer & { waiting: boolean; changedAfterFeedback: boolean; questionUpdated: boolean };
+type AdminAnswer = ShownAnswer & { waiting: boolean; changedAfterFeedback: boolean };
 type Question = { id: string; version: number; unit: string; cardId: string; reversed: boolean; scenario: string | null; choose: string; options: { id: string; text: string }[]; draft: boolean };
 type Unit = { id: string; title: string; questions: Question[] };
 type Filter = "all" | "waiting" | "changed";
@@ -126,7 +126,6 @@ function AnswerReview({ answer, found, onSaved }: { answer: AdminAnswer; found: 
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const card = found ? cardById.get(found.question.cardId) : undefined;
-  const chosen = found?.question.options.find((option) => option.id === answer.choice)?.text;
 
   async function save() {
     setBusy(true); setNotice(null);
@@ -154,11 +153,13 @@ function AnswerReview({ answer, found, onSaved }: { answer: AdminAnswer; found: 
         {answer.feedback && answer.feedbackUnread ? <i className="pr-badge is-done">學員未讀</i> : null}
       </span>
     </header>
-    {found?.question.scenario ? <p className="pa-scenario">問題：{found.question.scenario}</p> : null}
+    {/* What the student saw: the scenario and option text of the version this answer was written for. */}
+    {answer.scenarioAsked ? <p className="pa-scenario">問題：{answer.scenarioAsked}</p> : null}
     <dl className="pr-answer">
       {answer.observation ? <><dt>看見的畫面</dt><dd>{answer.observation}</dd></> : null}
       <dt>學員的解讀</dt><dd>{answer.reading}</dd>
-      {chosen ? <><dt>第一次選的解讀{answer.correct ? "（有依據）" : "（陷阱選項）"}</dt><dd>{chosen}</dd></> : null}
+      <dt>第一次選的解讀{answer.correct ? "（有依據）" : "（陷阱選項）"}</dt>
+      <dd>{answer.choiceText ?? "舊版題目的選項沒有保留下來。"}{answer.questionUpdated ? <small>學員作答時是舊版題目。</small> : null}</dd>
       {answer.revisedReading && answer.revisedReading !== answer.reading ? <><dt>修正後的解讀</dt><dd>{answer.revisedReading}</dd></> : null}
     </dl>
     <label className="pr-field"><span>給學員的回覆</span>

@@ -119,7 +119,7 @@ test("bank: real cards, unique ids, three options with one right answer, scenes 
   const hermit = bank.PRACTICE_QUESTIONS.find((question) => question.cardId === "major-09");
   assert.doesNotMatch(hermit.options[0].text, /獨自/, "the site's 隱者 has 蝦蝦 beside him");
   assert.equal(bank.PRACTICE_QUESTIONS.some((question) => question.unit === "gateway"), false, "門戶牌 waits for Zola's definition");
-  // Published 2026-11-14 after Zola confirmed the drafts (doc 「直覺練習｜學員練習題庫初稿」).
+  // Published 2026-11-14: Zola confirmed all 124 questions for students (doc 「直覺練習｜學員練習題庫初稿」).
   const counts = Object.fromEntries(bank.PRACTICE_UNITS.map((unit) => [unit.id, bank.PRACTICE_QUESTIONS.filter((question) => question.unit === unit.id).length]));
   assert.deepEqual(JSON.parse(JSON.stringify(counts)), { major: 22, minor: 40, court: 16, practice: 12, gateway: 0, body: 12, spread: 10, reversed: 12 });
   const slots = new Set(bank.PRACTICE_QUESTIONS.map((question) => question.options.find((option) => option.correct).id));
@@ -176,7 +176,7 @@ test("B4 the student's own fields only, checked and trimmed; feedback state for 
   assert.equal(input.publicAnswer({ ...row, reviewed_revision: 3, feedback_seen_at: "2026-11-14T02:30:00Z" }).feedbackUnread, false);
 });
 
-async function practiceRoute({ member, saveResult, onSave }) {
+async function practiceRoute({ member, saveResult, onSave, answers = [] }) {
   let schemaTouched = false;
   const route = await loadTypescript("app/api/practice/route.ts", {
     mocks: {
@@ -186,7 +186,7 @@ async function practiceRoute({ member, saveResult, onSave }) {
       },
       "@/lib/practice-store": {
         ensurePracticeSchema: async () => { schemaTouched = true; },
-        listAnswers: async () => [],
+        listAnswers: async () => answers,
         saveAnswer: async (...args) => { onSave?.(...args); return saveResult; },
       },
     },
@@ -313,4 +313,73 @@ test("review #33 B2: signed out, /practice shows its short note; the practice AP
   const page = await read("app/practice/page.tsx");
   assert.match(page, /"signed-out": \["這裡是學員練習室", "由 Zola 開通學員身分後才能使用。已經是學員的話，請先登入。"\]/);
   assert.match(page, /"not-student": \["這裡是學員練習室", "由 Zola 開通學員身分後才能使用。"\]/);
+});
+
+test("version history: every rewritten question keeps the texts of each earlier version", async () => {
+  const history = await loadTypescript("lib/practice-history.ts");
+  for (const question of bank.PRACTICE_QUESTIONS) {
+    const kept = history.PRACTICE_HISTORY[question.id] ?? {};
+    for (let version = 1; version < question.version; version += 1) {
+      const snapshot = kept[version];
+      assert.ok(snapshot, `${question.id} v${version} is kept before moving to v${question.version}`);
+      assert.equal(snapshot.options.map((option) => option.id).join(""), "abc", `${question.id} v${version}`);
+      assert.ok(snapshot.options.every((option) => option.text.length > 0 && !("correct" in option) && !("note" in option)), "texts only");
+    }
+    assert.ok(Object.keys(kept).every((version) => Number(version) < question.version), `${question.id}: no snapshot of the current or a future version`);
+  }
+  assert.equal(Object.keys(history.PRACTICE_HISTORY).length, 6, "the six questions rewritten when the bank was published");
+});
+
+test("an old answer is shown with the option it chose then, never with the new option under the same letter", async () => {
+  const hermit = bank.PRACTICE_QUESTIONS.find((question) => question.id === "major-09-a");
+  assert.equal(hermit.version, 2);
+  const old = bank.answerContext({ questionId: "major-09-a", questionVersion: 1, choice: "a" });
+  assert.match(old.choiceText, /雪山頂、提著燈/, "v1 option a was the right reading");
+  assert.notEqual(old.choiceText, hermit.options.find((option) => option.id === "a").text, "v2 moved the options");
+  assert.equal(old.questionUpdated, true);
+
+  const trap = hermit.options.find((option) => !option.correct);
+  const now = bank.answerContext({ questionId: "major-09-a", questionVersion: 2, choice: trap.id });
+  assert.equal(now.choiceText, trap.text);
+  assert.equal(now.questionUpdated, false);
+
+  assert.equal(bank.answerContext({ questionId: "major-09-a", questionVersion: 7, choice: "a" }).choiceText, null, "a version not kept shows no option text");
+  assert.deepEqual(JSON.parse(JSON.stringify(bank.answerContext({ questionId: "gone-x", questionVersion: 1, choice: "a" }))), { choiceText: null, scenarioAsked: null, questionUpdated: false });
+
+  const swords = bank.answerContext({ questionId: "practice-swords-05-a", questionVersion: 1, choice: "b" });
+  assert.match(swords.scenarioAsked, /吵架後一直沒聯絡/, "the scenario the student was asked then");
+  assert.match(swords.choiceText, /友情已經結束/);
+  const reversedOld = bank.answerContext({ questionId: "reversed-pentacles-04-a", questionVersion: 1, choice: "a" });
+  assert.match(reversedOld.scenarioAsked, /存不了錢/);
+});
+
+test("API: student and admin lists carry the chosen text of the answered version", async () => {
+  const v1Trap = { ...savedRow, question_version: 1, choice: "b", correct: false };
+  const student = await practiceRoute({ member: { id: "m1", role: "member", is_student: true }, answers: [v1Trap] });
+  const [mine] = (await (await student.route.GET()).json()).answers;
+  assert.match(mine.choiceText, /灰色斗篷/, "v1 option b, the trap the student actually picked");
+  assert.equal(mine.questionUpdated, true);
+  assert.equal(mine.correct, false);
+
+  const route = await loadTypescript("app/api/practice/admin/route.ts", {
+    mocks: {
+      "@/lib/membership": { requireAdmin: async () => ({ id: "admin-1", role: "admin" }), membershipErrorResponse: () => Response.json({ error: "x" }, { status: 500 }) },
+      "@/lib/practice-store": { ensurePracticeSchema: async () => {}, listMemberAnswers: async () => [v1Trap], listStudents: async () => [], saveFeedback: async () => ({ ok: false, current: null }) },
+    },
+  });
+  const [seen] = (await (await route.GET(new Request(`https://example.test/api/practice/admin?memberId=${savedRow.id}`))).json()).answers;
+  assert.equal(seen.choiceText, mine.choiceText);
+  assert.equal(seen.questionUpdated, true);
+  assert.equal(seen.waiting, true);
+});
+
+test("pages: a saved answer's choice is read from choiceText, not looked up in the current options", async () => {
+  for (const file of ["app/practice/page.tsx", "app/zola-admin/practice/page.tsx"]) {
+    const page = await read(file);
+    assert.doesNotMatch(page, /option\.id === answer\.choice/, `${file} never maps an old choice onto the new options`);
+    assert.match(page, /answer\.choiceText/, file);
+    assert.match(page, /舊版題目的選項沒有保留下來。/, file);
+  }
+  assert.match(await read("app/practice/page.tsx"), /這是題目更新前寫的作答/);
+  assert.match(await read("app/zola-admin/practice/page.tsx"), /answer\.scenarioAsked/, "Zola sees the question the student was asked");
 });

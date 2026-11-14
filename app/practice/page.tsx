@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useIdentityKey } from "@/app/auth-identity";
 import { TarotCardFace } from "@/app/tarot-card";
 import { tarotCards, type TarotCard } from "@/app/tarot-data";
-import type { PublicAnswer } from "@/lib/practice-input";
+import type { ShownAnswer } from "@/lib/practice-input";
 import "../styles/pearl-page.css";
 import "./practice.css";
 
@@ -20,7 +20,7 @@ type Question = {
   observe: string; read: string; choose: string; options: Option[]; draft: boolean;
 };
 type Unit = { id: string; level: "基礎" | "進階"; title: string; focus: string; questions: Question[] };
-type Catalog = { access: "student" | "admin"; units: Unit[]; answers: PublicAnswer[] };
+type Catalog = { access: "student" | "admin"; units: Unit[]; answers: ShownAnswer[] };
 type Judged = { correct: boolean; note: string; rightNote: string; sample: string | null };
 
 type Load =
@@ -75,7 +75,7 @@ function PracticeRoom({ waiting }: { waiting: boolean }) {
     return () => { active = false; };
   }, [waiting]);
 
-  const updateAnswer = useCallback((answer: PublicAnswer) => {
+  const updateAnswer = useCallback((answer: ShownAnswer) => {
     setLoad((current) => current.state !== "ready" ? current : { state: "ready", data: { ...current.data, answers: [answer, ...current.data.answers.filter((item) => item.questionId !== answer.questionId)] } });
   }, []);
 
@@ -121,7 +121,7 @@ function PracticeRoom({ waiting }: { waiting: boolean }) {
   </main>;
 }
 
-function Home({ data, answers, onOpenUnit, onSeen }: { data: Catalog; answers: Map<string, PublicAnswer>; onOpenUnit: (id: string) => void; onSeen: (answer: PublicAnswer) => void }) {
+function Home({ data, answers, onOpenUnit, onSeen }: { data: Catalog; answers: Map<string, ShownAnswer>; onOpenUnit: (id: string) => void; onSeen: (answer: ShownAnswer) => void }) {
   const unread = data.answers.filter((answer) => answer.feedbackUnread).length;
   return <>
     <header className="pr-hero">
@@ -154,7 +154,7 @@ function Home({ data, answers, onOpenUnit, onSeen }: { data: Catalog; answers: M
   </>;
 }
 
-function UnitView({ unit, answers, onBack, onOpen }: { unit: Unit; answers: Map<string, PublicAnswer>; onBack: () => void; onOpen: (id: string) => void }) {
+function UnitView({ unit, answers, onBack, onOpen }: { unit: Unit; answers: Map<string, ShownAnswer>; onBack: () => void; onOpen: (id: string) => void }) {
   return <section className="pr-unit-view">
     <button type="button" className="pr-back" onClick={onBack}>← 全部單元</button>
     <p className="pr-kicker">{unit.level}</p>
@@ -185,7 +185,7 @@ function PracticeCard({ card, reversed }: { card: TarotCard | undefined; reverse
   </div>;
 }
 
-function QuestionFlow({ question, unit, answer, onSaved, onBack, onNext }: { question: Question; unit: Unit; answer: PublicAnswer | null; onSaved: (answer: PublicAnswer) => void; onBack: () => void; onNext: () => void }) {
+function QuestionFlow({ question, unit, answer, onSaved, onBack, onNext }: { question: Question; unit: Unit; answer: ShownAnswer | null; onSaved: (answer: ShownAnswer) => void; onBack: () => void; onNext: () => void }) {
   const card = cardById.get(question.cardId);
   const [redo, setRedo] = useState(answer === null);
   const [step, setStep] = useState(1);
@@ -219,7 +219,7 @@ function QuestionFlow({ question, unit, answer, onSaved, onBack, onNext }: { que
     }).catch(() => null);
     setBusy(false);
     if (!result) { setNotice({ tone: "error", text: "網路不穩，這一題還沒有存好，請再按一次儲存。" }); return; }
-    const returned = result.data?.answer as PublicAnswer | undefined;
+    const returned = result.data?.answer as ShownAnswer | undefined;
     if (result.status === 409 && returned) {
       onSaved(returned);
       setExpectedRevision(returned.revision);
@@ -244,7 +244,7 @@ function QuestionFlow({ question, unit, answer, onSaved, onBack, onNext }: { que
 
     {!redo && answer ? <div className="pr-previous">
       <h2>妳上次的作答</h2>
-      <AnswerDetail answer={answer} question={question} />
+      <AnswerDetail answer={answer} />
       <button type="button" className="pr-primary" onClick={() => { setRedo(true); setReading(answer.reading); setObservation(answer.observation); }}>重新練習這一題</button>
     </div> : <>
       <ol className="pr-steps" aria-label="練習步驟">
@@ -305,22 +305,26 @@ function QuestionFlow({ question, unit, answer, onSaved, onBack, onNext }: { que
   </section>;
 }
 
-function AnswerDetail({ answer, question }: { answer: PublicAnswer; question: Question | undefined }) {
-  const chosen = question?.options.find((option) => option.id === answer.choice)?.text;
+function AnswerDetail({ answer }: { answer: ShownAnswer }) {
+  // choiceText is the option chosen in the version this answer was written for, never the new options.
+  const verdict = answer.correct ? "（第一次就選到有依據的解讀）" : "（之後再選到有依據的解讀）";
   return <dl className="pr-answer">
+    {answer.questionUpdated ? <><dt>題目已更新</dt><dd>這是題目更新前寫的作答，重新練習會用新的題目。</dd></> : null}
+    {answer.questionUpdated && answer.scenarioAsked ? <><dt>當時的問題</dt><dd>{answer.scenarioAsked}</dd></> : null}
     {answer.observation ? <><dt>看見的畫面</dt><dd>{answer.observation}</dd></> : null}
     <dt>我的解讀</dt><dd>{answer.reading}</dd>
-    {chosen ? <><dt>第一次選的解讀</dt><dd>{chosen}<small>{answer.correct ? "（第一次就選到有依據的解讀）" : "（之後再選到有依據的解讀）"}</small></dd></> : null}
+    {answer.choiceText ? <><dt>第一次選的解讀</dt><dd>{answer.choiceText}<small>{verdict}</small></dd></>
+      : answer.questionUpdated ? <><dt>第一次選的解讀</dt><dd>舊版題目的選項沒有保留下來。<small>{verdict}</small></dd></> : null}
     {answer.revisedReading && answer.revisedReading !== answer.reading ? <><dt>修正後的解讀</dt><dd>{answer.revisedReading}</dd></> : null}
     {answer.feedback ? <><dt>Zola 的回覆<small>{formatDate(answer.feedbackAt)}</small></dt><dd className="pr-feedback">{answer.feedback}{answer.feedbackOutdated ? <small>這則回覆是針對妳修改前的作答。</small> : null}</dd></> : null}
   </dl>;
 }
 
-function Records({ data, onSeen }: { data: Catalog; onSeen: (answer: PublicAnswer) => void }) {
+function Records({ data, onSeen }: { data: Catalog; onSeen: (answer: ShownAnswer) => void }) {
   const [open, setOpen] = useState<string | null>(null);
   const questions = useMemo(() => new Map(data.units.flatMap((unit) => unit.questions.map((question) => [question.id, { question, unit }] as const))), [data.units]);
 
-  async function toggle(answer: PublicAnswer) {
+  async function toggle(answer: ShownAnswer) {
     const next = open === answer.id ? null : answer.id;
     setOpen(next);
     if (next && answer.feedbackUnread) {
@@ -340,7 +344,7 @@ function Records({ data, onSeen }: { data: Catalog; onSeen: (answer: PublicAnswe
             <span><b>{card?.name ?? "練習題"}{found?.question.reversed ? "（逆位）" : ""}</b><small>{found?.unit.title ?? "已下架的題目"}・{formatDate(answer.updatedAt)}</small></span>
             {answer.feedbackUnread ? <i className="pr-badge is-new">新回覆</i> : answer.feedback ? <i className="pr-badge is-done">Zola 回覆了</i> : null}
           </button>
-          {open === answer.id ? <AnswerDetail answer={answer} question={found?.question} /> : null}
+          {open === answer.id ? <AnswerDetail answer={answer} /> : null}
         </li>;
       })}
     </ul>}
