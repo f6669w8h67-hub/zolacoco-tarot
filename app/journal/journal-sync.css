@@ -82,3 +82,35 @@ html body #explore .journal-tool .day-picker button { flex: 1 1 0; min-width: 0;
 @media (max-width: 360px) {
   html body #explore .tool-stage:has(> .journal-tool) { padding-left: 12px !important; padding-right: 12px !important; }
 }
+
+/* 七日回顧: the banner when seven days are written, the review itself and the LINE message */
+html body #explore .journal-tool .js-complete {
+  margin: 18px 0 6px; padding: 18px; display: grid; justify-items: center; gap: 8px; text-align: center;
+  border: 1px solid var(--hp-gold); border-radius: 18px; background: linear-gradient(180deg, #fdf8fb 0%, #f3f8fd 100%);
+}
+html body #explore .journal-tool .js-complete b { color: var(--hp-title); font-size: 18px; }
+html body #explore .journal-tool .js-complete p { margin: 0; color: var(--hp-muted); font-size: 15px; line-height: 1.7; }
+html body #explore .journal-tool .js-review { margin-top: 16px; display: grid; gap: 14px; text-align: left; }
+html body #explore .journal-tool .js-review > p { margin: 0; color: var(--hp-muted); line-height: 1.8; }
+html body #explore .journal-tool .js-review > h3 { margin: 0; text-align: center; }
+html body #explore .journal-tool .js-kicker { margin: 0; color: var(--hp-title) !important; font: italic 600 14px/1.4 "Cormorant Garamond", "Noto Serif TC", serif; letter-spacing: .08em; text-align: center; }
+html body #explore .journal-tool .js-review-days { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+html body #explore .journal-tool .js-review-days li { padding: 14px 16px; display: grid; gap: 6px; border: 1px solid var(--hp-line); border-radius: 16px; background: #ffffff; }
+html body #explore .journal-tool .js-review-days b { color: var(--hp-title); font-size: 15px; line-height: 1.6; }
+html body #explore .journal-tool .js-review-days p { margin: 0; color: var(--hp-ink); font-size: 15px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+html body #explore .journal-tool .js-review-days .js-review-reply { padding-top: 6px; border-top: 1px dashed var(--hp-line); color: var(--hp-muted); font-size: 14px; }
+html body #explore .journal-tool .js-review-reply span { color: var(--hp-title); font-weight: 700; }
+html body #explore .journal-tool .js-field { display: grid; gap: 4px; color: var(--hp-title); font-weight: 700; font-size: 16px; }
+html body #explore .journal-tool .js-field small { color: var(--hp-muted); font-weight: 400; font-size: 14px; line-height: 1.7; }
+html body #explore .journal-tool .js-field textarea { min-height: 96px; margin: 6px 0 0; font-weight: 400; }
+html body #explore .journal-tool .js-next {
+  padding: 18px; display: grid; gap: 10px; border: 1px solid var(--hp-gold); border-radius: 18px; background: #ffffff;
+}
+html body #explore .journal-tool .js-next > b { color: var(--hp-title); font-size: 17px; }
+html body #explore .journal-tool .js-next > p { margin: 0; color: var(--hp-muted); font-size: 15px; line-height: 1.8; }
+html body #explore .journal-tool .js-preview {
+  margin: 0; padding: 12px 14px; border: 1px dashed var(--hp-line); border-radius: 12px; background: #fdf8fb;
+  color: var(--hp-ink); font: 14px/1.8 "Noto Serif TC", serif; white-space: pre-wrap; overflow-wrap: anywhere;
+}
+html body #explore .journal-tool .js-line { justify-self: center; text-decoration: none; }
+html body #explore .journal-tool .js-review > .js-link { justify-self: center; }
