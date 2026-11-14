@@ -100,6 +100,8 @@ test("day responses: seven days, two replies each, a small practice, warm and ne
 test("day responses: her own first sentence comes back, the same note gets the same reply, next is the first unwritten day", () => {
   assert.equal(responses.echoOf("最近一直覺得很累，好像怎麼做都不夠好。其實我只是想被理解。"), "最近一直覺得很累，好像怎麼做都不夠好");
   assert.equal(responses.echoOf("  我很好！\n明天再說 "), "我很好");
+  assert.equal(responses.echoOf("第一行沒有標點\n第二行接著寫"), "第一行沒有標點", "a line break ends the sentence (review #45)");
+  assert.equal(responses.echoOf("\n\n  空行之後才開始寫。"), "空行之後才開始寫");
   const long = "一".repeat(40);
   assert.equal(responses.echoOf(long), `${"一".repeat(28)}…`);
   const none = Array(7).fill(false);
@@ -122,6 +124,7 @@ test("the journal opens the response right after a save (device and 陪跑), hid
   assert.match(tool, /const dayResponse = savedNote\.trim\(\) && !unsaved \? journalResponse\(/);
   assert.match(tool, /看這一天的回應/);
   assert.match(tool, /<h4>謝謝妳，今天也好好看了自己<\/h4>/);
+  assert.match(tool, /DAY \{day\} · 今天的小提醒/, "a daily reminder, not an analysis of her note (review #45)");
   assert.match(tool, /href="\/awareness">抽一張覺察卡，當今天的結尾 →<\/Link>/);
   const card = tool.slice(tool.indexOf("function DayResponseCard"));
   assert.doesNotMatch(card, /Zola/, "never presented as Zola's reply");

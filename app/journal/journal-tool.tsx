@@ -438,10 +438,14 @@ function SevenDayReview({ days, storeKey, coaching, onClose }: {
   </section>;
 }
 
-/** 寫完當天馬上有回應: what she wrote, a reply to that day's question, one small practice, and where to go next. */
+/**
+ * 寫完當天馬上有回應: what she wrote, a gentle reminder for that day's question, one small practice, and
+ * where to go next. A daily reminder from the site (picked by the note's characters), not an analysis of
+ * what she wrote (review #45), so the card never says it understood her feelings.
+ */
 function DayResponseCard({ day, response, onNext }: { day: number; response: NonNullable<ReturnType<typeof journalResponse>>; onNext: (day: number) => void }) {
   return <section className="js-response" aria-label={`第 ${day} 天寫完的回應`} role="status">
-    <small className="js-response-kicker">DAY {day} · 寫完了</small>
+    <small className="js-response-kicker">DAY {day} · 今天的小提醒</small>
     <h4>謝謝妳，今天也好好看了自己</h4>
     {response.echo ? <p className="js-response-echo"><span>妳寫下</span>「{response.echo}」</p> : null}
     <p className="js-response-reply">{response.reply}</p>

@@ -63,8 +63,9 @@ const ECHO_LIMIT = 28;
 
 /** Her own first sentence, shown back to her (on her screen only). */
 export function echoOf(note: string) {
-  const clean = note.replace(/\s+/g, " ").trim();
-  const first = clean.split(/(?<=[。！？!?])|\n/)[0]?.trim() ?? "";
+  // A line break ends the first sentence too (review #45): split first, then tidy the spaces.
+  const firstLine = note.trim().split(/\r?\n/).find((line) => line.trim()) ?? "";
+  const first = firstLine.replace(/\s+/g, " ").trim().split(/(?<=[。！？!?])/)[0]?.trim() ?? "";
   const sentence = first.replace(/[。！？!?]+$/, "");
   return sentence.length > ECHO_LIMIT ? `${sentence.slice(0, ECHO_LIMIT)}…` : sentence;
 }
