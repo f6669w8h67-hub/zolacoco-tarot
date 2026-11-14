@@ -25,6 +25,7 @@
 .zola-admin-page.pearl-page .member-status.status-pending { background: #fff6dc; color: #7a5b12; }
 .zola-admin-page.pearl-page .member-status:is(.status-suspended, .status-expired) { background: var(--za-blush); color: #b4405f; }
 .zola-admin-page.pearl-page .member-status.member-student { margin-left: 6px; border: 1px solid var(--za-gold); background: #ffffff; color: var(--za-title); }
+.zola-admin-page.pearl-page .member-status.member-coaching { margin-left: 6px; border: 1px solid var(--za-chip); background: var(--za-blue); color: var(--za-ink); }
 .zola-admin-page.pearl-page .member-admin-identity h2 { color: var(--za-title); font: 700 20px/1.4 "Noto Serif TC", serif; }
 .zola-admin-page.pearl-page .member-admin-identity p { color: var(--za-ink); }
 .zola-admin-page.pearl-page .member-admin-identity small { color: var(--za-muted); font-size: 13px; }

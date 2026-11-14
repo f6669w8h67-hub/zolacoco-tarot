@@ -1,4 +1,4 @@
-import { hasMemberAccess, hasStudentAccess, isClerkConfigured } from "./membership-access";
+import { hasCoachingAccess, hasMemberAccess, hasStudentAccess, isClerkConfigured } from "./membership-access";
 import { neon, type NeonQueryFunction } from "@neondatabase/serverless";
 import { auth, currentUser } from "@clerk/nextjs/server";
 
@@ -17,6 +17,8 @@ export type Membership = {
   status: MembershipStatus;
   /** Zola's student (學員練習室). Separate from VIP months. */
   is_student: boolean;
+  /** 陪跑中 (七日塔羅筆記 × 陪跑). Separate from VIP months and from is_student. */
+  is_coaching: boolean;
   effective_status: MembershipStatus;
   access_starts_at: string | null;
   access_expires_at: string | null;
@@ -69,6 +71,8 @@ export async function ensureMembershipSchema() {
     `;
     // 學員練習室: Zola marks her students. Existing members are not students.
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS is_student boolean NOT NULL DEFAULT false`;
+    // 七日塔羅筆記 × 陪跑: Zola marks who is 陪跑中. Existing members are not.
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS is_coaching boolean NOT NULL DEFAULT false`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS members_email_lower_idx ON members (lower(email))`;
     await sql`CREATE INDEX IF NOT EXISTS members_status_expiry_idx ON members (status, access_expires_at)`;
     await sql`
@@ -89,6 +93,9 @@ export async function ensureMembershipSchema() {
     // The student switch is audited with its value before and after.
     await sql`ALTER TABLE member_access_audit ADD COLUMN IF NOT EXISTS previous_student boolean`;
     await sql`ALTER TABLE member_access_audit ADD COLUMN IF NOT EXISTS new_student boolean`;
+    // So is the 陪跑中 switch.
+    await sql`ALTER TABLE member_access_audit ADD COLUMN IF NOT EXISTS previous_coaching boolean`;
+    await sql`ALTER TABLE member_access_audit ADD COLUMN IF NOT EXISTS new_coaching boolean`;
     await sql`
       CREATE INDEX IF NOT EXISTS member_access_audit_member_created_idx
       ON member_access_audit (member_id, created_at DESC)
@@ -206,6 +213,13 @@ export async function requireActiveMember() {
 export async function requireStudent() {
   const member = await syncCurrentMember();
   if (!hasStudentAccess(member)) throw new MembershipError("NOT_STUDENT", 403);
+  return member;
+}
+
+/** 陪跑筆記: Zola, or a member she marked as 陪跑中 (not suspended). VIP months not needed. */
+export async function requireCoaching() {
+  const member = await syncCurrentMember();
+  if (!hasCoachingAccess(member)) throw new MembershipError("NOT_COACHING", 403);
   return member;
 }
 

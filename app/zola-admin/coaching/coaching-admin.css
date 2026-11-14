@@ -1,0 +1,7 @@
+/* Zola's 陪跑筆記 page (/zola-admin/coaching). Built on practice.css (pearl panels, rose titles);
+   only the round headings and the prompt line under each day are new. */
+.coaching-admin .ca-round { margin-top: 18px; display: grid; gap: 4px; }
+.coaching-admin .ca-round > h3 { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding-bottom: 6px; border-bottom: 1px solid var(--pr-line); }
+.coaching-admin .ca-round > h3 small { color: var(--pr-muted); font-size: 13px; font-weight: 400; }
+.coaching-admin .ca-round .pa-answers { margin-top: 10px; }
+.coaching-admin .pa-answer > header small:nth-of-type(1) { color: var(--pr-ink); font-size: 14px; line-height: 1.6; }

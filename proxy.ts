@@ -6,6 +6,7 @@ import {
   allowsMembershipPreview,
   hasMemberAccess,
   isClerkConfigured,
+  isCoachingRoute,
   isMembershipServiceRoute,
   isPublicMembershipPage,
   isStudentPage,
@@ -35,6 +36,8 @@ const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
   }
   // Students need not hold VIP months: the practice page and APIs check the student on the server.
   if (isStudentRoute(request.nextUrl.pathname)) return NextResponse.next();
+  // 陪跑中 members need not hold VIP months either: every coaching API checks the person itself.
+  if (isCoachingRoute(request.nextUrl.pathname)) return NextResponse.next();
   if (!process.env.DATABASE_URL) return unavailable(request, "MEMBERSHIP_NOT_CONFIGURED");
 
   let rows;
