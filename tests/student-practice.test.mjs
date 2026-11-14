@@ -118,25 +118,42 @@ test("bank: real cards, unique ids, three options with one right answer, scenes 
   }
   const hermit = bank.PRACTICE_QUESTIONS.find((question) => question.cardId === "major-09");
   assert.doesNotMatch(hermit.options[0].text, /獨自/, "the site's 隱者 has 蝦蝦 beside him");
-  for (const unit of ["gateway", "spread"]) assert.equal(bank.PRACTICE_QUESTIONS.some((question) => question.unit === unit), false, `${unit} waits for Zola's material`);
+  assert.equal(bank.PRACTICE_QUESTIONS.some((question) => question.unit === "gateway"), false, "門戶牌 waits for Zola's definition");
+  // Published 2026-11-14 after Zola confirmed the drafts (doc 「直覺練習｜學員練習題庫初稿」).
+  const counts = Object.fromEntries(bank.PRACTICE_UNITS.map((unit) => [unit.id, bank.PRACTICE_QUESTIONS.filter((question) => question.unit === unit.id).length]));
+  assert.deepEqual(JSON.parse(JSON.stringify(counts)), { major: 22, minor: 40, court: 16, practice: 12, gateway: 0, body: 12, spread: 10, reversed: 12 });
+  const slots = new Set(bank.PRACTICE_QUESTIONS.map((question) => question.options.find((option) => option.correct).id));
+  assert.deepEqual([...slots].sort(), ["a", "b", "c"], "the right answer is not always in the same place");
+  for (const question of bank.PRACTICE_QUESTIONS) {
+    const right = question.options.find((option) => option.correct);
+    assert.doesNotMatch(right.text, /(?<!不)一定|注定|永遠|這輩子/, `${question.id}: a right answer never promises`);
+    if (question.unit === "reversed") assert.equal(question.reversed, true, question.id);
+    if (["practice", "spread", "reversed"].includes(question.unit)) assert.ok(question.scenario, `${question.id} has a client question`);
+  }
 });
 
-test("B5 drafts never reach students; Zola sees them; the page gets no right answers", () => {
-  assert.ok(bank.PRACTICE_QUESTIONS.every((question) => question.status === "draft"), "nothing is published before Zola confirms it");
+test("B5 drafts never reach students; Zola sees them; the page gets no right answers", async () => {
+  // The rule, on a bank with one draft beside one published question.
+  const sample = bank.PRACTICE_QUESTIONS.find((question) => question.id === "major-09-a");
+  const mixed = await loadTypescript("lib/practice-bank.ts", { mocks: { "@/lib/practice-questions": { PRACTICE_QUESTIONS: [{ ...sample, id: "draft-x", status: "draft" }, sample] } } });
+  assert.equal(mixed.practiceCatalog(false).reduce((sum, unit) => sum + unit.questions.length, 0), 1, "students see the published one only");
+  const preview = mixed.practiceCatalog(true).flatMap((unit) => unit.questions);
+  assert.equal(preview.length, 2);
+  assert.equal(preview.find((question) => question.id === "draft-x").draft, true);
+  assert.equal(mixed.visibleQuestion("draft-x", false), null);
+  assert.ok(mixed.visibleQuestion("draft-x", true));
+  // The real bank: everything Zola confirmed is published; the page never gets the answers.
+  assert.ok(bank.PRACTICE_QUESTIONS.every((question) => question.status === "published"));
   const student = bank.practiceCatalog(false);
-  assert.equal(student.reduce((sum, unit) => sum + unit.questions.length, 0), 0);
-  const admin = bank.practiceCatalog(true);
-  assert.equal(admin.reduce((sum, unit) => sum + unit.questions.length, 0), bank.PRACTICE_QUESTIONS.length);
-  const shown = admin.flatMap((unit) => unit.questions)[0];
-  assert.equal(shown.draft, true);
-  assert.equal(JSON.stringify(admin).includes("\"correct\""), false);
-  assert.equal(JSON.stringify(admin).includes("\"note\""), false);
-  assert.equal(bank.visibleQuestion("major-09-a", false), null);
-  assert.ok(bank.visibleQuestion("major-09-a", true));
-  const judged = bank.judgeChoice(bank.visibleQuestion("major-09-a", true), "b");
+  assert.equal(student.reduce((sum, unit) => sum + unit.questions.length, 0), bank.PRACTICE_QUESTIONS.length);
+  assert.equal(JSON.stringify(student).includes("\"correct\""), false);
+  assert.equal(JSON.stringify(student).includes("\"note\""), false);
+  const hermit = bank.visibleQuestion("major-09-a", false);
+  const trap = hermit.options.find((option) => !option.correct);
+  const judged = bank.judgeChoice(hermit, trap.id);
   assert.equal(judged.correct, false);
   assert.match(judged.note, /陷阱/);
-  assert.equal(bank.judgeChoice(bank.visibleQuestion("major-09-a", true), "z"), null);
+  assert.equal(bank.judgeChoice(hermit, "z"), null);
 });
 
 test("B4 the student's own fields only, checked and trimmed; feedback state for the page", () => {
@@ -180,14 +197,14 @@ async function practiceRoute({ member, saveResult, onSave }) {
 
 const savedRow = { id: "11111111-2222-3333-4444-555555555555", member_id: "m1", unit: "major", question_id: "major-09-a", question_version: 1, observation: "", reading: "r", choice: "b", correct: false, revised_reading: "", revision: 1, answered_at: "2026-11-14T01:00:00Z", updated_at: "2026-11-14T01:00:00Z", feedback: null, feedback_at: null, reviewed_revision: null, feedback_seen_at: null };
 
-test("API: not a student → 403; a student cannot see or save a draft; nothing touches the database", async () => {
+test("API: not a student → 403; a student sees the published bank and cannot save a question that is not there", async () => {
   const nobody = await practiceRoute({ member: null });
   assert.equal((await nobody.route.GET()).status, 403);
   const student = await practiceRoute({ member: { id: "m1", role: "member", is_student: true } });
   const list = await (await student.route.GET()).json();
   assert.equal(list.access, "student");
-  assert.equal(list.units.reduce((sum, unit) => sum + unit.questions.length, 0), 0);
-  const response = await student.post({ questionId: "major-09-a", reading: "x", choice: "a" });
+  assert.equal(list.units.reduce((sum, unit) => sum + unit.questions.length, 0), bank.PRACTICE_QUESTIONS.length);
+  const response = await student.post({ questionId: "gateway-major-00-a", reading: "x", choice: "a" });
   assert.equal(response.status, 404);
   assert.equal(student.touched(), true, "GET prepared the table; the refused POST did not save");
 });
@@ -195,12 +212,14 @@ test("API: not a student → 403; a student cannot see or save a draft; nothing 
 test("API B4: the server judges the choice (a page saying correct:true is ignored); a stale save is a 409", async () => {
   let saved;
   const zola = await practiceRoute({ member: { id: "admin-1", role: "admin" }, saveResult: { ok: true, answer: savedRow }, onSave: (memberId, value, expected) => { saved = { memberId, value, expected }; } });
-  const response = await zola.post({ questionId: "major-09-a", reading: "  先退一步 ", choice: "b", correct: true, expectedRevision: null });
+  const hermit = bank.PRACTICE_QUESTIONS.find((question) => question.id === "major-09-a");
+  const trap = hermit.options.find((option) => !option.correct).id;
+  const response = await zola.post({ questionId: "major-09-a", reading: "  先退一步 ", choice: trap, correct: true, expectedRevision: null });
   assert.equal(response.status, 200);
   assert.equal(saved.memberId, "admin-1");
-  assert.equal(saved.value.correct, false, "b is a trap; the server says so");
+  assert.equal(saved.value.correct, false, "a trap; the server says so");
   assert.equal(saved.value.reading, "先退一步");
-  assert.equal(saved.value.questionVersion, 1);
+  assert.equal(saved.value.questionVersion, hermit.version);
   assert.equal(saved.expected, null);
 
   const stale = await practiceRoute({ member: { id: "admin-1", role: "admin" }, saveResult: { ok: false, current: { ...savedRow, revision: 4 } } });
