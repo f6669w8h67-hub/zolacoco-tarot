@@ -8,6 +8,7 @@ import {
   isClerkConfigured,
   isMembershipServiceRoute,
   isPublicMembershipPage,
+  isStudentRoute,
 } from "./lib/membership-access";
 
 const configured = isClerkConfigured(process.env);
@@ -29,6 +30,8 @@ const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
     }
     return session.redirectToSignIn({ returnBackUrl: request.url });
   }
+  // Students need not hold VIP months: the practice page and APIs check the student on the server.
+  if (isStudentRoute(request.nextUrl.pathname)) return NextResponse.next();
   if (!process.env.DATABASE_URL) return unavailable(request, "MEMBERSHIP_NOT_CONFIGURED");
 
   let rows;
