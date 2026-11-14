@@ -93,6 +93,11 @@
 .astro-warn { margin: -6px 0 0; color: var(--ap-title) !important; font-size: 14px; }
 .astro-error { margin: 0; color: #b4405f !important; font-size: 14px; font-weight: 700; }
 .astro-form .astro-primary { width: 100%; }
+.astro-fold { margin: -4px 0 0; padding: 12px 14px; display: grid; gap: 8px; border: 1px solid var(--ap-gold); border-radius: 14px; background: var(--ap-blush); }
+.astro-fold legend { padding: 0 6px; color: var(--ap-title); font: 700 15px/1.5 "Noto Serif TC", serif; }
+.astro-custom { padding: 14px; display: grid; gap: 12px; border: 1px dashed #b9c7d8; border-radius: 16px; background: #fbfcfe; }
+.astro-custom label { display: grid; gap: 6px; }
+.astro-custom input[type="number"] { width: 100%; min-height: 50px; padding: 10px 14px; border: 1px solid #b9c7d8; border-radius: 14px; background: #ffffff; color: var(--ap-ink); font: 16px/1.4 "Noto Serif TC", serif; }
 
 /* ---------- result ---------- */
 .astro-result { text-align: left; }

@@ -89,6 +89,20 @@ test("places: our own list, real time zones, unique ids; Taiwan's 22 counties an
   assert.doesNotMatch(page, /open-meteo|geocoding/i, "no outside place-search service");
 });
 
+test("review #34: the page says it uses the city centre, offers exact coordinates, and asks when a time happened twice", async () => {
+  assert.match(page, /排盤使用所選城市的市中心座標。出生城市不在清單裡，可以選最接近的城市（上升和宮位會是近似值），或選最下方的「自行輸入經緯度」。/);
+  assert.doesNotMatch(page + await read("lib/birth-places.ts"), /差幾十公里|well under a degree/, "no promise that a nearby city is exact");
+  assert.match(page, /<option value=\{CUSTOM\}>自行輸入經緯度（進階）<\/option>/);
+  assert.match(page, /name: `\$\{city\.name\}（市中心座標）`/);
+  assert.match(page, /自訂座標（/);
+  assert.match(page, /const resolved = tools\.resolveLocalTime\(birth\.date, birth\.time, place\.timeZone\);/);
+  assert.match(page, /時鐘直接跳過了這段時間，這個時刻在當地不存在。/);
+  assert.match(page, /這個時間在出生地出現了兩次，是哪一次？/);
+  assert.match(page, /utc = resolved\.options\[birth\.fold\]\.utc\.toISOString\(\);/);
+  assert.match(page, /const resetTime = \(\) => \{ setRepeated\(null\); setFold\(null\); setFormError\(""\); \};/, "changing the date, time or place asks again");
+  assert.match(await read("app/healing-room/page.tsx"), /輸入出生日期、時間、地點，查看妳的本命盤與白話解讀。/);
+});
+
 test("the wheel: Ascendant on the left, rounded points, planets fanned out so marks never overlap", () => {
   assert.deepEqual(wheel.pointAt(100, 50, 100), { x: 150, y: 200 }, "the Ascendant sits on the left");
   assert.deepEqual(wheel.pointAt(190, 50, 100), { x: 200, y: 250 }, "longitudes run counter-clockwise: 90° later is at the bottom");

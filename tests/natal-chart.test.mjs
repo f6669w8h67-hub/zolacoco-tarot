@@ -87,3 +87,21 @@ test("without a birth time: no Ascendant, Midheaven or houses; signs that change
   const all = chart.elementCounts(known);
   assert.equal(all.火 + all.土 + all.風 + all.水, 10);
 });
+
+test("review #34 B1: a birth time skipped or repeated by a daylight-saving change is never guessed", () => {
+  const iso = (resolved) => resolved.kind === "exact" ? resolved.utc.toISOString() : resolved.kind === "repeated" ? resolved.options.map((option) => `${option.utc.toISOString()} ${option.offsetMinutes}`) : resolved.kind;
+  assert.equal(iso(chart.resolveLocalTime("2024-03-10", "02:30", "America/Los_Angeles")), "gap", "spring forward: 02:30 never happened in LA");
+  assert.deepEqual(iso(chart.resolveLocalTime("2024-11-03", "01:30", "America/Los_Angeles")), ["2024-11-03T08:30:00.000Z -420", "2024-11-03T09:30:00.000Z -480"], "fall back: 01:30 happened twice");
+  assert.equal(iso(chart.resolveLocalTime("1974-04-01", "00:30", "Asia/Taipei")), "gap", "Taiwan 1974: clocks jumped from 00:00 to 01:00");
+  assert.deepEqual(iso(chart.resolveLocalTime("1974-09-30", "23:30", "Asia/Taipei")), ["1974-09-30T14:30:00.000Z 540", "1974-09-30T15:30:00.000Z 480"], "Taiwan 1974: 23:00–23:59 twice");
+  assert.equal(iso(chart.resolveLocalTime("2024-03-31", "02:30", "Europe/London")), "2024-03-31T01:30:00.000Z", "London switches at 01:00, so 02:30 BST exists");
+  assert.equal(iso(chart.resolveLocalTime("2024-03-31", "01:30", "Europe/London")), "gap");
+  assert.equal(iso(chart.resolveLocalTime("1990-04-09", "14:30", "Asia/Taipei")), "1990-04-09T06:30:00.000Z");
+  const place = { latitude: 25.033, longitude: 121.5654, timeZone: "Asia/Taipei" };
+  assert.throws(() => chart.computeNatalChart({ ...place, date: "1974-04-01", time: "00:30" }), /BIRTH_TIME_SKIPPED/);
+  assert.throws(() => chart.computeNatalChart({ ...place, date: "1974-09-30", time: "23:30" }), /BIRTH_TIME_REPEATED/);
+  const second = chart.computeNatalChart({ ...place, date: "1974-09-30", time: "23:30", utc: "1974-09-30T15:30:00.000Z" });
+  assert.equal(second.utc, "1974-09-30T15:30:00.000Z", "her choice is used as given");
+  const noTime = chart.computeNatalChart({ ...place, date: "1974-04-01", time: null });
+  assert.equal(noTime.timeKnown, false, "a day that starts inside the gap still works without a birth time");
+});

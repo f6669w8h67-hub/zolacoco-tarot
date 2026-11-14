@@ -1,7 +1,7 @@
 // Birth places for 探索妳的星盤: our own list (no outside place-search service, ChatGPT review B1).
 // City centres to two decimals (about 1 km), each with its IANA time zone, so past daylight-saving
-// rules apply. A visitor not on the list picks the nearest city: a few dozen kilometres moves the
-// Ascendant by well under a degree.
+// rules apply. The page says the chart uses the city centre (review #34 B2): choosing the nearest
+// city gives an approximate Ascendant and houses, and anyone can enter exact coordinates instead.
 export type BirthPlace = { id: string; name: string; group: string; latitude: number; longitude: number; timeZone: string };
 
 const TW = "Asia/Taipei";

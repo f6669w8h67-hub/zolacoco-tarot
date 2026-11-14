@@ -54,6 +54,12 @@ export type BirthInput = {
   latitude: number;
   longitude: number;
   timeZone: string;
+  /**
+   * The birth moment as an ISO instant, when the page has already resolved the local time (a time
+   * that happened twice on a daylight-saving day needs her choice). Without it, the local time must
+   * exist exactly once.
+   */
+  utc?: string;
 };
 
 export type Placement = {
@@ -100,16 +106,67 @@ export function zoneOffsetMinutes(timeZone: string, instant: Date) {
   return Math.round((asUtc - instant.getTime()) / 60000);
 }
 
-/** Local wall-clock time at the place → the UTC instant. */
-export function localToUtc(date: string, time: string, timeZone: string) {
+function wallClock(date: string, time: string) {
   const [year, month, day] = date.split("-").map(Number);
   const [hour, minute] = time.split(":").map(Number);
-  const wall = Date.UTC(year, month - 1, day, hour, minute);
-  const first = zoneOffsetMinutes(timeZone, new Date(wall));
-  let utc = wall - first * 60000;
-  const second = zoneOffsetMinutes(timeZone, new Date(utc));
-  if (second !== first) utc = wall - second * 60000;
-  return new Date(utc);
+  return Date.UTC(year, month - 1, day, hour, minute);
+}
+
+export type LocalTimeOption = { utc: Date; offsetMinutes: number };
+export type LocalTimeResolution =
+  | { kind: "exact"; utc: Date }
+  /** The clocks jumped forward over this time: it never happened there (ChatGPT review #34 B1). */
+  | { kind: "gap" }
+  /** The clocks went back: this time happened twice, earlier offset first. She has to choose. */
+  | { kind: "repeated"; options: [LocalTimeOption, LocalTimeOption] };
+
+/**
+ * A local wall-clock time at the place → every UTC instant that shows exactly that time there.
+ * Candidate offsets are the zone's offsets around that day; each is kept only if the instant really
+ * reads back as the same date and time in that zone.
+ */
+export function resolveLocalTime(date: string, time: string, timeZone: string): LocalTimeResolution {
+  const wall = wallClock(date, time);
+  const offsets = new Set([-36, -24, -12, 0, 12, 24, 36].map((hours) => zoneOffsetMinutes(timeZone, new Date(wall + hours * 3600000))));
+  const found = new Map<number, LocalTimeOption>();
+  for (const offset of offsets) {
+    const utc = wall - offset * 60000;
+    if (zoneOffsetMinutes(timeZone, new Date(utc)) === offset) found.set(utc, { utc: new Date(utc), offsetMinutes: offset });
+  }
+  const options = [...found.values()].sort((a, b) => a.utc.getTime() - b.utc.getTime());
+  if (options.length === 0) return { kind: "gap" };
+  if (options.length === 1) return { kind: "exact", utc: options[0].utc };
+  return { kind: "repeated", options: [options[0], options[1]] };
+}
+
+/**
+ * Local time → one UTC instant, never refusing: for the edges of a birth day without a birth time.
+ * A repeated time takes its first occurrence; a skipped time is read with the offset in force just
+ * before the jump (so 00:30 on a day the clocks jump at 00:00 lands just after the jump).
+ */
+export function localToUtc(date: string, time: string, timeZone: string) {
+  const resolved = resolveLocalTime(date, time, timeZone);
+  if (resolved.kind === "exact") return resolved.utc;
+  if (resolved.kind === "repeated") return resolved.options[0].utc;
+  const wall = wallClock(date, time);
+  return new Date(wall - zoneOffsetMinutes(timeZone, new Date(wall - 86400000)) * 60000);
+}
+
+export class BirthTimeError extends Error {
+  reason: "gap" | "repeated";
+  constructor(reason: "gap" | "repeated") {
+    super(reason === "gap" ? "BIRTH_TIME_SKIPPED" : "BIRTH_TIME_REPEATED");
+    this.reason = reason;
+  }
+}
+
+/** The birth instant for a known time: exact, or the page's resolved choice; never a silent guess. */
+function birthInstant(input: BirthInput) {
+  if (input.utc) return new Date(input.utc);
+  const resolved = resolveLocalTime(input.date, input.time!, input.timeZone);
+  if (resolved.kind === "gap") throw new BirthTimeError("gap");
+  if (resolved.kind === "repeated") throw new BirthTimeError("repeated");
+  return resolved.utc;
 }
 
 function eclipticLongitude(body: string, time: Astronomy.AstroTime) {
@@ -188,7 +245,7 @@ function positionsAt(time: Astronomy.AstroTime) {
 
 export function computeNatalChart(input: BirthInput): NatalChart {
   const timeKnown = input.time !== null;
-  const utcDate = localToUtc(input.date, input.time ?? "12:00", input.timeZone);
+  const utcDate = timeKnown ? birthInstant(input) : localToUtc(input.date, "12:00", input.timeZone);
   const time = Astronomy.MakeTime(utcDate);
   const now = positionsAt(time);
   const later = positionsAt(time.AddDays(1 / 24));

@@ -10,7 +10,7 @@ import Link from "next/link";
 import { lineMessageUrl } from "@/lib/contact";
 import { bookingMessage } from "@/lib/natal-booking";
 import { MUSIC_WAIT_MS, initialMusic, musicStep, type MusicEvent, type MusicState } from "@/lib/astro-music";
-import { BIRTH_PLACES, PLACE_GROUPS, placeById, type BirthPlace } from "@/lib/birth-places";
+import { BIRTH_PLACES, PLACE_GROUPS, placeById } from "@/lib/birth-places";
 import type { NatalChart, PlanetId, SignId } from "@/lib/natal-chart";
 import { ASCENDANT_READINGS, ELEMENT_LINES, MARS_LINES, MERCURY_LINES, MOON_READINGS, SUN_READINGS, VENUS_LINES } from "@/lib/natal-readings";
 import { WHEEL, type wheelLayout } from "@/lib/natal-wheel";
@@ -24,13 +24,18 @@ const BIRTH_STORE = "zolacoco-natal-birth-v1";
 const OLD_RECORDS = "zolacoco-astrology-exploration-records-v1";
 
 type View = "intro" | "form" | "result";
-type Birth = { date: string; time: string | null; placeId: string };
+/** placeId "custom": her own latitude, longitude and time zone (ChatGPT review #34 B2). fold: which of
+ *  two occurrences of a repeated local time (the clocks went back that night): 0 first, 1 second. */
+type Birth = { date: string; time: string | null; placeId: string; fold?: 0 | 1; custom?: { latitude: number; longitude: number; timeZone: string } };
+type Place = { name: string; latitude: number; longitude: number; timeZone: string };
+type Repeated = { offsets: [number, number] };
 type Engine = {
+  resolveLocalTime: typeof import("@/lib/natal-chart").resolveLocalTime;
   computeNatalChart: typeof import("@/lib/natal-chart").computeNatalChart;
   elementCounts: typeof import("@/lib/natal-chart").elementCounts;
   wheelLayout: typeof wheelLayout;
 };
-type Computed = { birth: Birth; place: BirthPlace; chart: NatalChart; wheel: ReturnType<typeof wheelLayout>; elements: Record<"火" | "土" | "風" | "水", number> };
+type Computed = { birth: Birth; place: Place; chart: NatalChart; wheel: ReturnType<typeof wheelLayout>; elements: Record<"火" | "土" | "風" | "水", number> };
 
 const SIGN_NAMES: Record<SignId, string> = {
   aries: "牡羊座", taurus: "金牛座", gemini: "雙子座", cancer: "巨蟹座", leo: "獅子座", virgo: "處女座",
@@ -57,10 +62,42 @@ function todayInTaipei() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei" }).format(new Date());
 }
 
+const CUSTOM = "custom";
+
+function validCustom(custom: Birth["custom"]) {
+  return Boolean(custom && Number.isFinite(custom.latitude) && Math.abs(custom.latitude) <= 89.9 && Number.isFinite(custom.longitude) && Math.abs(custom.longitude) <= 180 && zoneExists(custom.timeZone));
+}
+
+function zoneExists(zone: string) {
+  try { new Intl.DateTimeFormat("en", { timeZone: zone }); return true; } catch { return false; }
+}
+
+/** The place the chart uses, said plainly: a city's centre, or her own coordinates. */
+function placeFor(birth: Birth): Place | null {
+  if (birth.placeId === CUSTOM) {
+    if (!validCustom(birth.custom)) return null;
+    const { latitude, longitude, timeZone } = birth.custom!;
+    return { name: `自訂座標（${latitude >= 0 ? "北緯" : "南緯"} ${Math.abs(latitude).toFixed(2)}°、${longitude >= 0 ? "東經" : "西經"} ${Math.abs(longitude).toFixed(2)}°）`, latitude, longitude, timeZone };
+  }
+  const city = placeById(birth.placeId);
+  return city ? { name: `${city.name}（市中心座標）`, latitude: city.latitude, longitude: city.longitude, timeZone: city.timeZone } : null;
+}
+
+function utcLabel(offsetMinutes: number) {
+  const hours = offsetMinutes / 60;
+  return `UTC${hours >= 0 ? "+" : "−"}${Number.isInteger(hours) ? Math.abs(hours) : Math.abs(hours).toFixed(1)}`;
+}
+
+/** Every time zone the browser knows, else the ones on the place list. */
+function timeZones() {
+  const all = (Intl as unknown as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf?.("timeZone");
+  return all?.length ? all : [...new Set(BIRTH_PLACES.map((place) => place.timeZone))].sort();
+}
+
 function readBirth(): Birth | null {
   try {
     const value = JSON.parse(localStorage.getItem(BIRTH_STORE) ?? "null") as Birth | null;
-    if (value && /^\d{4}-\d{2}-\d{2}$/.test(value.date) && (value.time === null || /^\d{2}:\d{2}$/.test(value.time)) && placeById(value.placeId)) return value;
+    if (value && /^\d{4}-\d{2}-\d{2}$/.test(value.date) && (value.time === null || /^\d{2}:\d{2}$/.test(value.time)) && placeFor(value)) return value;
   } catch { /* nothing kept */ }
   return null;
 }
@@ -73,6 +110,11 @@ export default function AstrologyExplorationPage() {
   const [time, setTime] = useState("");
   const [timeUnknown, setTimeUnknown] = useState(false);
   const [placeId, setPlaceId] = useState("tw-taipei");
+  const [customLat, setCustomLat] = useState("");
+  const [customLon, setCustomLon] = useState("");
+  const [customZone, setCustomZone] = useState("Asia/Taipei");
+  const [repeated, setRepeated] = useState<Repeated | null>(null);
+  const [fold, setFold] = useState<0 | 1 | null>(null);
   const [remember, setRemember] = useState(false);
   const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -167,17 +209,38 @@ export default function AstrologyExplorationPage() {
   async function loadEngine() {
     if (engine.current) return engine.current;
     const [natal, wheel] = await Promise.all([import("@/lib/natal-chart"), import("@/lib/natal-wheel")]);
-    engine.current = { computeNatalChart: natal.computeNatalChart, elementCounts: natal.elementCounts, wheelLayout: wheel.wheelLayout };
+    engine.current = { resolveLocalTime: natal.resolveLocalTime, computeNatalChart: natal.computeNatalChart, elementCounts: natal.elementCounts, wheelLayout: wheel.wheelLayout };
     return engine.current;
   }
 
   async function compute(birth: Birth) {
-    const place = placeById(birth.placeId);
+    const place = placeFor(birth);
     if (!place) { setFormError("請選擇出生地點。"); return false; }
     setBusy(true);
     try {
       const tools = await loadEngine();
-      const chart = tools.computeNatalChart({ date: birth.date, time: birth.time, latitude: place.latitude, longitude: place.longitude, timeZone: place.timeZone });
+      // A known birth time must exist exactly once at the place; a repeated one needs her choice.
+      let utc: string | undefined;
+      if (birth.time) {
+        const resolved = tools.resolveLocalTime(birth.date, birth.time, place.timeZone);
+        if (resolved.kind === "gap") {
+          setFormError(`${birth.date} ${birth.time} 在出生地剛好遇到夏令時間開始，時鐘直接跳過了這段時間，這個時刻在當地不存在。請再確認出生時間（例如出生證明上的時間）。`);
+          setView("form");
+          return false;
+        }
+        if (resolved.kind === "repeated") {
+          if (birth.fold === undefined) {
+            setRepeated({ offsets: [resolved.options[0].offsetMinutes, resolved.options[1].offsetMinutes] });
+            setFormError("這個出生時間在出生地出現了兩次（夏令時間結束、時鐘撥回），請在下方選擇是哪一次。");
+            setView("form");
+            return false;
+          }
+          utc = resolved.options[birth.fold].utc.toISOString();
+        } else {
+          utc = resolved.utc.toISOString();
+        }
+      }
+      const chart = tools.computeNatalChart({ date: birth.date, time: birth.time, latitude: place.latitude, longitude: place.longitude, timeZone: place.timeZone, utc });
       setComputed({ birth, place, chart, wheel: tools.wheelLayout(chart), elements: tools.elementCounts(chart) });
       setAttachBirth(false);
       setView("result");
@@ -194,7 +257,13 @@ export default function AstrologyExplorationPage() {
     setFormError("");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < "1900-01-01" || date > todayInTaipei()) { setFormError("請填寫正確的出生日期。"); return; }
     if (!timeUnknown && !/^\d{2}:\d{2}$/.test(time)) { setFormError("請填寫出生時間；不知道的話，勾選「不知道出生時間」。"); return; }
-    const birth: Birth = { date, time: timeUnknown ? null : time, placeId };
+    let custom: Birth["custom"];
+    if (placeId === CUSTOM) {
+      custom = { latitude: Number(customLat), longitude: Number(customLon), timeZone: customZone };
+      if (customLat.trim() === "" || customLon.trim() === "" || !validCustom(custom)) { setFormError("請填寫正確的緯度（-89.9～89.9）、經度（-180～180），並選擇出生地的時區。"); return; }
+    }
+    if (repeated && fold === null && !timeUnknown) { setFormError("這個出生時間在出生地出現了兩次，請在下方選擇是哪一次。"); return; }
+    const birth: Birth = { date, time: timeUnknown ? null : time, placeId, ...(custom ? { custom } : {}), ...(repeated && fold !== null && !timeUnknown ? { fold } : {}) };
     const done = await compute(birth);
     if (!done) return;
     try {
@@ -208,7 +277,10 @@ export default function AstrologyExplorationPage() {
       setTime(from.time ?? "");
       setTimeUnknown(from.time === null);
       setPlaceId(from.placeId);
+      if (from.custom) { setCustomLat(String(from.custom.latitude)); setCustomLon(String(from.custom.longitude)); setCustomZone(from.custom.timeZone); }
     }
+    setRepeated(null);
+    setFold(null);
     setRemember(false);
     setFormError("");
     setView("form");
@@ -219,7 +291,9 @@ export default function AstrologyExplorationPage() {
     setSaved(null);
   }
 
-  const replacing = Boolean(saved && remember && (saved.date !== date || saved.time !== (timeUnknown ? null : time) || saved.placeId !== placeId));
+  const replacing = Boolean(saved && remember && (saved.date !== date || saved.time !== (timeUnknown ? null : time) || saved.placeId !== placeId || (placeId === CUSTOM && (String(saved.custom?.latitude) !== customLat || String(saved.custom?.longitude) !== customLon || saved.custom?.timeZone !== customZone))));
+  // Any change to the date, time or place asks again whether the time is repeated there.
+  const resetTime = () => { setRepeated(null); setFold(null); setFormError(""); };
 
   return <main className={`astro-page pearl-page astro-view-${view}`}>
     {player.mounted ? <div className="astro-audio-only" aria-hidden="true"><iframe key={player.frame} ref={musicFrame} onLoad={onMusicLoad} src="https://www.youtube-nocookie.com/embed/MRQsx1-_1jc?enablejsapi=1&playsinline=1&loop=1&playlist=MRQsx1-_1jc&controls=0&rel=0" title="探索妳的星盤背景音樂" allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" tabIndex={-1} /></div> : null}
@@ -246,15 +320,28 @@ export default function AstrologyExplorationPage() {
       <h1>妳的出生資料</h1>
       <p className="astro-lead">出生時間越準確，上升星座和宮位越準確。可以參考出生證明或媽媽手冊。</p>
       <form className="astro-form" onSubmit={(event) => { event.preventDefault(); void submit(); }} noValidate>
-        <label><span>出生日期</span><input type="date" value={date} min="1900-01-01" max={todayInTaipei()} onChange={(event) => setDate(event.target.value)} required /></label>
-        <label><span>出生時間</span><input type="time" value={time} disabled={timeUnknown} onChange={(event) => setTime(event.target.value)} /></label>
-        <label className="astro-check"><input type="checkbox" checked={timeUnknown} onChange={(event) => setTimeUnknown(event.target.checked)} /><span>不知道出生時間（不會顯示上升星座和宮位）</span></label>
+        <label><span>出生日期</span><input type="date" value={date} min="1900-01-01" max={todayInTaipei()} onChange={(event) => { setDate(event.target.value); resetTime(); }} required /></label>
+        <label><span>出生時間</span><input type="time" value={time} disabled={timeUnknown} onChange={(event) => { setTime(event.target.value); resetTime(); }} /></label>
+        <label className="astro-check"><input type="checkbox" checked={timeUnknown} onChange={(event) => { setTimeUnknown(event.target.checked); resetTime(); }} /><span>不知道出生時間（不會顯示上升星座和宮位）</span></label>
+        {repeated && !timeUnknown ? <fieldset className="astro-fold">
+          <legend>這個時間在出生地出現了兩次，是哪一次？</legend>
+          <label className="astro-check"><input type="radio" name="fold" checked={fold === 0} onChange={() => setFold(0)} /><span>第一次（時鐘撥回前，{utcLabel(repeated.offsets[0])}）</span></label>
+          <label className="astro-check"><input type="radio" name="fold" checked={fold === 1} onChange={() => setFold(1)} /><span>第二次（時鐘撥回後，{utcLabel(repeated.offsets[1])}）</span></label>
+          <small>不確定的話，可以問問家人，或看出生證明上有沒有寫「夏令時間」。</small>
+        </fieldset> : null}
         <label><span>出生地點</span>
-          <select value={placeId} onChange={(event) => setPlaceId(event.target.value)}>
+          <select value={placeId} onChange={(event) => { setPlaceId(event.target.value); resetTime(); }}>
             {PLACE_GROUPS.map((group) => <optgroup label={group} key={group}>{BIRTH_PLACES.filter((place) => place.group === group).map((place) => <option value={place.id} key={place.id}>{place.name}</option>)}</optgroup>)}
+            <optgroup label="其他"><option value={CUSTOM}>自行輸入經緯度（進階）</option></optgroup>
           </select>
-          <small>清單裡沒有的話，選最接近的城市就可以，差幾十公里對星盤影響很小。</small>
+          <small>排盤使用所選城市的市中心座標。出生城市不在清單裡，可以選最接近的城市（上升和宮位會是近似值），或選最下方的「自行輸入經緯度」。</small>
         </label>
+        {placeId === CUSTOM ? <div className="astro-custom">
+          <label><span>緯度</span><input type="number" inputMode="decimal" step="0.01" min="-89.9" max="89.9" placeholder="例如 25.03（南緯用負數）" value={customLat} onChange={(event) => { setCustomLat(event.target.value); resetTime(); }} /></label>
+          <label><span>經度</span><input type="number" inputMode="decimal" step="0.01" min="-180" max="180" placeholder="例如 121.56（西經用負數）" value={customLon} onChange={(event) => { setCustomLon(event.target.value); resetTime(); }} /></label>
+          <label><span>出生地時區</span><select value={customZone} onChange={(event) => { setCustomZone(event.target.value); resetTime(); }}>{timeZones().map((zone) => <option value={zone} key={zone}>{zone}</option>)}</select></label>
+          <small>可以在地圖 App 長按出生地點，複製顯示的緯度和經度。時區用出生地所在城市（例如 Asia/Taipei）。</small>
+        </div> : null}
         <label className="astro-check"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /><span>記住這次的出生資料（只存在這台裝置，可以隨時清除）</span></label>
         {replacing ? <p className="astro-warn">勾選後，會取代之前記住的 {saved?.date} 出生資料。</p> : null}
         {formError ? <p className="astro-error" role="alert">{formError}</p> : null}
@@ -298,7 +385,7 @@ function ChartResult({ computed, music, attachBirth, setAttachBirth, onEdit }: {
     <div className="astro-top-bar"><button type="button" className="astro-back" onClick={onEdit}>← 修改出生資料</button>{music}</div>
     <small className="astro-kicker">your natal chart</small>
     <h1>妳的本命盤</h1>
-    <p className="astro-birth-line">{birth.date}・{birth.time ?? "出生時間不確定"}・{place.name}</p>
+    <p className="astro-birth-line">{birth.date}・{birth.time ?? "出生時間不確定"}{birth.fold !== undefined ? `（當地第${birth.fold === 0 ? "一" : "二"}次的 ${birth.time}）` : ""}・{place.name}</p>
 
     <figure className="astro-wheel-wrap">
       <ChartWheel wheel={wheel} houses={chart.cusps !== null} />
