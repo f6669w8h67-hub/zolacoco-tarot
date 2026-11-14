@@ -10,6 +10,8 @@ export type ClientMember = {
   birthday: string | null;
   role: "admin" | "member";
   effective_status: "pending" | "active" | "suspended" | "expired";
+  /** Zola's student (學員練習室); older responses may not have it yet. */
+  is_student?: boolean;
   access_expires_at: string | null;
   created_at?: string;
 };
@@ -94,7 +96,7 @@ export async function saveMemberProfile(
 }
 
 export async function runMemberAction(
-  body: { memberId: string; action: "activate" | "suspend" | "restore"; months: number },
+  body: { memberId: string; action: "activate" | "suspend" | "restore"; months: number } | { memberId: string; action: "student"; student: boolean },
   fetchImpl: Fetch = fetch,
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   const fallback = "操作失敗，請稍後再試。";

@@ -15,7 +15,7 @@
     "validate:artifact": "bash scripts/validate-artifact.sh",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
-    "test:membership": "node --experimental-vm-modules --test tests/membership-access.test.mjs tests/member-identity.test.mjs tests/member-data-auth.test.mjs",
+    "test:membership": "node --experimental-vm-modules --experimental-strip-types --test tests/membership-access.test.mjs tests/member-identity.test.mjs tests/member-data-auth.test.mjs tests/student-practice.test.mjs",
     "test:account": "node --experimental-vm-modules --experimental-strip-types --test tests/account-state.test.mjs tests/account-view.test.mjs tests/member-profile-api.test.mjs tests/membership-pearl.test.mjs",
     "test:tarot": "node --experimental-strip-types --test tests/tarot-reading.test.mjs tests/tarot-page-state.test.mjs tests/tarot-deck.test.mjs tests/tarot-card-design.test.mjs tests/draw-fan.test.mjs tests/tarot-readings.test.mjs tests/home-pearl.test.mjs tests/healing-room-pearl.test.mjs tests/astrology-pearl.test.mjs tests/astro-music.test.mjs tests/delayed-advance.test.mjs tests/site-check.test.mjs tests/awareness.test.mjs"
   },

@@ -1,0 +1,151 @@
+/* ===== 學員練習室 · /practice =====
+   Pearl ground and header from pearl-page.css. White panels with gold hairlines, rose titles, ink text,
+   porcelain-blue chips. Phone first. Scoped to .practice-page. */
+.practice-page {
+  --pr-ink: #263449; --pr-muted: #33445f; --pr-title: #843450; --pr-gold: #c5a46f;
+  --pr-line: #e4d6e0; --pr-blue: #e8f2fc; --pr-blush: #fceaf3; --pr-chip: #b9c7d8;
+  min-height: 100svh; padding: 96px 18px 64px; color: var(--pr-ink); font-family: "Noto Serif TC", serif;
+}
+.practice-page *, .practice-page *::before, .practice-page *::after { box-sizing: border-box; }
+.practice-page > * { max-width: 680px; margin-left: auto; margin-right: auto; }
+.practice-page p { margin: 0; color: var(--pr-muted); line-height: 1.85; overflow-wrap: anywhere; }
+.practice-page h1 { margin: 6px 0 10px; color: var(--pr-title); font: 700 clamp(26px, 6.6vw, 40px)/1.35 "Noto Serif TC", serif; letter-spacing: .02em; }
+.practice-page h2 { margin: 0 0 10px; color: var(--pr-title); font: 700 20px/1.45 "Noto Serif TC", serif; }
+.practice-page h3 { margin: 0 0 6px; color: var(--pr-title); font: 700 16px/1.5 "Noto Serif TC", serif; }
+.pr-kicker { color: var(--pr-title) !important; font: italic 600 16px/1.4 "Cormorant Garamond", "Noto Serif TC", serif; letter-spacing: .06em; }
+.pr-lead { font-size: 15px; }
+
+.pr-primary, .pr-secondary {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 24px; border-radius: 999px;
+  font: 600 16px/1.3 "Noto Serif TC", serif; letter-spacing: .05em; text-decoration: none; cursor: pointer;
+}
+.pr-primary { border: 1px solid var(--pr-title); background: var(--pr-title); color: #ffffff !important; }
+.pr-secondary { border: 1px solid var(--pr-chip); background: #ffffff; color: var(--pr-ink) !important; }
+.pr-primary:disabled, .pr-secondary:disabled { opacity: .55; cursor: default; }
+.practice-page :is(button, a, textarea):focus-visible { outline: 2px solid var(--pr-gold); outline-offset: 3px; }
+.pr-back { padding: 6px 0; border: 0; background: none; color: var(--pr-title); font: 600 15px/1.4 "Noto Serif TC", serif; cursor: pointer; }
+
+/* states and hero */
+.pr-state { margin-top: 12vh !important; padding: 30px 22px; display: grid; justify-items: center; gap: 12px; text-align: center; border: 1px solid var(--pr-line); border-radius: 22px; background: #ffffff; }
+.pr-hero { text-align: center; }
+.pr-admin-note { margin-top: 12px !important; padding: 10px 14px; border: 1px dashed var(--pr-gold); border-radius: 14px; background: #ffffff; font-size: 14px; }
+.pr-admin-note a { margin-left: 6px; color: var(--pr-title); }
+.pr-unread { display: inline-block; margin-top: 14px; padding: 8px 16px; border-radius: 999px; background: var(--pr-blush); color: var(--pr-title); font-weight: 700; text-decoration: none; }
+
+/* units */
+.pr-units { margin-top: 28px; }
+.pr-unit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.pr-unit {
+  min-height: 132px; padding: 16px; display: grid; align-content: start; gap: 6px; text-align: left;
+  border: 1px solid var(--pr-line); border-radius: 18px; background: #ffffff; color: var(--pr-ink); font-family: inherit; cursor: pointer;
+}
+.pr-unit b { color: var(--pr-title); font-size: 17px; }
+.pr-unit small { color: var(--pr-muted); font-size: 13px; line-height: 1.6; }
+.pr-unit em { color: var(--pr-muted); font-size: 13px; font-style: normal; }
+.pr-unit.is-soon { cursor: default; background: rgba(255, 255, 255, .6); }
+.pr-unit.is-soon small { width: max-content; padding: 2px 10px; border-radius: 999px; background: var(--pr-blue); }
+.pr-progress { height: 6px; margin-top: 6px; border-radius: 999px; background: var(--pr-blue); overflow: hidden; }
+.pr-progress span { display: block; height: 100%; border-radius: inherit; background: var(--pr-gold); }
+
+/* question list */
+.pr-unit-view { text-align: left; }
+.pr-question-list { margin: 18px 0 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.pr-question-list button {
+  width: 100%; min-height: 60px; padding: 12px 14px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px;
+  border: 1px solid var(--pr-line); border-radius: 16px; background: #ffffff; color: var(--pr-ink); text-align: left; font-family: inherit; cursor: pointer;
+}
+.pr-q-number { color: var(--pr-gold); font: 600 15px/1 "Cormorant Garamond", serif; }
+.pr-q-title { display: grid; gap: 2px; }
+.pr-q-title b { color: var(--pr-title); }
+.pr-q-title small { color: var(--pr-muted); font-size: 13px; }
+.pr-badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-style: normal; font-weight: 700; white-space: nowrap; }
+.pr-badge.is-draft { border: 1px dashed var(--pr-gold); color: var(--pr-muted); }
+.pr-badge.is-done { background: var(--pr-blue); color: var(--pr-muted); }
+.pr-badge.is-new { background: var(--pr-title); color: #ffffff; }
+
+/* the question */
+.pr-flow { display: grid; gap: 14px; }
+.pr-flow > h1 { margin-bottom: 0; }
+.pr-scenario { padding: 12px 16px; border-left: 3px solid var(--pr-gold); border-radius: 0; background: #ffffff; }
+.pr-scenario b { display: block; color: var(--pr-title); font-size: 13px; }
+.pr-card { position: relative; width: min(52vw, 220px); aspect-ratio: 2 / 3.25; margin: 4px auto 8px; }
+.pr-card .rc-card-face { display: grid; width: 100%; height: 100%; }
+.pr-card.is-reversed .rc-card-face__art img { transform: rotate(180deg); }
+.pr-reversed-chip { position: absolute; top: 10px; left: 10px; padding: 3px 10px; border-radius: 999px; background: #ffffff; color: var(--pr-title); font-size: 13px; font-weight: 700; box-shadow: 0 0 0 1px var(--pr-gold); }
+.pr-steps { margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.pr-steps li { display: grid; justify-items: center; gap: 4px; color: var(--pr-muted); font-size: 12px; text-align: center; }
+.pr-steps span { width: 28px; height: 28px; display: grid; place-items: center; border: 1px solid var(--pr-chip); border-radius: 50%; background: #ffffff; font-weight: 700; }
+.pr-steps .is-current span { border-color: var(--pr-title); background: var(--pr-title); color: #ffffff; }
+.pr-steps .is-current { color: var(--pr-title); font-weight: 700; }
+.pr-steps .is-done span { border-color: var(--pr-gold); color: var(--pr-gold); }
+.pr-step, .pr-previous { padding: 18px 16px; display: grid; gap: 12px; border: 1px solid var(--pr-line); border-radius: 20px; background: #ffffff; }
+.practice-page textarea {
+  width: 100%; min-height: 110px; padding: 12px 14px; border: 1px solid var(--pr-chip); border-radius: 14px; background: #ffffff;
+  color: var(--pr-ink); font: 16px/1.75 "Noto Serif TC", serif; resize: vertical;
+}
+.pr-field { display: grid; gap: 6px; color: var(--pr-title); font-weight: 700; font-size: 15px; }
+.pr-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.pr-options { display: grid; gap: 8px; }
+.pr-options button {
+  padding: 12px 14px; display: grid; grid-template-columns: auto 1fr; gap: 10px; text-align: left;
+  border: 1px solid var(--pr-line); border-radius: 14px; background: #ffffff; color: var(--pr-ink); font: 15px/1.7 "Noto Serif TC", serif; cursor: pointer;
+}
+.pr-options button > span { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 50%; background: var(--pr-blue); color: var(--pr-title); font-weight: 700; }
+.pr-options button.is-right { border-color: var(--pr-gold); background: #fffdf8; }
+.pr-options button.is-trap { border-color: #b4405f; }
+.pr-judged { padding: 12px 14px; border-radius: 14px; }
+.pr-judged.is-right { background: var(--pr-blue); }
+.pr-judged.is-trap { background: var(--pr-blush); }
+.pr-judged b { color: var(--pr-title); }
+.pr-judged small { color: var(--pr-muted); }
+.pr-compare { display: grid; gap: 10px; }
+.pr-compare section { padding: 12px 14px; border: 1px solid var(--pr-line); border-radius: 14px; }
+.pr-compare small { display: block; margin-top: 6px; color: var(--pr-muted); font-size: 13px; line-height: 1.7; }
+.pr-reference { background: var(--pr-blue); }
+.pr-notice { font-size: 14px; }
+.pr-notice.is-error { color: #b4405f !important; }
+.pr-notice.is-ok { color: var(--pr-title) !important; }
+
+/* answers and records */
+.pr-answer { margin: 0; display: grid; gap: 4px; }
+.pr-answer dt { margin-top: 8px; color: var(--pr-title); font-weight: 700; font-size: 14px; }
+.pr-answer dt small { margin-left: 8px; color: var(--pr-muted); font-weight: 400; }
+.pr-answer dd { margin: 0; color: var(--pr-muted); line-height: 1.8; white-space: pre-wrap; }
+.pr-answer dd small { display: block; color: var(--pr-muted); font-size: 13px; }
+.pr-feedback { padding: 10px 12px; border-radius: 12px; background: var(--pr-blush); }
+.pr-records { margin-top: 34px; }
+.pr-records ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.pr-records li { border: 1px solid var(--pr-line); border-radius: 16px; background: #ffffff; }
+.pr-records li > button { width: 100%; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center; gap: 10px; border: 0; background: none; text-align: left; font-family: inherit; color: var(--pr-ink); cursor: pointer; }
+.pr-records li > button span { display: grid; gap: 2px; }
+.pr-records li > button b { color: var(--pr-title); }
+.pr-records li > button small { color: var(--pr-muted); font-size: 13px; }
+.pr-records li > .pr-answer { padding: 0 14px 14px; }
+.pr-empty { padding: 18px; border: 1px dashed var(--pr-chip); border-radius: 16px; text-align: center; }
+
+@media (min-width: 761px) { .practice-page { padding-top: 116px; } }
+
+/* Zola's 學員練習 page (/zola-admin/practice) */
+.practice-admin > * { max-width: 860px; }
+.pa-filters { margin-top: 18px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.pa-filters button { min-height: 40px; padding: 6px 16px; border: 1px solid var(--pr-chip); border-radius: 999px; background: #ffffff; color: var(--pr-ink); font: 600 14px/1.3 "Noto Serif TC", serif; cursor: pointer; }
+.pa-filters button.is-active { border-color: var(--pr-title); background: var(--pr-title); color: #ffffff; }
+.practice-admin .pr-notice { margin-top: 12px; text-align: center; }
+.pa-students, .pa-answers { margin: 18px auto 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.pa-students button {
+  width: 100%; padding: 14px 16px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; text-align: left;
+  border: 1px solid var(--pr-line); border-radius: 18px; background: #ffffff; color: var(--pr-ink); font-family: inherit; cursor: pointer;
+}
+.pa-students button > span { display: grid; gap: 3px; }
+.pa-students b { color: var(--pr-title); font-size: 17px; }
+.pa-students small { color: var(--pr-muted); font-size: 13px; }
+.pa-counts { justify-items: end; text-align: right; }
+.pa-student { margin-top: 16px; display: grid; gap: 6px; }
+.pa-answer { padding: 16px; display: grid; gap: 10px; border: 1px solid var(--pr-line); border-radius: 18px; background: #ffffff; }
+.pa-answer > header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; }
+.pa-answer > header > span:first-child { display: grid; gap: 2px; }
+.pa-answer > header b { color: var(--pr-title); font-size: 17px; }
+.pa-answer > header small { color: var(--pr-muted); font-size: 13px; }
+.pa-badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; }
+.pa-scenario { font-size: 14px; }
+@media (max-width: 520px) { .pa-counts { justify-items: start; text-align: left; } }

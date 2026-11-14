@@ -30,6 +30,31 @@ export function allowsMembershipPreview(env: {
     (env.VERCEL_ENV === "preview" && env.MEMBERSHIP_PREVIEW === "true");
 }
 
+// 學員練習室 (/practice and its APIs). Students are chosen by Zola and practise whether or not they
+// hold VIP months, so these routes skip the VIP check in proxy.ts once signed in; every practice API
+// then checks the student itself on the server (requireStudent / requireAdmin). The page gets its
+// questions only from those APIs.
+export function isStudentRoute(pathname: string) {
+  return ["/practice", "/api/practice"].some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
+}
+
+/** The 學員練習室 page itself is open to everyone: signed out or not a student, it shows a short note
+ * and loads nothing private. Its APIs (/api/practice…) are not open: they need a signed-in student. */
+export function isStudentPage(pathname: string) {
+  return pathname === "/practice" || pathname === "/practice/";
+}
+
+/** Admin always; a member Zola marked as her student, unless suspended. Independent of VIP months. */
+export function hasStudentAccess(member: {
+  role?: string;
+  status?: string;
+  is_student?: boolean | null;
+} | undefined) {
+  return member?.role === "admin" || Boolean(member?.is_student === true && member.status !== "suspended");
+}
+
 export function hasMemberAccess(member: {
   role?: string;
   status?: string;

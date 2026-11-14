@@ -33,8 +33,9 @@ export async function POST(request: Request) {
     const admin = await requireAdmin();
     const body = (await request.json()) as {
       memberId?: string;
-      action?: "activate" | "suspend" | "restore";
+      action?: "activate" | "suspend" | "restore" | "student";
       months?: number;
+      student?: boolean;
     };
     const memberId = body.memberId?.trim();
     const action = body.action;
@@ -45,6 +46,26 @@ export async function POST(request: Request) {
     const currentRows = await sql`SELECT * FROM members WHERE id = ${memberId} AND role = 'member'`;
     const current = currentRows[0] as Record<string, unknown> | undefined;
     if (!current) return Response.json({ error: "找不到這位會員。" }, { status: 404 });
+
+    // 學員練習室: Zola marks or unmarks her student. Separate from VIP months; logged with the value
+    // before and after, in the same statement as the change; sending the current value changes nothing.
+    if (action === "student") {
+      if (typeof body.student !== "boolean") return Response.json({ error: "學員設定不正確。" }, { status: 400 });
+      const student = body.student;
+      if (Boolean(current.is_student) === student) return Response.json({ member: current, unchanged: true });
+      await sql`
+        WITH updated AS (
+          UPDATE members SET is_student = ${student}
+          WHERE id = ${memberId} AND role = 'member' AND is_student IS DISTINCT FROM ${student}
+          RETURNING id, status, access_expires_at
+        )
+        INSERT INTO member_access_audit (member_id, admin_email, action, previous_status, new_status, previous_expires_at, new_expires_at, previous_student, new_student, note)
+        SELECT id, ${admin.email}, 'updated', status, status, access_expires_at, access_expires_at, ${!student}, ${student}, 'student'
+        FROM updated
+      `;
+      const rows = await sql`SELECT * FROM members WHERE id = ${memberId}`;
+      return Response.json({ member: rows[0] });
+    }
 
     if (action === "suspend") {
       const updated = await sql.transaction((tx) => [
