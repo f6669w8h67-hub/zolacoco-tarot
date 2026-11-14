@@ -118,17 +118,24 @@ test("bank: real cards, unique ids, three options with one right answer, scenes 
   }
   const hermit = bank.PRACTICE_QUESTIONS.find((question) => question.cardId === "major-09");
   assert.doesNotMatch(hermit.options[0].text, /獨自/, "the site's 隱者 has 蝦蝦 beside him");
-  assert.equal(bank.PRACTICE_QUESTIONS.some((question) => question.unit === "gateway"), false, "門戶牌 waits for Zola's definition");
-  // Published 2026-11-14: Zola confirmed all 124 questions for students (doc 「直覺練習｜學員練習題庫初稿」).
+  // 門戶牌 follows Zola's 「塔羅門戶牌完整教學資料」 (confirmed 2026-11-14): every question has a client question, and the
+  // right answer sits 4/4/4 across a, b and c inside the unit.
+  const gateway = bank.PRACTICE_QUESTIONS.filter((question) => question.unit === "gateway");
+  assert.equal(gateway.length, 12);
+  const gatewaySlots = { a: 0, b: 0, c: 0 };
+  for (const question of gateway) gatewaySlots[question.options.find((option) => option.correct).id] += 1;
+  assert.deepEqual(gatewaySlots, { a: 4, b: 4, c: 4 });
+  assert.ok(gateway.every((question) => /門|關卡|主門戶|副門戶/.test(question.options.find((option) => option.correct).text)), "each right answer names the gate or the threshold");
+  // Published 2026-11-14: Zola confirmed all 136 questions for students (doc 「直覺練習｜學員練習題庫初稿」).
   const counts = Object.fromEntries(bank.PRACTICE_UNITS.map((unit) => [unit.id, bank.PRACTICE_QUESTIONS.filter((question) => question.unit === unit.id).length]));
-  assert.deepEqual(JSON.parse(JSON.stringify(counts)), { major: 22, minor: 40, court: 16, practice: 12, gateway: 0, body: 12, spread: 10, reversed: 12 });
+  assert.deepEqual(JSON.parse(JSON.stringify(counts)), { major: 22, minor: 40, court: 16, practice: 12, gateway: 12, body: 12, spread: 10, reversed: 12 });
   const slots = new Set(bank.PRACTICE_QUESTIONS.map((question) => question.options.find((option) => option.correct).id));
   assert.deepEqual([...slots].sort(), ["a", "b", "c"], "the right answer is not always in the same place");
   for (const question of bank.PRACTICE_QUESTIONS) {
     const right = question.options.find((option) => option.correct);
     assert.doesNotMatch(right.text, /(?<!不)一定|注定|永遠|這輩子/, `${question.id}: a right answer never promises`);
     if (question.unit === "reversed") assert.equal(question.reversed, true, question.id);
-    if (["practice", "spread", "reversed"].includes(question.unit)) assert.ok(question.scenario, `${question.id} has a client question`);
+    if (["practice", "gateway", "spread", "reversed"].includes(question.unit)) assert.ok(question.scenario, `${question.id} has a client question`);
   }
 });
 
@@ -203,8 +210,8 @@ test("API: not a student → 403; a student sees the published bank and cannot s
   const student = await practiceRoute({ member: { id: "m1", role: "member", is_student: true } });
   const list = await (await student.route.GET()).json();
   assert.equal(list.access, "student");
-  assert.equal(list.units.reduce((sum, unit) => sum + unit.questions.length, 0), bank.PRACTICE_QUESTIONS.length);
-  const response = await student.post({ questionId: "gateway-major-00-a", reading: "x", choice: "a" });
+  assert.equal(list.units.reduce((sum, unit) => sum + unit.questions.length, 0), bank.PRACTICE_QUESTIONS.filter((question) => question.status === "published").length);
+  const response = await student.post({ questionId: "major-99-a", reading: "x", choice: "a" });
   assert.equal(response.status, 404);
   assert.equal(student.touched(), true, "GET prepared the table; the refused POST did not save");
 });

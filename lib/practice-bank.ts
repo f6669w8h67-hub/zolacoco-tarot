@@ -18,7 +18,7 @@ import { publicAnswer, type AnswerContext, type ShownAnswer } from "@/lib/practi
 import type { PracticeAnswerRow } from "@/lib/practice-store";
 import { PRACTICE_QUESTIONS } from "@/lib/practice-questions";
 
-// The questions themselves live in practice-questions.ts (Zola confirmed all 124 for students on 2026-11-14).
+// The questions themselves live in practice-questions.ts (Zola confirmed all 136 for students on 2026-11-14).
 export { PRACTICE_QUESTIONS };
 
 export type PracticeLevel = "基礎" | "進階";
@@ -54,7 +54,7 @@ export const PRACTICE_UNITS: PracticeUnit[] = [
   { id: "minor", level: "基礎", title: "小阿爾克納", focus: "四元素、數字 1～10 的階段與畫面動作" },
   { id: "court", level: "基礎", title: "宮廷牌", focus: "宮廷牌代表一個人，或一種人格狀態" },
   { id: "practice", level: "基礎", title: "實戰練習", focus: "一個問題、一張牌，說出對方聽得懂的解讀" },
-  { id: "gateway", level: "進階", title: "門戶牌", focus: "準備中" },
+  { id: "gateway", level: "進階", title: "門戶牌", focus: "牌陣中的關鍵入口與轉折：卡在哪、要跨過什麼" },
   { id: "body", level: "進階", title: "塔羅中的肢體語言", focus: "姿勢、視線、手勢與人物距離" },
   { id: "spread", level: "進階", title: "牌陣", focus: "切牌與指示牌、位置的意思與解讀順序" },
   { id: "reversed", level: "進階", title: "逆位深度解讀", focus: "逆位不一定不好：卡住、過頭或內化，依問事情境判斷" },
