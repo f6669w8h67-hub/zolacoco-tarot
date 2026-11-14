@@ -201,7 +201,6 @@ test("root layout selects a closed fallback in production and retains developmen
       "./styles/serif-all.css": {},
       "./styles/card-face.css": {},
       "./site-header": { default: () => null },
-      "./site-notice": { default: () => null },
       "./pearl-fonts": { default: () => null },
       "./membership-gate": { default: wrapper("authenticated"), UnconfiguredMembershipGate: wrapper("closed") },
       "./auth-identity": { ClerkIdentityProvider: ({ children }) => children },

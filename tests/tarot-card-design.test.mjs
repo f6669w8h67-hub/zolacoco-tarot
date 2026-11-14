@@ -59,14 +59,7 @@ test("the relationship spread board is a triangle on desktop and a column on pho
   assert.ok(page.includes("spread-motif motif-${item.id}"), "spread choices draw their own position diagram");
 });
 
-test("maintenance notice is on every page and can be dismissed; the draw section has no shadows", async () => {
-  const layout = await read("app/layout.tsx");
-  const notice = await read("app/site-notice.tsx");
-  assert.match(layout, /<SiteHeader \/>\s*<SiteNotice \/>/);
-  assert.match(notice, /網站維護中/);
-  assert.match(notice, /如有缺少的功能，請耐心稍等/);
-  assert.match(notice, /sessionStorage\.setItem\(SITE_NOTICE_KEY, "1"\)/);
-  assert.match(notice, /aria-label="關閉網站維護公告"/);
+test("the draw section has no shadows", async () => {
   assert.match(css, /#draw, #draw \*:not\(:focus-visible\), #draw \*::before, #draw \*::after \{\s*box-shadow: none !important;/);
 });
 
