@@ -39,5 +39,5 @@ test("header brand, menu links and the small links found in the check are 44px; 
 
 test("SVG chart points are rounded, so server and phone render the same markup", async () => {
   assert.match(await read("app/healing-room/page.tsx"), /Math\.round\(\(60 \+ r \* f\(a\)\) \* 100\) \/ 100/);
-  assert.match(await read("app/astrology-exploration/page.tsx"), /Math\.round\(\(100 \+ r \* f\(\(deg \* Math\.PI\) \/ 180\)\) \* 100\) \/ 100/);
+  assert.match(await read("lib/natal-wheel.ts"), /const round = \(value: number\) => Math\.round\(value \* 100\) \/ 100;/);
 });

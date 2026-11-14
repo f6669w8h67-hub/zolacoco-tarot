@@ -1,176 +1,138 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+// 探索妳的星盤 v2 (Zola, 2026-11-14: 「兩個都要」「精緻金色星象儀」): a real natal chart from the birth
+// date, time and place, a plain-language reading of six placements and the elements, then a way to
+// book Zola's full chart reading on LINE. The chart is computed in this browser (lib/natal-chart.ts):
+// birth data is never sent to the site. It goes into the LINE message only if she ticks
+// 「附上我的出生資料」 and sees the text first (ChatGPT review B4).
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ZOLA_LINE_URL } from "@/lib/contact";
+import { lineMessageUrl } from "@/lib/contact";
+import { bookingMessage } from "@/lib/natal-booking";
 import { MUSIC_WAIT_MS, initialMusic, musicStep, type MusicEvent, type MusicState } from "@/lib/astro-music";
+import { BIRTH_PLACES, PLACE_GROUPS, placeById } from "@/lib/birth-places";
+import type { NatalChart, PlanetId, SignId } from "@/lib/natal-chart";
+import { ASCENDANT_READINGS, ELEMENT_LINES, MARS_LINES, MERCURY_LINES, MOON_READINGS, SUN_READINGS, VENUS_LINES } from "@/lib/natal-readings";
+import { WHEEL, type wheelLayout } from "@/lib/natal-wheel";
 import "../styles/pearl-page.css";
 import "./astrology-exploration.css";
 
 const YT_ORIGIN = "https://www.youtube-nocookie.com";
+/** Birth data kept on this device only when she ticks 「記住」; a new key, the old records stay as they are. */
+const BIRTH_STORE = "zolacoco-natal-birth-v1";
+/** The old four-question exploration records, still shown in 我的存檔 (/admin). Never removed here. */
+const OLD_RECORDS = "zolacoco-astrology-exploration-records-v1";
 
-type View = "intro" | "theme" | "state" | "need" | "focus" | "result" | "service" | "records";
-type Choice = { id: string; title: string; note: string };
-type Result = {
-  title: string;
-  chartFocus: string;
-  focusNote: string;
-  innerNeed: string;
-  pattern: string;
-  questions: string[];
+type View = "intro" | "form" | "result";
+/** placeId "custom": her own latitude, longitude and time zone (ChatGPT review #34 B2). fold: which of
+ *  two occurrences of a repeated local time (the clocks went back that night): 0 first, 1 second. */
+type Birth = { date: string; time: string | null; placeId: string; fold?: 0 | 1; custom?: { latitude: number; longitude: number; timeZone: string } };
+type Place = { name: string; latitude: number; longitude: number; timeZone: string };
+type Repeated = { offsets: [number, number] };
+type Engine = {
+  resolveLocalTime: typeof import("@/lib/natal-chart").resolveLocalTime;
+  computeNatalChart: typeof import("@/lib/natal-chart").computeNatalChart;
+  elementCounts: typeof import("@/lib/natal-chart").elementCounts;
+  wheelLayout: typeof wheelLayout;
 };
-type RecordItem = {
-  id: string;
-  date: string;
-  theme: Choice;
-  state: Choice;
-  need: Choice;
-  focus: Choice;
-  note: string;
-  result: Result;
+type Computed = { birth: Birth; place: Place; chart: NatalChart; wheel: ReturnType<typeof wheelLayout>; elements: Record<"火" | "土" | "風" | "水", number> };
+
+const SIGN_NAMES: Record<SignId, string> = {
+  aries: "牡羊座", taurus: "金牛座", gemini: "雙子座", cancer: "巨蟹座", leo: "獅子座", virgo: "處女座",
+  libra: "天秤座", scorpio: "天蠍座", sagittarius: "射手座", capricorn: "摩羯座", aquarius: "水瓶座", pisces: "雙魚座",
 };
-
-const STORE = "zolacoco-astrology-exploration-records-v1";
-
-const themes: Choice[] = [
-  { id: "relationship", title: "感情與關係", note: "理解自己的愛情需求、互動方式與關係模式" },
-  { id: "career", title: "工作天賦與方向", note: "整理適合發揮的能力、職涯選擇與成就感來源" },
-  { id: "emotion", title: "情緒與安全感", note: "看見情緒反應、依附需要與真正能安心的方式" },
-  { id: "identity", title: "自我價值與定位", note: "理解我是誰、如何表達自己，以及容易懷疑自己的地方" },
-  { id: "lesson", title: "人生課題與轉變", note: "釐清目前的考驗、成長方向與生命轉折" },
-  { id: "pattern", title: "反覆出現的模式", note: "理解為什麼相似的關係、情緒或選擇總會再次發生" },
-];
-
-const states: Choice[] = [
-  { id: "unclear", title: "我不知道自己真正想要什麼", note: "選項很多，卻很難做出相信自己的決定" },
-  { id: "anxious", title: "我很容易焦慮或想太多", note: "即使事情還沒發生，心裡已經反覆演練很多次" },
-  { id: "repeating", title: "相似的問題一直重複", note: "換了情境或對象，熟悉的感受仍然再次出現" },
-  { id: "stuck", title: "我很努力，卻感覺卡在原地", note: "做了很多事，仍然沒有真正靠近想要的生活" },
-  { id: "pleasing", title: "我常先照顧別人的期待", note: "知道別人需要什麼，卻不容易說出自己的需要" },
-  { id: "transition", title: "我正處在人生轉換期", note: "舊的狀態正在結束，新的方向還沒有完全成形" },
-];
-
-const needs: Choice[] = [
-  { id: "security", title: "安全感與穩定", note: "希望知道自己可以放心依靠什麼" },
-  { id: "understood", title: "被理解與被接住", note: "希望真實感受能被看見，而不必一直解釋" },
-  { id: "freedom", title: "自由與選擇空間", note: "希望能按照自己的節奏生活，不再被期待推著走" },
-  { id: "recognition", title: "肯定與成就感", note: "希望自己的努力有價值，也能相信自己的能力" },
-  { id: "belonging", title: "歸屬感與連結", note: "希望在關係或群體中，仍然能安心做自己" },
-  { id: "direction", title: "清楚的方向感", note: "希望知道現在的選擇，正把自己帶往哪裡" },
-];
-
-const focuses: Choice[] = [
-  { id: "inner", title: "我的內在情緒與安全感", note: "想從月亮、第四宮與情緒反應開始理解" },
-  { id: "self", title: "我是誰，以及如何活出自己", note: "想從太陽、上升與第一宮整理自我定位" },
-  { id: "love", title: "我的感情需求與關係模式", note: "想從金星、火星與第七宮理解互動方式" },
-  { id: "career", title: "我的天賦、工作與人生方向", note: "想從天頂、第十宮與土星理解職涯課題" },
-  { id: "lesson", title: "反覆出現的人生課題", note: "想從南北交點、土星與冥王星尋找深層線索" },
-  { id: "whole", title: "我還不確定，想從整體星盤開始", note: "希望先看懂星盤主軸，再決定最想深入的地方" },
-];
-
-const focusByTheme: Record<string, { title: string; chart: string; note: string }> = {
-  relationship: { title: "在關係裡，看見真正想被如何愛著的自己", chart: "金星 × 火星 × 第七宮", note: "適合深入愛情需求、被吸引的模式、主動與退讓的方式，以及長期關係中的課題。" },
-  career: { title: "在工作選擇裡，找回屬於自己的成就感", chart: "天頂 × 第十宮 × 土星", note: "適合整理天賦如何被看見、對成就的期待、職涯壓力，以及願意長期累積的方向。" },
-  emotion: { title: "理解情緒背後，那個一直想被安穩接住的自己", chart: "月亮 × 第四宮 × 上升", note: "適合理解本能反應、安全感來源、家庭影響，以及壓力來臨時如何照顧自己。" },
-  identity: { title: "把外界的期待放下，重新認識真正的自己", chart: "太陽 × 上升 × 第一宮", note: "適合整理自我認同、表達方式、核心動力，以及為什麼有時很難肯定自己的選擇。" },
-  lesson: { title: "理解此刻的轉變，正在邀請妳學會什麼", chart: "南北交點 × 土星 × 冥王星", note: "適合梳理重要轉折、長期考驗、需要放下的習慣，以及下一階段的成長方向。" },
-  pattern: { title: "看懂反覆出現的模式，才有機會做出不同選擇", chart: "土星 × 冥王星 × 南北交點", note: "適合理解熟悉卻消耗的循環、害怕改變的原因，以及生命中需要重新建立的界線。" },
+const SIGN_ORDER: SignId[] = ["aries", "taurus", "gemini", "cancer", "leo", "virgo", "libra", "scorpio", "sagittarius", "capricorn", "aquarius", "pisces"];
+const SHORT_SIGN = ["牡羊", "金牛", "雙子", "巨蟹", "獅子", "處女", "天秤", "天蠍", "射手", "摩羯", "水瓶", "雙魚"];
+const PLANET_NAMES: Record<PlanetId, string> = {
+  sun: "太陽", moon: "月亮", mercury: "水星", venus: "金星", mars: "火星", jupiter: "木星", saturn: "土星", uranus: "天王星", neptune: "海王星", pluto: "冥王星", node: "北交點",
 };
 
-const needCopy: Record<string, string> = {
-  security: "妳此刻很重視可預期、可依靠的感覺。比起逼自己勇敢，更重要的是先辨認什麼會讓妳真正安心。",
-  understood: "妳需要的不一定是更多建議，而是感受能被聽懂。星盤探索可以幫妳找到情緒語言，以及妳習慣隱藏需要的方式。",
-  freedom: "妳正在尋找能自己做決定的空間。值得理解的是：妳害怕失去什麼，又為了符合期待放下了什麼。",
-  recognition: "妳希望努力能被看見，也想更相信自己的價值。這份需要可以帶妳回到成就感、能力與自我肯定的來源。",
-  belonging: "妳渴望連結，但也不想在關係裡失去自己。適合整理親密、界線與歸屬感之間的平衡。",
-  direction: "妳需要一條能相信的路。星盤不替妳決定答案，但能幫助妳看懂自己做選擇時最在意的核心。",
-};
-
-const stateCopy: Record<string, string> = {
-  unclear: "當方向模糊時，妳可能不是沒有答案，而是同時聽見太多期待。先分辨哪些聲音屬於自己。",
-  anxious: "焦慮常在替妳預演失去控制的可能。理解情緒反應與安全感來源，能讓妳不用只靠反覆思考保護自己。",
-  repeating: "重複不代表妳沒有成長，它常提醒某個需要、界線或害怕仍未被真正理解。",
-  stuck: "努力沒有帶來靠近感時，值得重新確認：現在追求的目標，是否真的符合妳的內在動力。",
-  pleasing: "習慣先讀懂別人，可能讓自己的聲音越來越小。這次探索邀請妳把需要放回同等重要的位置。",
-  transition: "轉換期的不確定不是失敗，而是舊方法已經不再適合。妳正在為下一個版本的自己騰出空間。",
-};
-
-/**
- * Step 4 (ChatGPT spec, 2026-11-14): a bright pearl astrology salon. The seven dark scene photos
- * (3 MB PNGs each) are no longer requested; one light gold chart in line, drawn in SVG, decorates
- * every view at a different size. It is a decoration only: nothing here calculates a natal chart.
- */
-function AstroChart({ className = "" }: { className?: string }) {
-  const planets = [18, 74, 131, 199, 262, 318];
-  // Rounded so the server and the phone print the same numbers (no hydration mismatch).
-  const at = (deg: number, r: number) => [Math.cos, Math.sin].map((f) => Math.round((100 + r * f((deg * Math.PI) / 180)) * 100) / 100);
-  return <svg className={`astro-chart ${className}`} viewBox="0 0 200 200" fill="none" stroke="currentColor" aria-hidden="true">
-    <circle cx="100" cy="100" r="94" strokeWidth="1.1" /><circle cx="100" cy="100" r="80" strokeWidth=".8" /><circle cx="100" cy="100" r="44" strokeWidth=".8" /><circle cx="100" cy="100" r="7" strokeWidth=".8" />
-    {Array.from({ length: 72 }, (_, i) => { const [x1, y1] = at(i * 5, 80); const [x2, y2] = at(i * 5, i % 6 === 0 ? 94 : 85); return <line key={`t${i}`} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth={i % 6 === 0 ? .9 : .5} />; })}
-    {Array.from({ length: 12 }, (_, i) => { const [x1, y1] = at(i * 30 + 15, 44); const [x2, y2] = at(i * 30 + 15, 80); return <line key={`h${i}`} x1={x1} y1={y1} x2={x2} y2={y2} strokeWidth=".5" />; })}
-    <ellipse className="astro-chart-ring" cx="100" cy="100" rx="96" ry="30" transform="rotate(-24 100 100)" strokeWidth=".8" strokeDasharray="3 4" />
-    <ellipse className="astro-chart-ring" cx="100" cy="100" rx="96" ry="22" transform="rotate(58 100 100)" strokeWidth=".7" strokeDasharray="2 5" />
-    <path className="astro-chart-aspect" d={`M${at(planets[0], 62).join(" ")} L${at(planets[2], 62).join(" ")} L${at(planets[4], 62).join(" ")} Z M${at(planets[1], 62).join(" ")} L${at(planets[3], 62).join(" ")}`} strokeWidth=".7" strokeDasharray="2 3" />
-    {planets.map((deg) => { const [x, y] = at(deg, 62); return <circle key={deg} cx={x} cy={y} r="2.6" fill="currentColor" stroke="none" />; })}
-  </svg>;
+function degreeText(longitude: number) {
+  const within = ((longitude % 30) + 30) % 30;
+  const whole = Math.floor(within);
+  const minutes = Math.floor((within - whole) * 60);
+  return `${whole}°${String(minutes).padStart(2, "0")}′`;
 }
 
-const dateLabel = () => new Intl.DateTimeFormat("zh-TW", { year: "numeric", month: "long", day: "numeric" }).format(new Date());
-const makeId = () => globalThis.crypto?.randomUUID?.() ?? `astro-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-
-function makeResult(theme: Choice, state: Choice, need: Choice, focus: Choice, note: string): Result {
-  const base = focusByTheme[theme.id] ?? focusByTheme.pattern;
-  const customFocus = focus.id === "whole" ? base.chart : focus.title.replace("我的", "");
-  const subject = theme.id === "relationship" ? "關係中真正需要的互動與安全感" : theme.id === "career" ? "工作選擇、天賦與成就感" : theme.id === "emotion" ? "情緒反應與安全感來源" : theme.id === "identity" ? "自我定位與表達方式" : theme.id === "lesson" ? "人生轉折與成長課題" : "反覆出現的選擇與情緒模式";
-  return {
-    title: base.title,
-    chartFocus: focus.id === "whole" ? base.chart : `${customFocus}｜${base.chart}`,
-    focusNote: base.note,
-    innerNeed: needCopy[need.id],
-    pattern: stateCopy[state.id],
-    questions: [
-      `我的星盤如何呈現「${need.title}」這項核心需要？`,
-      `為什麼我在${subject}上，容易出現「${state.title}」的感受？`,
-      note.trim() ? `關於「${note.trim()}」，我的本命盤能提供哪些理解與行動方向？` : `我可以如何運用自己的星盤優勢，回應目前最在意的「${theme.title}」課題？`,
-    ],
-  };
+function signOfLongitude(longitude: number): SignId {
+  return SIGN_ORDER[Math.floor((((longitude % 360) + 360) % 360) / 30)];
 }
 
-function ChoicePage({ view, step, title, copy, choices, value, onSelect, onBack, onNext, music, children }: { view: View; step: number; title: string; copy: string; choices: Choice[]; value: Choice | null; onSelect: (choice: Choice) => void; onBack: () => void; onNext: () => void; music: React.ReactNode; children?: React.ReactNode }) {
-  return <section className={`astro-step astro-step-${view}`}>
-    <AstroChart className="astro-chart-side" />
-    <div className="astro-step-panel">
-      <div className="astro-progress"><button onClick={onBack}>← 上一步</button><span aria-label={`第 ${step} 步，共 4 步`}>{String(step).padStart(2, "0")} / 04</span>{music}</div>
-      <div className="astro-progress-line" role="progressbar" aria-label="探索進度" aria-valuemin={0} aria-valuemax={4} aria-valuenow={step}><i style={{ width: `${step * 25}%` }} /></div>
-      <small>follow your honest feeling</small>
-      <h1>{title}</h1>
-      <p className="astro-lead">{copy}</p>
-      <aside className="astro-mindset"><b>作答提醒</b><p>先選第一個讓妳有感覺的答案。這裡沒有好壞或標準答案，也不需要選擇「理想中的自己」。</p></aside>
-      <div className="astro-choices">{choices.map((choice, index) => <button key={choice.id} type="button" aria-pressed={value?.id === choice.id} className={value?.id === choice.id ? "active" : ""} onClick={() => onSelect(choice)}><i>{String(index + 1).padStart(2, "0")}</i><span><b>{choice.title}</b><small>{choice.note}</small></span><em>{value?.id === choice.id ? "✓ 已選擇" : "選擇"}</em></button>)}</div>
-      {children}
-      <button className="astro-primary astro-next" disabled={!value} onClick={onNext}>{step === 4 ? "整理我的探索結果" : "繼續探索"} <b>→</b></button>
-    </div>
-  </section>;
+function todayInTaipei() {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Taipei" }).format(new Date());
+}
+
+const CUSTOM = "custom";
+
+function validCustom(custom: Birth["custom"]) {
+  return Boolean(custom && Number.isFinite(custom.latitude) && Math.abs(custom.latitude) <= 89.9 && Number.isFinite(custom.longitude) && Math.abs(custom.longitude) <= 180 && zoneExists(custom.timeZone));
+}
+
+function zoneExists(zone: string) {
+  try { new Intl.DateTimeFormat("en", { timeZone: zone }); return true; } catch { return false; }
+}
+
+/** The place the chart uses, said plainly: a city's centre, or her own coordinates. */
+function placeFor(birth: Birth): Place | null {
+  if (birth.placeId === CUSTOM) {
+    if (!validCustom(birth.custom)) return null;
+    const { latitude, longitude, timeZone } = birth.custom!;
+    return { name: `自訂座標（${latitude >= 0 ? "北緯" : "南緯"} ${Math.abs(latitude).toFixed(2)}°、${longitude >= 0 ? "東經" : "西經"} ${Math.abs(longitude).toFixed(2)}°）`, latitude, longitude, timeZone };
+  }
+  const city = placeById(birth.placeId);
+  return city ? { name: `${city.name}（市中心座標）`, latitude: city.latitude, longitude: city.longitude, timeZone: city.timeZone } : null;
+}
+
+function utcLabel(offsetMinutes: number) {
+  const hours = offsetMinutes / 60;
+  return `UTC${hours >= 0 ? "+" : "−"}${Number.isInteger(hours) ? Math.abs(hours) : Math.abs(hours).toFixed(1)}`;
+}
+
+/** Every time zone the browser knows, else the ones on the place list. */
+function timeZones() {
+  const all = (Intl as unknown as { supportedValuesOf?: (key: string) => string[] }).supportedValuesOf?.("timeZone");
+  return all?.length ? all : [...new Set(BIRTH_PLACES.map((place) => place.timeZone))].sort();
+}
+
+function readBirth(): Birth | null {
+  try {
+    const value = JSON.parse(localStorage.getItem(BIRTH_STORE) ?? "null") as Birth | null;
+    if (value && /^\d{4}-\d{2}-\d{2}$/.test(value.date) && (value.time === null || /^\d{2}:\d{2}$/.test(value.time)) && placeFor(value)) return value;
+  } catch { /* nothing kept */ }
+  return null;
 }
 
 export default function AstrologyExplorationPage() {
   const [view, setView] = useState<View>("intro");
-  const [theme, setTheme] = useState<Choice | null>(null);
-  const [state, setState] = useState<Choice | null>(null);
-  const [need, setNeed] = useState<Choice | null>(null);
-  const [focus, setFocus] = useState<Choice | null>(null);
-  const [note, setNote] = useState("");
-  // read on the client after mounting, so the first render matches the server (records unchanged)
-  const [records, setRecords] = useState<RecordItem[]>([]);
-  const [recordsReady, setRecordsReady] = useState(false);
+  const [saved, setSaved] = useState<Birth | null>(null);
+  const [hasOldRecords, setHasOldRecords] = useState(false);
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
+  const [timeUnknown, setTimeUnknown] = useState(false);
+  const [placeId, setPlaceId] = useState("tw-taipei");
+  const [customLat, setCustomLat] = useState("");
+  const [customLon, setCustomLon] = useState("");
+  const [customZone, setCustomZone] = useState("Asia/Taipei");
+  const [repeated, setRepeated] = useState<Repeated | null>(null);
+  const [fold, setFold] = useState<0 | 1 | null>(null);
+  const [remember, setRemember] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [computed, setComputed] = useState<Computed | null>(null);
+  const [attachBirth, setAttachBirth] = useState(false);
+  const engine = useRef<Engine | null>(null);
+
+  // Read this device's kept birth data after mounting, so the first render matches the server.
   useEffect(() => {
     const load = window.setTimeout(() => {
-      try { setRecords(JSON.parse(localStorage.getItem(STORE) || "[]")); } catch { setRecords([]); }
-      setRecordsReady(true);
+      setSaved(readBirth());
+      try { setHasOldRecords((JSON.parse(localStorage.getItem(OLD_RECORDS) || "[]") as unknown[]).length > 0); } catch { setHasOldRecords(false); }
     }, 0);
     return () => window.clearTimeout(load);
   }, []);
-  const [saved, setSaved] = useState(false);
+
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [view]);
+
   // Music: never starts by itself. The rules live in lib/astro-music.ts; this only runs its
   // commands, keeps the wait timer and talks to the YouTube player.
   const [player, setPlayer] = useState<MusicState>(initialMusic);
@@ -178,10 +140,6 @@ export default function AstrologyExplorationPage() {
   const musicFrame = useRef<HTMLIFrameElement | null>(null);
   const musicWait = useRef(0);
   const musicHello = useRef(0);
-
-  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [view]);
-
-  const result = useMemo(() => theme && state && need && focus ? makeResult(theme, state, need, focus, note) : null, [theme, state, need, focus, note]);
 
   const dispatchMusic = useCallback((first: MusicEvent) => {
     const send = (func: string, args: unknown[] = []) => musicFrame.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), YT_ORIGIN);
@@ -240,10 +198,6 @@ export default function AstrologyExplorationPage() {
     musicHello.current = window.setInterval(hello, 250);
   }
 
-  function beginJourney() {
-    setView("theme");
-  }
-
   const music = <div className="astro-music">
     <button className={`astro-music-toggle ${player.phase === "playing" ? "is-playing" : ""}`} type="button" aria-pressed={player.phase === "playing"} aria-busy={player.phase === "loading"} onClick={() => dispatchMusic({ type: "tap" })}>
       <i aria-hidden="true"><span /><span /><span /></i>
@@ -252,48 +206,275 @@ export default function AstrologyExplorationPage() {
     {player.notice ? <p className="astro-music-notice" role="status">{player.notice}</p> : null}
   </div>;
 
-  function restart() { setTheme(null); setState(null); setNeed(null); setFocus(null); setNote(""); setSaved(false); setView("intro"); }
-  function saveRecord() {
-    if (!theme || !state || !need || !focus || !result || saved) return;
-    const item: RecordItem = { id: makeId(), date: dateLabel(), theme, state, need, focus, note, result };
-    const next = [item, ...records];
-    setRecords(next);
-    localStorage.setItem(STORE, JSON.stringify(next));
-    setSaved(true);
-    void fetch("/api/activity", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "astrology_exploration", title: "探索妳的星盤", summary: `${theme.title}・${result.chartFocus}`, details: item }) });
+  async function loadEngine() {
+    if (engine.current) return engine.current;
+    const [natal, wheel] = await Promise.all([import("@/lib/natal-chart"), import("@/lib/natal-wheel")]);
+    engine.current = { resolveLocalTime: natal.resolveLocalTime, computeNatalChart: natal.computeNatalChart, elementCounts: natal.elementCounts, wheelLayout: wheel.wheelLayout };
+    return engine.current;
   }
-  function removeRecord(id: string) {
-    if (!window.confirm("確定要刪除這份星盤探索紀錄嗎？")) return;
-    const next = records.filter((record) => record.id !== id);
-    setRecords(next);
-    localStorage.setItem(STORE, JSON.stringify(next));
+
+  async function compute(birth: Birth) {
+    const place = placeFor(birth);
+    if (!place) { setFormError("請選擇出生地點。"); return false; }
+    setBusy(true);
+    try {
+      const tools = await loadEngine();
+      // A known birth time must exist exactly once at the place; a repeated one needs her choice.
+      let utc: string | undefined;
+      if (birth.time) {
+        const resolved = tools.resolveLocalTime(birth.date, birth.time, place.timeZone);
+        if (resolved.kind === "gap") {
+          setFormError(`${birth.date} ${birth.time} 在出生地剛好遇到夏令時間開始，時鐘直接跳過了這段時間，這個時刻在當地不存在。請再確認出生時間（例如出生證明上的時間）。`);
+          setView("form");
+          return false;
+        }
+        if (resolved.kind === "repeated") {
+          if (birth.fold === undefined) {
+            setRepeated({ offsets: [resolved.options[0].offsetMinutes, resolved.options[1].offsetMinutes] });
+            setFormError("這個出生時間在出生地出現了兩次（夏令時間結束、時鐘撥回），請在下方選擇是哪一次。");
+            setView("form");
+            return false;
+          }
+          utc = resolved.options[birth.fold].utc.toISOString();
+        } else {
+          utc = resolved.utc.toISOString();
+        }
+      }
+      const chart = tools.computeNatalChart({ date: birth.date, time: birth.time, latitude: place.latitude, longitude: place.longitude, timeZone: place.timeZone, utc });
+      setComputed({ birth, place, chart, wheel: tools.wheelLayout(chart), elements: tools.elementCounts(chart) });
+      setAttachBirth(false);
+      setView("result");
+      return true;
+    } catch {
+      setFormError("星盤暫時排不出來，請重新整理頁面後再試一次。");
+      return false;
+    } finally {
+      setBusy(false);
+    }
   }
+
+  async function submit() {
+    setFormError("");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < "1900-01-01" || date > todayInTaipei()) { setFormError("請填寫正確的出生日期。"); return; }
+    if (!timeUnknown && !/^\d{2}:\d{2}$/.test(time)) { setFormError("請填寫出生時間；不知道的話，勾選「不知道出生時間」。"); return; }
+    let custom: Birth["custom"];
+    if (placeId === CUSTOM) {
+      custom = { latitude: Number(customLat), longitude: Number(customLon), timeZone: customZone };
+      if (customLat.trim() === "" || customLon.trim() === "" || !validCustom(custom)) { setFormError("請填寫正確的緯度（-89.9～89.9）、經度（-180～180），並選擇出生地的時區。"); return; }
+    }
+    if (repeated && fold === null && !timeUnknown) { setFormError("這個出生時間在出生地出現了兩次，請在下方選擇是哪一次。"); return; }
+    const birth: Birth = { date, time: timeUnknown ? null : time, placeId, ...(custom ? { custom } : {}), ...(repeated && fold !== null && !timeUnknown ? { fold } : {}) };
+    const done = await compute(birth);
+    if (!done) return;
+    try {
+      if (remember) { localStorage.setItem(BIRTH_STORE, JSON.stringify(birth)); setSaved(birth); }
+    } catch { /* this device cannot keep it; the chart still shows */ }
+  }
+
+  function editBirth(from: Birth | null) {
+    if (from) {
+      setDate(from.date);
+      setTime(from.time ?? "");
+      setTimeUnknown(from.time === null);
+      setPlaceId(from.placeId);
+      if (from.custom) { setCustomLat(String(from.custom.latitude)); setCustomLon(String(from.custom.longitude)); setCustomZone(from.custom.timeZone); }
+    }
+    setRepeated(null);
+    setFold(null);
+    setRemember(false);
+    setFormError("");
+    setView("form");
+  }
+
+  function forget() {
+    try { localStorage.removeItem(BIRTH_STORE); } catch { /* nothing kept */ }
+    setSaved(null);
+  }
+
+  const replacing = Boolean(saved && remember && (saved.date !== date || saved.time !== (timeUnknown ? null : time) || saved.placeId !== placeId || (placeId === CUSTOM && (String(saved.custom?.latitude) !== customLat || String(saved.custom?.longitude) !== customLon || saved.custom?.timeZone !== customZone))));
+  // Any change to the date, time or place asks again whether the time is repeated there.
+  const resetTime = () => { setRepeated(null); setFold(null); setFormError(""); };
 
   return <main className={`astro-page pearl-page astro-view-${view}`}>
     {player.mounted ? <div className="astro-audio-only" aria-hidden="true"><iframe key={player.frame} ref={musicFrame} onLoad={onMusicLoad} src="https://www.youtube-nocookie.com/embed/MRQsx1-_1jc?enablejsapi=1&playsinline=1&loop=1&playlist=MRQsx1-_1jc&controls=0&rel=0" title="探索妳的星盤背景音樂" allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" tabIndex={-1} /></div> : null}
+
     {view === "intro" && <section className="astro-intro">
-      <div className="astro-intro-art"><AstroChart className="astro-chart-hero" /></div>
-      <div className="astro-intro-copy"><div className="astro-intro-head"><small>inner astrology journey</small>{music}</div><h1>探索妳的星盤</h1><p className="astro-subtitle">看見妳的人生課題、內在需求，<br />以及此刻最值得理解的自己。</p><div className="astro-about"><h2>這個體驗可以帶給妳什麼？</h2><p>透過四個簡單提問，整理妳目前最在意的生活主題、反覆感受與內在需要，最後找到適合帶進個人星盤解析的重點。</p><ul><li>約 3 分鐘完成</li><li>不需要先懂占星</li><li>不需要提供出生資料</li></ul></div><aside><b>開始以前，請先記得</b><p>這是自我探索引導，不是實際的本命盤計算。跟著當下最真實的感覺回答即可，妳不需要想得很完整，也不需要迎合任何理想答案。</p></aside><button className="astro-primary" onClick={beginJourney}>開始探索自己 <b>→</b></button><button className="astro-text-button" onClick={() => setView("records")}>查看過往探索紀錄</button></div>
+      <div className="astro-intro-art"><img src="/astrology-exploration/armillary.webp" srcSet="/astrology-exploration/armillary-560.webp 560w, /astrology-exploration/armillary.webp 880w" sizes="(max-width: 760px) 78vw, 440px" alt="香檳金色的天球儀，刻著十二星座的金環，中心是一顆珍珠球" width={880} height={880} /></div>
+      <div className="astro-intro-copy">
+        <div className="astro-intro-head"><small>your natal chart</small>{music}</div>
+        <h1>探索妳的星盤</h1>
+        <p className="astro-subtitle">輸入出生日期、時間和地點，排出妳的本命盤，看看太陽、月亮、上升和其他行星落在哪裡，以及它們在說些什麼。</p>
+        <ul className="astro-facts"><li>約 2 分鐘</li><li>不需要先懂占星</li><li>出生資料只在妳的裝置上排盤</li></ul>
+        <div className="astro-actions">
+          {saved ? <button type="button" className="astro-primary" disabled={busy} onClick={() => void compute(saved)}>用記住的出生資料排盤 <b>→</b></button> : null}
+          <button type="button" className={saved ? "astro-secondary" : "astro-primary"} onClick={() => editBirth(saved)}>{saved ? "輸入新的出生資料" : "開始排盤"} {saved ? null : <b>→</b>}</button>
+        </div>
+        {saved ? <p className="astro-kept">這台裝置記住了 {saved.date} 的出生資料。<button type="button" className="astro-text-button" onClick={forget}>清除記住的出生資料</button></p> : null}
+        {hasOldRecords ? <p className="astro-kept">以前的星盤探索紀錄，可以在 <Link href="/admin">我的存檔</Link> 查看。</p> : null}
+      </div>
     </section>}
 
-    {view === "theme" && <ChoicePage music={music} view="theme" step={1} title="妳現在最想了解自己的哪一部分？" copy="不用選最嚴重的問題，只要選此刻最希望被理解的地方。" choices={themes} value={theme} onSelect={setTheme} onBack={() => setView("intro")} onNext={() => setView("state")} />}
-    {view === "state" && <ChoicePage music={music} view="state" step={2} title="最近，哪一種狀態最靠近妳？" copy="回想最近一至三個月，不必分析原因，先辨認最常出現的感受。" choices={states} value={state} onSelect={setState} onBack={() => setView("theme")} onNext={() => setView("need")} />}
-    {view === "need" && <ChoicePage music={music} view="need" step={3} title="在這些感受背後，妳真正想被滿足的是什麼？" copy="選擇最想擁有的感覺，而不是妳覺得自己『應該』需要的答案。" choices={needs} value={need} onSelect={setNeed} onBack={() => setView("state")} onNext={() => setView("focus")} />}
-    {view === "focus" && <ChoicePage music={music} view="focus" step={4} title="如果打開自己的星盤，妳最想先從哪裡開始？" copy="這會幫助妳把模糊的困擾，整理成更適合深入解析的方向。" choices={focuses} value={focus} onSelect={setFocus} onBack={() => setView("need")} onNext={() => setView("result")}><label className="astro-note"><b>還有一件最想理解的事嗎？</b><span>可以留下一句話，完成後會替妳整理成解析問題（選填）。</span><textarea value={note} onChange={(event) => setNote(event.target.value)} maxLength={120} placeholder="例如：為什麼我在關係裡總是不敢說出真正的需要？" /><small>{note.length} / 120</small></label></ChoicePage>}
-
-    {view === "result" && result && theme && state && need && focus && <section className="astro-result">
-      <div className="astro-top-bar">{music}</div>
-      <div className="astro-result-hero"><small>your inner exploration summary</small><h1><span className="astro-keep">此刻最值得理解的</span><span className="astro-keep">星盤主題</span></h1><p>{result.title}</p></div>
-      <div className="astro-result-sheet"><AstroChart className="astro-chart-watermark" /><div className="astro-result-label"><span>探索方向</span><b>{theme.title}</b></div><h2>{result.chartFocus}</h2><p className="astro-focus-note">{result.focusNote}</p><div className="astro-insights"><article><small>妳此刻真正重視的需要</small><h3>{need.title}</h3><p>{result.innerNeed}</p></article><article><small>最近反覆出現的內在訊號</small><h3>{state.title}</h3><p>{result.pattern}</p></article></div><section className="astro-questions"><small>帶進正式解析的 3 個問題</small><h2><span className="astro-keep">妳可以從這三個方向，</span><span className="astro-keep">更深入理解自己</span></h2><ol>{result.questions.map((question) => <li key={question}>{question}</li>)}</ol></section><aside className="astro-clarify"><b>關於這份結果</b><p>這是依照妳的回答整理出的自我探索方向，不是本命盤計算結果。真正的個人星盤解析仍需要出生日期、準確時間與出生地點，才能看見行星、星座和宮位之間的完整關係。</p></aside><div className="astro-result-actions"><button className="astro-primary" onClick={saveRecord}>{saved ? "已收進我的探索紀錄" : "儲存這份探索摘要"}</button><button onClick={() => setView("service")}>了解個人星盤解析 <b>→</b></button><button onClick={restart}>重新做一次</button></div></div>
+    {view === "form" && <section className="astro-form-view">
+      <div className="astro-top-bar"><button type="button" className="astro-back" onClick={() => setView("intro")}>← 返回</button>{music}</div>
+      <small className="astro-kicker">birth details</small>
+      <h1>妳的出生資料</h1>
+      <p className="astro-lead">出生時間越準確，上升星座和宮位越準確。可以參考出生證明或媽媽手冊。</p>
+      <form className="astro-form" onSubmit={(event) => { event.preventDefault(); void submit(); }} noValidate>
+        <label><span>出生日期</span><input type="date" value={date} min="1900-01-01" max={todayInTaipei()} onChange={(event) => { setDate(event.target.value); resetTime(); }} required /></label>
+        <label><span>出生時間</span><input type="time" value={time} disabled={timeUnknown} onChange={(event) => { setTime(event.target.value); resetTime(); }} /></label>
+        <label className="astro-check"><input type="checkbox" checked={timeUnknown} onChange={(event) => { setTimeUnknown(event.target.checked); resetTime(); }} /><span>不知道出生時間（不會顯示上升星座和宮位）</span></label>
+        {repeated && !timeUnknown ? <fieldset className="astro-fold">
+          <legend>這個時間在出生地出現了兩次，是哪一次？</legend>
+          <label className="astro-check"><input type="radio" name="fold" checked={fold === 0} onChange={() => setFold(0)} /><span>第一次（時鐘撥回前，{utcLabel(repeated.offsets[0])}）</span></label>
+          <label className="astro-check"><input type="radio" name="fold" checked={fold === 1} onChange={() => setFold(1)} /><span>第二次（時鐘撥回後，{utcLabel(repeated.offsets[1])}）</span></label>
+          <small>不確定的話，可以問問家人，或看出生證明上有沒有寫「夏令時間」。</small>
+        </fieldset> : null}
+        <label><span>出生地點</span>
+          <select value={placeId} onChange={(event) => { setPlaceId(event.target.value); resetTime(); }}>
+            {PLACE_GROUPS.map((group) => <optgroup label={group} key={group}>{BIRTH_PLACES.filter((place) => place.group === group).map((place) => <option value={place.id} key={place.id}>{place.name}</option>)}</optgroup>)}
+            <optgroup label="其他"><option value={CUSTOM}>自行輸入經緯度（進階）</option></optgroup>
+          </select>
+          <small>排盤使用所選城市的市中心座標。出生城市不在清單裡，可以選最接近的城市（上升和宮位會是近似值），或選最下方的「自行輸入經緯度」。</small>
+        </label>
+        {placeId === CUSTOM ? <div className="astro-custom">
+          <label><span>緯度</span><input type="number" inputMode="decimal" step="0.01" min="-89.9" max="89.9" placeholder="例如 25.03（南緯用負數）" value={customLat} onChange={(event) => { setCustomLat(event.target.value); resetTime(); }} /></label>
+          <label><span>經度</span><input type="number" inputMode="decimal" step="0.01" min="-180" max="180" placeholder="例如 121.56（西經用負數）" value={customLon} onChange={(event) => { setCustomLon(event.target.value); resetTime(); }} /></label>
+          <label><span>出生地時區</span><select value={customZone} onChange={(event) => { setCustomZone(event.target.value); resetTime(); }}>{timeZones().map((zone) => <option value={zone} key={zone}>{zone}</option>)}</select></label>
+          <small>可以在地圖 App 長按出生地點，複製顯示的緯度和經度。時區用出生地所在城市（例如 Asia/Taipei）。</small>
+        </div> : null}
+        <label className="astro-check"><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /><span>記住這次的出生資料（只存在這台裝置，可以隨時清除）</span></label>
+        {replacing ? <p className="astro-warn">勾選後，會取代之前記住的 {saved?.date} 出生資料。</p> : null}
+        {formError ? <p className="astro-error" role="alert">{formError}</p> : null}
+        <button type="submit" className="astro-primary" disabled={busy}>{busy ? "排盤中…" : "排出我的星盤"} <b>→</b></button>
+      </form>
     </section>}
 
-    {view === "service" && result && <section className="astro-service">
-      <div className="astro-service-art"><AstroChart className="astro-chart-service" /></div>
-      <div className="astro-service-copy"><div className="astro-top-bar"><button className="astro-back" onClick={() => setView("result")}>← 回到探索摘要</button>{music}</div><small>personal natal chart reading</small><h1>為妳保留一個，<br />好好理解自己的位置</h1><p>免費體驗幫妳找到想問的重點；個人本命星盤解析，則會根據妳的出生資料，完整梳理性格、情緒、關係、工作天賦與人生課題。</p><div className="astro-service-grid"><article><h2>解析會看見什麼？</h2><ul><li>太陽、月亮與上升：核心自我、情緒與外在表現</li><li>金星、火星與第七宮：感情需求與關係模式</li><li>天頂、第十宮與土星：工作天賦、責任與成長方向</li><li>南北交點與重要相位：反覆課題與生命發展主軸</li></ul></article><article><h2>預約前請準備</h2><ul><li>西元出生年月日</li><li>盡量準確的出生時間</li><li>出生城市或地區</li><li>目前最想深入的 1～3 個問題</li></ul></article></div><aside><b>妳這次找到的解析主題</b><p>{result.chartFocus}</p></aside><div className="astro-service-actions"><a className="astro-primary" href={ZOLA_LINE_URL} target="_blank" rel="noreferrer">前往官方 LINE 預約 ↗</a><Link href="/#consult">了解 Zola 的服務方式</Link></div><p className="astro-service-note">點擊後會前往 Zolacoco 官方 LINE，由 Zola 親自確認解析內容與預約方式。</p></div>
-    </section>}
+    {view === "result" && computed && <ChartResult computed={computed} music={music} attachBirth={attachBirth} setAttachBirth={setAttachBirth} onEdit={() => editBirth(computed.birth)} />}
 
-    {view === "records" && <section className="astro-records"><div className="astro-records-sheet"><div className="astro-top-bar"><button className="astro-back" onClick={() => setView("intro")}>← 回到星盤探索</button>{music}</div><small>my exploration records</small><h1>我的星盤探索紀錄</h1><p>完成的摘要會保存在這個裝置上，方便妳日後預約解析時再次查看。</p>{!recordsReady ? <p className="astro-loading" role="status">正在讀取這台裝置上的紀錄…</p> : records.length ? <div className="astro-record-list">{records.map((record) => <article key={record.id}><small>{record.date}</small><h2>{record.theme.title}</h2><b>{record.result.chartFocus}</b><p>{record.result.title}</p><ol>{record.result.questions.map((question) => <li key={question}>{question}</li>)}</ol><div className="astro-record-actions"><button onClick={() => { setTheme(record.theme); setState(record.state); setNeed(record.need); setFocus(record.focus); setNote(record.note); setSaved(true); setView("result"); }}>查看完整摘要</button><button onClick={() => removeRecord(record.id)}>刪除</button></div></article>)}</div> : <div className="astro-empty"><AstroChart className="astro-chart-empty" /><h2>還沒有探索紀錄</h2><p>完成四個簡單提問後，妳的內在探索摘要會收藏在這裡。</p><button className="astro-primary" onClick={() => setView("theme")}>開始第一次探索</button></div>}</div></section>}
-
-    <footer className="astro-footer">這項體驗用於自我整理與星盤服務前的問題聚焦，不替代心理、醫療、法律或財務專業建議。</footer>
+    <footer className="astro-footer">星盤解讀是自我探索的參考，不替代心理、醫療、法律或財務專業建議。出生資料只在妳的裝置上用來排盤，不會傳到網站；只有勾選「附上我的出生資料」時，才會放進 LINE 預填訊息。背景音樂由 YouTube 播放。</footer>
   </main>;
+}
+
+const PLANET_MARK_TEXT: Record<PlanetId, string> = { sun: "日", moon: "月", mercury: "水", venus: "金", mars: "火", jupiter: "木", saturn: "土", uranus: "天", neptune: "海", pluto: "冥", node: "北" };
+
+function Reading({ chart, id, title, question, texts }: { chart: NatalChart; id: PlanetId; title: string; question: string; texts: Record<SignId, string> }) {
+  const item = chart.placements.find((placement) => placement.id === id)!;
+  const unsure = chart.uncertain[id];
+  return <article className="astro-reading">
+    <header><span className="astro-mark" aria-hidden="true">{PLANET_MARK_TEXT[id]}</span><div><h3>{title}</h3><small>{question}</small></div></header>
+    {unsure ? <>
+      <p className="astro-placement">{PLANET_NAMES[id]}可能在 {SIGN_NAMES[unsure[0]]} 或 {SIGN_NAMES[unsure[1]]}</p>
+      <p className="astro-unsure">妳出生那天{PLANET_NAMES[id]}換了星座，沒有出生時間無法確定是哪一個。兩段都可以讀讀看，留意哪一段比較像妳。</p>
+      <p><b>{SIGN_NAMES[unsure[0]]}：</b>{texts[unsure[0]]}</p>
+      <p><b>{SIGN_NAMES[unsure[1]]}：</b>{texts[unsure[1]]}</p>
+    </> : <>
+      <p className="astro-placement">{PLANET_NAMES[id]}在{SIGN_NAMES[item.sign]} {degreeText(item.longitude)}{item.house ? `・第 ${item.house} 宮` : ""}{item.retrograde ? "・逆行" : ""}</p>
+      <p>{texts[item.sign]}</p>
+    </>}
+  </article>;
+}
+
+function ChartResult({ computed, music, attachBirth, setAttachBirth, onEdit }: { computed: Computed; music: React.ReactNode; attachBirth: boolean; setAttachBirth: (value: boolean) => void; onEdit: () => void }) {
+  const { chart, birth, place, wheel, elements } = computed;
+  const message = bookingMessage({ date: birth.date, time: birth.time, place: place.name }, attachBirth);
+  const strongest = (Object.entries(elements) as ["火" | "土" | "風" | "水", number][]).sort((a, b) => b[1] - a[1]);
+  const total = strongest.reduce((sum, [, count]) => sum + count, 0);
+  const lead = strongest[0][1] > strongest[1][1] ? strongest[0][0] : null;
+
+  return <section className="astro-result">
+    <div className="astro-top-bar"><button type="button" className="astro-back" onClick={onEdit}>← 修改出生資料</button>{music}</div>
+    <small className="astro-kicker">your natal chart</small>
+    <h1>妳的本命盤</h1>
+    <p className="astro-birth-line">{birth.date}・{birth.time ?? "出生時間不確定"}{birth.fold !== undefined ? `（當地第${birth.fold === 0 ? "一" : "二"}次的 ${birth.time}）` : ""}・{place.name}</p>
+
+    <figure className="astro-wheel-wrap">
+      <ChartWheel wheel={wheel} houses={chart.cusps !== null} />
+      <figcaption>{chart.timeKnown ? `外圈是十二星座，內圈是十二宮（${chart.houseSystem === "placidus" ? "Placidus 宮位制" : "等宮制"}）；日、月、水、金、火、木、土、天、海、冥、北代表各個星體。` : "沒有出生時間，所以只畫出星座與行星，不畫上升、天頂和宮位。"}</figcaption>
+    </figure>
+    {chart.houseSystem === "equal" ? <p className="astro-note">出生地點緯度很高，Placidus 宮位在這個時刻無法計算，這裡改用從上升起算的等宮制。</p> : null}
+    {!chart.timeKnown ? <p className="astro-note">沒有出生時間時，用出生當天中午排盤：不顯示上升星座、天頂和宮位{Object.keys(chart.uncertain).length ? "；當天換了星座的星體，會列出兩個可能。" : "。"}</p> : null}
+
+    <h2 className="astro-section-title">三個核心</h2>
+    <div className="astro-readings">
+      <Reading chart={chart} id="sun" title="太陽" question="我最想活成什麼樣子？" texts={SUN_READINGS} />
+      <Reading chart={chart} id="moon" title="月亮" question="什麼讓我感到安心？" texts={MOON_READINGS} />
+      {chart.ascendant !== null ? <article className="astro-reading">
+        <header><span className="astro-mark" aria-hidden="true">升</span><div><h3>上升</h3><small>我習慣如何面對世界？</small></div></header>
+        <p className="astro-placement">上升在{SIGN_NAMES[signOfLongitude(chart.ascendant)]} {degreeText(chart.ascendant)}</p>
+        <p>{ASCENDANT_READINGS[signOfLongitude(chart.ascendant)]}</p>
+      </article> : <article className="astro-reading is-missing"><header><span className="astro-mark" aria-hidden="true">升</span><div><h3>上升</h3><small>我習慣如何面對世界？</small></div></header><p>上升星座需要準確的出生時間（每兩小時左右就會換一個星座），知道出生時間後再回來排一次。</p></article>}
+    </div>
+
+    <h2 className="astro-section-title">思考、喜歡與行動</h2>
+    <div className="astro-readings">
+      <Reading chart={chart} id="mercury" title="水星" question="我如何理解與表達？" texts={MERCURY_LINES} />
+      <Reading chart={chart} id="venus" title="金星" question="我如何表達喜歡、建立連結？" texts={VENUS_LINES} />
+      <Reading chart={chart} id="mars" title="火星" question="我如何推進事情、面對衝突？" texts={MARS_LINES} />
+    </div>
+
+    <h2 className="astro-section-title">四元素</h2>
+    <div className="astro-elements">
+      {(["火", "土", "風", "水"] as const).map((element) => <div key={element}><b>{element}</b><span className="astro-bar"><i style={{ width: `${total ? Math.round((elements[element] / total) * 100) : 0}%` }} /></span><em>{elements[element]}</em></div>)}
+      <p>{lead ? ELEMENT_LINES[lead] : "四個元素分布得比較平均：妳能在不同狀態之間切換，也可以留意自己最常用、最少用的是哪一種。"}</p>
+      <small>計算太陽到冥王星共 {total} 顆星體，只是自我探索的提示，不是性格分數。</small>
+    </div>
+
+    <h2 className="astro-section-title">行星位置</h2>
+    <div className="astro-table-wrap"><table className="astro-table">
+      <thead><tr><th scope="col">星體</th><th scope="col">星座</th><th scope="col">度數</th>{chart.timeKnown ? <th scope="col">宮位</th> : null}</tr></thead>
+      <tbody>
+        {chart.placements.map((item) => <tr key={item.id}><th scope="row">{PLANET_NAMES[item.id]}{item.retrograde ? <small>逆行</small> : null}</th><td>{chart.uncertain[item.id] ? `${SIGN_NAMES[chart.uncertain[item.id]![0]]}／${SIGN_NAMES[chart.uncertain[item.id]![1]]}` : SIGN_NAMES[item.sign]}</td><td>{chart.uncertain[item.id] ? "—" : degreeText(item.longitude)}</td>{chart.timeKnown ? <td>{item.house}</td> : null}</tr>)}
+        {chart.ascendant !== null && chart.midheaven !== null ? <>
+          <tr><th scope="row">上升</th><td>{SIGN_NAMES[signOfLongitude(chart.ascendant)]}</td><td>{degreeText(chart.ascendant)}</td><td>1</td></tr>
+          <tr><th scope="row">天頂</th><td>{SIGN_NAMES[signOfLongitude(chart.midheaven)]}</td><td>{degreeText(chart.midheaven)}</td><td>10</td></tr>
+        </> : null}
+      </tbody>
+    </table></div>
+
+    <section className="astro-booking" aria-labelledby="astro-booking-title">
+      <small className="astro-kicker">personal chart reading</small>
+      <h2 id="astro-booking-title">想看懂整張星盤？</h2>
+      <p>這裡讀的是單一星體落在哪個星座，是認識自己的入門。Zola 的星盤解析會把整張星盤放在一起看：妳的核心議題、反覆出現的模式，以及此刻最值得理解的地方。</p>
+      <label className="astro-check"><input type="checkbox" checked={attachBirth} onChange={(event) => setAttachBirth(event.target.checked)} /><span>附上我的出生資料（日期、時間、地點）</span></label>
+      <p className="astro-preview-label">打開 LINE 後會先放進輸入框，妳確認後再按送出：</p>
+      <pre className="astro-preview">{message}</pre>
+      <a className="astro-primary" href={lineMessageUrl(message)} target="_blank" rel="noreferrer">傳 LINE 預約星盤解析 <b>→</b></a>
+    </section>
+  </section>;
+}
+
+function ChartWheel({ wheel, houses }: { wheel: ReturnType<typeof wheelLayout>; houses: boolean }) {
+  const { center, outer, zodiacInner, inner } = WHEEL;
+  return <svg className="astro-wheel" viewBox="0 0 400 400" role="img" aria-label="本命盤圖：外圈十二星座、內圈宮位與各星體位置，詳細數值見下方表格">
+    <defs>
+      <radialGradient id="astro-wheel-pearl" cx="50%" cy="45%" r="60%"><stop offset="0%" stopColor="#ffffff" /><stop offset="70%" stopColor="#fdf7fa" /><stop offset="100%" stopColor="#f3f6fc" /></radialGradient>
+      <linearGradient id="astro-wheel-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#e3cd9c" /><stop offset="50%" stopColor="#c5a46f" /><stop offset="100%" stopColor="#d8be8a" /></linearGradient>
+    </defs>
+    <circle cx={center} cy={center} r={outer + 2} fill="url(#astro-wheel-pearl)" stroke="url(#astro-wheel-gold)" strokeWidth="2.4" />
+    {wheel.signs.map((sign) => <path key={`band-${sign.index}`} d={`M ${sign.edge[0].x} ${sign.edge[0].y} L ${sign.edge[1].x} ${sign.edge[1].y}`} stroke="#c5a46f" strokeWidth="1" />)}
+    <circle cx={center} cy={center} r={outer - 5} fill="none" stroke="#d8be8a" strokeWidth=".6" />
+    <circle cx={center} cy={center} r={zodiacInner} fill="#ffffff" stroke="url(#astro-wheel-gold)" strokeWidth="1.6" />
+    {wheel.ticks.map((tick, index) => <line key={`tick-${index}`} x1={tick.line[0].x} y1={tick.line[0].y} x2={tick.line[1].x} y2={tick.line[1].y} stroke="#c5a46f" strokeWidth={tick.major ? .9 : .5} />)}
+    {wheel.signs.map((sign) => <text key={`sign-${sign.index}`} x={sign.label.x} y={sign.label.y} className="astro-wheel-sign" textAnchor="middle" dominantBaseline="central">{SHORT_SIGN[sign.index]}</text>)}
+    {houses ? wheel.houses.map((house) => <g key={`house-${house.number}`}>
+      <line x1={house.line[0].x} y1={house.line[0].y} x2={house.line[1].x} y2={house.line[1].y} stroke={house.angle ? "#c5a46f" : "#d8be8a"} strokeWidth={house.angle ? 1.4 : .7} />
+      <text x={house.label.x} y={house.label.y} className="astro-wheel-house" textAnchor="middle" dominantBaseline="central">{house.number}</text>
+    </g>) : null}
+    {wheel.axes.map((axis) => <g key={axis.name}>
+      <line x1={axis.line[0].x} y1={axis.line[0].y} x2={axis.line[1].x} y2={axis.line[1].y} stroke="#843450" strokeWidth="1.2" />
+    </g>)}
+    <circle cx={center} cy={center} r={inner} fill="url(#astro-wheel-pearl)" stroke="url(#astro-wheel-gold)" strokeWidth="1.4" />
+    <circle cx={center} cy={center} r={inner - 6} fill="none" stroke="#d8be8a" strokeWidth=".6" strokeDasharray="1.5 3" />
+    <g className="astro-wheel-rosette" stroke="#c5a46f" strokeWidth=".8" fill="none">
+      {Array.from({ length: 8 }, (_, index) => <path key={index} d={`M ${center} ${center - 22} L ${center + 5} ${center} L ${center} ${center + 22} L ${center - 5} ${center} Z`} transform={`rotate(${index * 22.5} ${center} ${center})`} />)}
+      <circle cx={center} cy={center} r="4" fill="#fceaf3" />
+    </g>
+    {wheel.planets.map((planet) => <g key={planet.id} className="astro-wheel-planet">
+      <line x1={planet.tick[0].x} y1={planet.tick[0].y} x2={planet.tick[1].x} y2={planet.tick[1].y} stroke="#843450" strokeWidth="1.4" />
+      <circle cx={planet.marker.x} cy={planet.marker.y} r="11.5" fill="#ffffff" stroke="#c5a46f" strokeWidth="1" />
+      <text x={planet.marker.x} y={planet.marker.y} textAnchor="middle" dominantBaseline="central" className="astro-wheel-mark">{planet.mark}</text>
+      <text x={planet.label.x} y={planet.label.y} textAnchor="middle" dominantBaseline="central" className="astro-wheel-degree">{planet.degree}°{planet.retrograde ? "R" : ""}</text>
+    </g>)}
+    {wheel.axes.map((axis) => <text key={`label-${axis.name}`} x={axis.at.x} y={axis.at.y} className="astro-wheel-axis" textAnchor="middle" dominantBaseline="central">{axis.name}</text>)}
+  </svg>;
 }
