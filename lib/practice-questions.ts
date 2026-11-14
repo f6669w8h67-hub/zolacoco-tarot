@@ -1,8 +1,8 @@
-// 學員練習室 published questions (Zola confirmed the format, 2026-11-14). Built from the doc
+// 學員練習室 published questions (Zola confirmed all of them for students, 2026-11-14). Built from the doc
 // 「直覺練習｜學員練習題庫初稿」, which follows her course handouts (基礎3 numbers, elements and reversals,
 // 基礎4 court cards, 塔羅中的肢體語言3, 牌陣1). Scene details come from each card's `scene` in tarot-data.ts.
 // Option order is mixed per question; `correct` and `note` never leave the server (see practice-bank.ts).
-// 門戶牌 has no questions yet: its definition is still with Zola.
+// 門戶牌 follows Zola's 「塔羅門戶牌完整教學資料」 (gate types, 主門戶／副門戶, positions first, no mind-reading or promises).
 import type { PracticeQuestion } from "@/lib/practice-bank";
 
 export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
@@ -1525,6 +1525,162 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "a", text: "卡住：溫柔的力量出不來，完全沒力氣。", correct: false, note: "不符合這個情境：她還撐得住表面。" },
       { id: "b", text: "內化：表面冷靜但內心混亂。", correct: true, note: "最符合這個情境。逆位不一定代表不好，而是能量呈現不同狀態：卡住、過頭或內化。" },
       { id: "c", text: "過頭：情緒失控、容易衝動。", correct: false, note: "不符合這個情境：她沒有爆發，是全部收在心裡。" },
+    ],
+    sample: null,
+  },
+  {
+    id: "gateway-major-00-a", version: 1, status: "published", unit: "gateway", cardId: "major-00",
+    scenario: "「我想開一個自己的手作品牌，可是一直沒有開始。」",
+    observe: "先看問題，再寫下牌面上看到的兩件事：牠們在做什麼、身邊有什麼。",
+    read: "用一兩句話寫：在這個問題裡，這張牌是哪一道門？要跨過的關卡是什麼？",
+    choose: "哪一個解讀讀對了這張牌在這個問題裡的門戶角色？",
+    options: [
+      { id: "a", text: "完成門：代表品牌會順利做起來。", correct: false, note: "陷阱：愚人是開始的關卡，不是完成；門戶也不保證結果。" },
+      { id: "b", text: "愚人是門戶牌，代表命運要妳現在就辭職去做。", correct: false, note: "陷阱：門戶是要跨過的關卡，不是命運的命令；也替客人做了重大決定。" },
+      { id: "c", text: "啟動門（開始之門）：關卡是願不願意先踏出第一步、接受還看不清的部分；萊恩背著小包袱站在懸崖花園邊緣仰望晨光，正準備出發。", correct: true, note: "有依據：愚人在這個問題裡是「開始」的關卡，畫面停在出發之前。" },
+    ],
+    sample: null,
+  },
+  {
+    id: "gateway-swords-08-a", version: 1, status: "published", unit: "gateway", cardId: "swords-08",
+    scenario: "「我很想換工作，卻一直覺得自己什麼都做不到。」",
+    observe: "先看問題，再寫下牌面上看到的兩件事：牠們在做什麼、身邊有什麼。",
+    read: "用一兩句話寫：在這個問題裡，這張牌是哪一道門？要跨過的關卡是什麼？",
+    choose: "哪一個解讀讀對了這張牌在這個問題裡的門戶角色？",
+    options: [
+      { id: "a", text: "阻礙門（限制門）：卡住她的多半是自己設下的限制，關卡是能不能突破這個設限；絲帶綁得鬆鬆的，蝦蝦正咬著結幫忙解開。", correct: true, note: "有依據：鬆的絲帶和幫忙解結的蝦蝦，說明這道門跨得過去。" },
+      { id: "b", text: "完成門：代表她已經準備好，可以直接離職。", correct: false, note: "陷阱：把限制讀成完成，也替客人做了重大決定。" },
+      { id: "c", text: "寶劍八是門戶牌，代表換工作一定會失敗。", correct: false, note: "陷阱：門戶點出關卡，不預言結果。" },
+    ],
+    sample: null,
+  },
+  {
+    id: "gateway-major-13-a", version: 1, status: "published", unit: "gateway", cardId: "major-13",
+    scenario: "「我們每次吵架都用冷戰收場，這段關係接下來會怎樣？」",
+    observe: "先看問題，再寫下牌面上看到的兩件事：牠們在做什麼、身邊有什麼。",
+    read: "用一兩句話寫：在這個問題裡，這張牌是哪一道門？要跨過的關卡是什麼？",
+    choose: "哪一個解讀讀對了這張牌在這個問題裡的門戶角色？",
+    options: [
+      { id: "a", text: "死神代表這段關係一定會結束。", correct: false, note: "陷阱：把轉化門讀成結果保證，也忽略了升起的太陽。" },
+      { id: "b", text: "死神代表有人會遇到危險。", correct: false, note: "陷阱：把牌名字面化；塔羅不做生死與安危的斷定。" },
+      { id: "c", text: "轉化門（結束與重生之門）：關卡是願不願意讓冷戰這種舊的相處方式結束；遠方兩座塔之間升起太陽，結束的是模式，不一定是這段關係。", correct: true, note: "有依據：問題的核心是相處方式，死神在這裡是舊模式的結束與新的開始。" },
+    ],
+    sample: null,
+  },
+  {
+    id: "gateway-major-07-a", version: 1, status: "published", unit: "gateway", cardId: "major-07",
+    scenario: "「我們曖昧了半年，一直沒有往前，該怎麼辦？」",
+    observe: "先看問題，再寫下牌面上看到的兩件事：牠們在做什麼、身邊有什麼。",
+    read: "用一兩句話寫：在這個問題裡，這張牌是哪一道門？要跨過的關卡是什麼？",
+    choose: "哪一個解讀讀對了這張牌在這個問題裡的門戶角色？",
+    options: [
+      { id: "a", text: "行動門（推進之門）：關卡是兩個人有沒有一致的方向和實際推進；一黑一白兩隻小獅子要往同一個方向拉，車才會前進。", correct: true, note: "有依據：兩股力量拉同一台車，行動門問的是方向一致與實際行動。" },
+      { id: "b", text: "戰車代表他很快就會主動追妳。", correct: false, note: "陷阱：替對方讀心，也把門戶當成預言。" },
+      { id: "c", text: "戰車代表要一起出遠門旅行。", correct: false, note: "陷阱：把畫面字面化。" },
+    ],
+    sample: null,
+  },
+  {
+    id: "gateway-major-21-a", version: 1, status: "published", unit: "gateway", cardId: "major-21",
+    scenario: "「這份做了五年的工作，我是不是該離開了？」",
+    observe: "先看問題，再寫下牌面上看到的兩件事：牠們在做什麼、身邊有什麼。",
+    read: "用一兩句話寫：在這個問題裡，這張牌是哪一道門？要跨過的關卡是什麼？",
+    choose: "哪一個解讀讀對了這張牌在這個問題裡的門戶角色？",
+    options: [
+      { id: "a", text: "世界牌代表要出國工作。", correct: false, note: "陷阱：把牌名字面化。" },
+      { id: "b", text: "完成門：關卡是能不能替這個階段好好收尾，帶著收穫進入下一段；萊恩和蝦蝦在花環中央輕盈起舞，一段旅程完成了它的功課。", correct: true, note: "有依據：完成門讀的是收尾與整合，不替客人決定走或留。" },
+      { id: "c", text: "啟動門：代表新工作馬上就會開始。", correct: false, note: "陷阱：世界是完成與收尾的關卡，不是開始；也把門戶當成時間預言。" },
+    ],
+    sample: null,
+  },
+  {
+    id: "gateway-major-06-a", version: 1, status: "published", unit: "gateway", cardId: "major-06",
+    scenario: "「他是不是已經決定要跟我在一起了？」",
+    observe: "先看問題，再寫下牌面上看到的兩件事：牠們在做什麼、身邊有什麼。",
+    read: "用一兩句話寫：在這個問題裡，這張牌是哪一道門？要跨過的關卡是什麼？",
+    choose: "哪一個解讀讀對了這張牌在這個問題裡的門戶角色？",
+    options: [
+      { id: "a", text: "戀人代表他已經選擇妳了，可以放心。", correct: false, note: "陷阱：把門戶當成對方心意的證明。" },
+      { id: "b", text: "決策門（關係選擇之門）：關卡是「是否真正選擇這段關係」；門戶點出要面對的選擇，不能證明他心裡已經決定，可以觀察他實際怎麼做。", correct: true, note: "有依據：門戶牌不能證明對方的真實想法，要回到實際互動核對。" },
+      { id: "c", text: "天使在上面祝福，代表你們注定在一起。", correct: false, note: "陷阱：把一個畫面元素放大成命運保證。" },
+    ],
+    sample: null,
+  },
+  {
+    id: "gateway-cups-02-a", version: 1, status: "published", unit: "gateway", cardId: "cups-02",
+    scenario: "三張牌依序是聖杯二（畫面）、寶劍二、錢幣騎士｜問題：「他為什麼遲遲不願意確認關係？」",
+    observe: "先看問題，再寫下牌面上看到的兩件事：牠們在做什麼、身邊有什麼。",
+    read: "用一兩句話寫：在這個問題裡，這張牌是哪一道門？要跨過的關卡是什麼？",
+    choose: "哪一個解讀讀對了這張牌在這個問題裡的門戶角色？",
+    options: [
+      { id: "a", text: "聖杯二是主門戶，代表他其實很想確認，只是時間還沒到。", correct: false, note: "陷阱：挑最溫暖的牌當主門戶，還替對方讀心。" },
+      { id: "b", text: "聖杯二呈現面對面敬酒、彼此回應的連結（連結門），但不能單憑這張牌確認雙方的真實心意；問題問的是「為什麼不確認」，真正卡住的關卡在寶劍二，聖杯二不是主門戶。", correct: true, note: "有依據：主門戶要回答問題的卡點，不是挑最美好的那一張；牌的連結象徵也不能證明對方的心意。" },
+      { id: "c", text: "面對面敬酒，代表你們其實已經在一起了，不用確認。", correct: false, note: "陷阱：把畫面字面化，也沒有回答問題。" },
+    ],
+    sample: null,
+  },
+  {
+    id: "gateway-swords-02-a", version: 1, status: "published", unit: "gateway", cardId: "swords-02",
+    scenario: "三張牌依序是聖杯六、寶劍二（畫面）、錢幣騎士｜問題：「我跟他還有機會復合嗎？」",
+    observe: "先看問題，再寫下牌面上看到的兩件事：牠們在做什麼、身邊有什麼。",
+    read: "用一兩句話寫：在這個問題裡，這張牌是哪一道門？要跨過的關卡是什麼？",
+    choose: "哪一個解讀讀對了這張牌在這個問題裡的門戶角色？",
+    options: [
+      { id: "a", text: "主門戶（決策門）：過去仍有情感記憶，但現在卡在要不要重新建立關係這個選擇；萊恩蒙著眼、雙爪交叉持劍，還沒有面對決定。", correct: true, note: "有依據：主門戶是整個牌陣最重要的轉折條件；先面對選擇，後面才談得上行動。" },
+      { id: "b", text: "寶劍二代表他已經選擇別人了。", correct: false, note: "陷阱：把「還沒選」讀成對方的決定，替對方讀心。" },
+      { id: "c", text: "聖杯六的回憶最強烈，所以主門戶是聖杯六，寶劍二只是背景。", correct: false, note: "陷阱：聖杯六說的是過去的連結，卡住的轉折在寶劍二。" },
+    ],
+    sample: null,
+  },
+  {
+    id: "gateway-pentacles-12-a", version: 1, status: "published", unit: "gateway", cardId: "pentacles-12",
+    scenario: "三張牌依序是聖杯六、寶劍二、錢幣騎士（畫面）｜問題：「我跟他還有機會復合嗎？」",
+    observe: "先看問題，再寫下牌面上看到的兩件事：牠們在做什麼、身邊有什麼。",
+    read: "用一兩句話寫：在這個問題裡，這張牌是哪一道門？要跨過的關卡是什麼？",
+    choose: "哪一個解讀讀對了這張牌在這個問題裡的門戶角色？",
+    options: [
+      { id: "a", text: "錢幣騎士是主門戶，代表他會穩穩地回來。", correct: false, note: "陷阱：搞錯主副，也把門戶當成結果保證。" },
+      { id: "b", text: "馬停著不動，代表復合不會有進展。", correct: false, note: "陷阱：把穩重讀成停滯，忽略它是落實的條件。" },
+      { id: "c", text: "副門戶（持續行動門）：就算做出選擇，也需要穩定、持續的實際行動才走得下去；萊恩騎著穩重的大馬，靜靜停在剛耕好的田野上。", correct: true, note: "有依據：副門戶補充主門戶能不能推進的條件。" },
+    ],
+    sample: null,
+  },
+  {
+    id: "gateway-major-15-a", version: 1, status: "published", unit: "gateway", cardId: "major-15", reversed: true,
+    scenario: "「我想離開一段反覆分合的關係，最近好像比較看清楚了。」",
+    observe: "先看問題，再寫下牌面上看到的兩件事：牠們在做什麼、身邊有什麼。",
+    read: "用一兩句話寫：在這個問題裡，這張牌是哪一道門？要跨過的關卡是什麼？",
+    choose: "哪一個解讀讀對了這張牌在這個問題裡的門戶角色？",
+    options: [
+      { id: "a", text: "阻礙門正在鬆動：已經意識到束縛、開始嘗試鬆綁，關卡是能不能不再反覆陷入；脖子上的緞帶本來就是鬆的。", correct: true, note: "有依據：逆位不一定代表卡住，也可能是釋放或內在轉化；也仍可能反覆陷入。" },
+      { id: "b", text: "惡魔逆位代表卡得更深，永遠出不來。", correct: false, note: "陷阱：把逆位一律讀成卡住，還用「永遠」下定論。" },
+      { id: "c", text: "惡魔代表對方是壞人，要趕快離開。", correct: false, note: "陷阱：替人貼標籤，也替客人做決定。" },
+    ],
+    sample: null,
+  },
+  {
+    id: "gateway-major-18-a", version: 1, status: "published", unit: "gateway", cardId: "major-18",
+    scenario: "「這個月問他的心意問了三次，都抽到月亮，是不是他在騙我？」",
+    observe: "先看問題，再寫下牌面上看到的兩件事：牠們在做什麼、身邊有什麼。",
+    read: "用一兩句話寫：在這個問題裡，這張牌是哪一道門？要跨過的關卡是什麼？",
+    choose: "哪一個解讀讀對了這張牌在這個問題裡的門戶角色？",
+    options: [
+      { id: "a", text: "一直抽到月亮，代表命運要妳離開他。", correct: false, note: "陷阱：把重複出現讀成命運的命令，也替客人做決定。" },
+      { id: "b", text: "不確定與恐懼之門：關卡是能不能先確認事實，而不是靠猜測做決定；重複抽到是提醒妳正視這道關卡，不是命運的強制。萊恩和蝦蝦望著月亮，小路通向看不清的遠方。", correct: true, note: "有依據：重複抽到同一張牌，不等於命運強制要求完成某個關卡。" },
+      { id: "c", text: "月亮代表他在騙妳。", correct: false, note: "陷阱：把「看不清楚」直接讀成欺騙，替對方讀心。" },
+    ],
+    sample: null,
+  },
+  {
+    id: "gateway-major-16-a", version: 1, status: "published", unit: "gateway", cardId: "major-16",
+    scenario: "時間變化牌陣：第 2 張（過去）是高塔（畫面），第 5 張（即將發生）是節制｜問題：「我們搬到新城市後一直不順，接下來會怎樣？」",
+    observe: "先看問題，再寫下牌面上看到的兩件事：牠們在做什麼、身邊有什麼。",
+    read: "用一兩句話寫：在這個問題裡，這張牌是哪一道門？要跨過的關卡是什麼？",
+    choose: "哪一個解讀讀對了這張牌在這個問題裡的門戶角色？",
+    options: [
+      { id: "a", text: "高塔最強烈，所以它是主門戶，代表接下來還會更亂。", correct: false, note: "陷阱：只看牌的強度，忽略它落在過去的位置。" },
+      { id: "b", text: "高塔代表新家會出意外。", correct: false, note: "陷阱：把建築字面化成災難預言。" },
+      { id: "c", text: "高塔很醒目，但它落在過去的位置，讀的是已經經歷過的動盪（舊結構瓦解）；接下來的關卡要看第 5 張的節制，也就是慢慢磨合。", correct: true, note: "有依據：先尊重牌位，不能只因為某張牌醒目就把它當主門戶。" },
     ],
     sample: null,
   },
