@@ -82,7 +82,7 @@ test("page: public, shuffle then flip one card, no fan; the face shows the ACT l
   assert.match(page, /想把這份覺察留下來嗎？/);
   assert.match(page, /href="\/sign-in\?redirect_url=%2Fawareness"/);
   assert.match(page, /我的覺察紀錄/);
-  assert.match(page, /type: "awareness_card"/);
+  assert.doesNotMatch(page, /api\/activity/, "nothing about her answer is sent to the site; records stay on this device");
 });
 
 test("share image: 1080×1920 with the brand handle; 我的存檔 lists 覺察卡 records for the signed-in member", async () => {

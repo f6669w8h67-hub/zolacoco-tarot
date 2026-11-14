@@ -6,6 +6,8 @@ import { tarotCards } from "../tarot-data";
 import { loadMemberProfile } from "@/lib/member-client";
 import { AWARENESS_RECORDS_PREFIX, awarenessAccess, currentSession, readRecords, type AwarenessSession } from "@/lib/awareness-records";
 import { useIdentityKey } from "../auth-identity";
+import "../styles/pearl-page.css";
+import "./archive-pearl.css";
 
 type StoredValue = unknown[] | Record<string, string>;
 type Archive = Record<string, StoredValue>;
@@ -54,6 +56,8 @@ function itemDetail(item: unknown) {
   const row = item as Record<string, unknown>;
   if (row.deck === "zolacoco-awareness") return String(row.line ?? "");
   if (Array.isArray(row.cards)) return row.cards.map((card) => String((card as Record<string, unknown>).name ?? "")).filter(Boolean).join("・");
+  // 七日內在筆記: the day is the title and the note is shown once, below it.
+  if (typeof row.question === "string" && /^DAY \d+$/.test(row.question)) return "";
   return String(row.result_label ?? row.card ?? row.planet_name ?? row.summary ?? row.date ?? "");
 }
 
@@ -112,9 +116,9 @@ export default function ArchivePage() {
     URL.revokeObjectURL(url);
   }
 
-  return <main className="admin-page">
-    <div className="admin-top"><div><p className="eyebrow">ZOLACOCO TAROT · MY ARCHIVE</p><h1>我的存檔</h1></div><div><Link href="/">返回網站</Link></div></div>
-    <section className="access-card"><b>手機版與電腦版都能存檔</b><br />紀錄會保存在妳目前使用的瀏覽器；同一台裝置重新開啟網站仍可查看。換手機、換電腦或清除瀏覽器資料前，請先下載備份。</section>
+  return <main className="admin-page pearl-page">
+    <div className="admin-top"><div><p className="eyebrow">Zolacoco · My Archive</p><h1>我的存檔</h1></div><div><Link href="/">返回網站</Link></div></div>
+    <section className="access-card"><b>紀錄存在這台裝置</b><br />占卜、筆記和覺察卡的紀錄保存在妳目前使用的瀏覽器，同一台裝置重新打開網站都看得到。換手機、換電腦或清除瀏覽器資料前，請先下載備份。</section>
     <div className="archive-toolbar"><span>目前共 {archiveReady ? total : "—"} 筆存檔</span><button type="button" onClick={exportBackup} disabled={!archiveReady}>{archiveReady ? "下載全部備份" : "正在讀取存檔…"}</button></div>
     {sources.map((source) => {
       const value = archive[source.key];
