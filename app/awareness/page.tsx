@@ -7,15 +7,17 @@ import "./awareness.css";
 import { loadMemberProfile } from "@/lib/member-client";
 import {
   awarenessAccess,
-  parseRecords,
-  recordsKey,
+  currentSession,
+  readRecords,
   removeRecord,
   shareFileName,
   taipeiDate,
   upsertRecord,
-  type AwarenessAccess,
+  writeRecords,
   type AwarenessRecord,
+  type AwarenessSession,
 } from "@/lib/awareness-records";
+import { useIdentityKey } from "../auth-identity";
 import { AWARENESS_BACK, breakLines, cardArt, drawCard, phrases, themeLabel, type AwarenessCard } from "./awareness-data";
 import { renderShareCard } from "./share-card";
 
@@ -60,14 +62,28 @@ export default function AwarenessPage() {
   const timers = useRef<number[]>([]);
   const deckRef = useRef<HTMLDivElement>(null);
 
-  const [access, setAccess] = useState<AwarenessAccess>("loading");
-  const [memberId, setMemberId] = useState<string | null>(null);
-  const [records, setRecords] = useState<AwarenessRecord[]>([]);
+  // Member access and records belong to the person signed in now. When she signs out or another
+  // member signs in on the same open page, the old session stops counting at once (currentSession),
+  // her unsaved answer is cleared, and a late answer from the server for the old person is ignored.
+  const identityKey = useIdentityKey();
+  const [session, setSession] = useState<AwarenessSession | null>(null);
+  const { access, memberId, records } = currentSession(identityKey, session);
   const [answer, setAnswer] = useState("");
   const [completed, setCompleted] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saved" | "error">("idle");
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState(false);
   const [openRecord, setOpenRecord] = useState<string | null>(null);
+  const [seenIdentity, setSeenIdentity] = useState(identityKey);
+  if (seenIdentity !== identityKey) {
+    setSeenIdentity(identityKey);
+    setAnswer("");
+    setCompleted(false);
+    setSaveState("idle");
+    setConfirmDelete(null);
+    setDeleteError(false);
+    setOpenRecord(null);
+  }
 
   const [share, setShare] = useState<{ url: string; file: File } | null>(null);
   const [shareState, setShareState] = useState<"idle" | "making" | "error">("idle");
@@ -75,22 +91,22 @@ export default function AwarenessPage() {
   useEffect(() => () => { timers.current.forEach((id) => window.clearTimeout(id)); }, []);
   useEffect(() => () => { if (share) URL.revokeObjectURL(share.url); }, [share]);
 
-  // Who is visiting decides the part below the card. Signed-out visitors get 401 → guest.
+  // Who is visiting decides the part below the card. Runs again for every new person.
   useEffect(() => {
+    if (identityKey === null || identityKey === "signed-out") return;
     let active = true;
     void loadMemberProfile().then((result) => {
       if (!active) return;
-      if (!result.ok) { setAccess("guest"); return; }
-      const state = awarenessAccess(result.member);
-      setAccess(state);
-      const id = result.member.id ? String(result.member.id) : null;
-      setMemberId(id);
-      if (state === "member" && id) {
-        try { setRecords(parseRecords(localStorage.getItem(recordsKey(id)))); } catch { setRecords([]); }
+      if (!result.ok) {
+        setSession({ key: identityKey, access: result.failure === "UNAUTHENTICATED" ? "guest" : "unavailable", memberId: null, records: [] });
+        return;
       }
+      const state = awarenessAccess(result.member);
+      const id = result.member.id ? String(result.member.id) : null;
+      setSession({ key: identityKey, access: state, memberId: id, records: state === "member" && id ? readRecords(localStorage, id) : [] });
     });
     return () => { active = false; };
-  }, []);
+  }, [identityKey]);
 
   const later = useCallback((fn: () => void, ms: number) => { timers.current.push(window.setTimeout(fn, ms)); }, []);
 
@@ -123,10 +139,12 @@ export default function AwarenessPage() {
     later(reveal, SHUFFLE_MS);
   }
 
+  /** Saves first; the list on screen changes only when the browser really kept it. */
   function persist(next: AwarenessRecord[]) {
-    setRecords(next);
-    if (!memberId) return false;
-    try { localStorage.setItem(recordsKey(memberId), JSON.stringify(next)); return true; } catch { return false; }
+    if (!memberId || !session || session.key !== identityKey) return false;
+    if (!writeRecords(localStorage, memberId, next)) return false;
+    setSession({ ...session, records: next });
+    return true;
   }
 
   function saveRecord() {
@@ -239,7 +257,10 @@ export default function AwarenessPage() {
           </button>
           {saveState === "saved" ? <p className="aw-status" role="status">已存進「我的覺察紀錄」，也可以在<Link href="/admin">我的存檔</Link>看到。</p> : null}
           {saveState === "error" ? <p className="aw-status is-error" role="alert">這台裝置暫時無法儲存，請確認瀏覽器沒有開無痕模式後再試一次。</p> : null}
-        </> : access === "pending" ? <div className="aw-member-note">
+        </> : access === "unavailable" ? <div className="aw-member-note">
+          <h3>暫時無法確認會員狀態</h3>
+          <p>可能是網路不穩，請稍後重新整理頁面。抽牌、解析、提問和小練習現在都可以照常使用。</p>
+        </div> : access === "pending" ? <div className="aw-member-note">
           <h3>會員尚待 Zola 開通</h3>
           <p>開通後就能在這裡寫下回答，並收藏每一次的覺察紀錄。抽牌、解析、提問和小練習現在都可以自由使用。</p>
           <Link className="aw-secondary" href="/account">查看會員狀態</Link>
@@ -282,9 +303,13 @@ export default function AwarenessPage() {
             {item.answer ? <p><b>我的回答</b>{item.answer}</p> : null}
             <p><b>小練習</b>{item.practice}{item.completed ? <span className="aw-done">已完成</span> : null}</p>
             {confirmDelete === item.id ? <div className="aw-actions">
-              <button type="button" className="aw-danger" onClick={() => { persist(removeRecord(records, item.id)); setConfirmDelete(null); setOpenRecord(null); }}>確定刪除</button>
-              <button type="button" className="aw-secondary" onClick={() => setConfirmDelete(null)}>取消</button>
+              <button type="button" className="aw-danger" onClick={() => {
+                if (!persist(removeRecord(records, item.id))) { setDeleteError(true); return; }
+                setDeleteError(false); setConfirmDelete(null); setOpenRecord(null);
+              }}>確定刪除</button>
+              <button type="button" className="aw-secondary" onClick={() => { setConfirmDelete(null); setDeleteError(false); }}>取消</button>
             </div> : <button type="button" className="aw-text-button" onClick={() => setConfirmDelete(item.id)}>刪除這筆紀錄</button>}
+            {confirmDelete === item.id && deleteError ? <p className="aw-status is-error" role="alert">這筆紀錄沒有刪除成功，請再試一次。</p> : null}
           </div> : null}
         </li>)}
       </ul>}

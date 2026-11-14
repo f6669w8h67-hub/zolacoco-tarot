@@ -16,7 +16,7 @@ test("50 cards in seven groups (8×6 + 2), each with a line, reading, question a
   deck.cards.forEach((card, index) => {
     assert.equal(card.number, String(index + 1).padStart(2, "0"));
     for (const field of ["name", "line", "reading", "question", "practice"]) assert.ok(card[field]?.trim(), `${card.id} ${field}`);
-    assert.ok(card.reading.length >= 70 && card.reading.length <= 130, `${card.id} reading length ${card.reading.length}`);
+    assert.ok(card.reading.length >= 80 && card.reading.length <= 110, `${card.id} reading length ${card.reading.length}`);
     assert.equal(card.reading.includes("你"), false, card.id);
   });
 });
@@ -113,4 +113,49 @@ test("card sentences break into balanced lines: after a comma when possible, nev
       if (lines.length > 1) assert.ok(lines.at(-1).length >= 3, `${card.id} short last line ${lines.at(-1)}`);
     }
   }
+});
+
+test("switching people on an open page: the old member's access and records never show for the next person", () => {
+  const record = { id: "d1", createdAt: "2026-11-14T01:00:00Z", deck: "zolacoco-awareness", cardId: "awareness-01", cardNumber: "01", theme: "acceptance", name: "n", line: "l", question: "q", answer: "A 的私人回答", practice: "p", completed: false };
+  const sessionA = { key: "user_A", access: "member", memberId: "m-A", records: [record] };
+  // A is signed in and loaded
+  assert.deepEqual(records.currentSession("user_A", sessionA).records, [record]);
+  // A signs out: guest, nothing private
+  assert.deepEqual(records.currentSession("signed-out", sessionA), { access: "guest", memberId: null, records: [] });
+  // B signs in while A's session is still in state: loading, nothing of A's
+  assert.deepEqual(records.currentSession("user_B", sessionA), { access: "loading", memberId: null, records: [] });
+  // Clerk still loading
+  assert.equal(records.currentSession(null, sessionA).access, "loading");
+  // a pending member never gets records shown
+  assert.deepEqual(records.currentSession("user_A", { ...sessionA, access: "pending" }).records, []);
+});
+
+test("saving and deleting only show on screen when the browser really kept the change", () => {
+  const record = { id: "d1", createdAt: "2026-11-14T01:00:00Z", deck: "zolacoco-awareness", cardId: "awareness-01", cardNumber: "01", theme: "acceptance", name: "n", line: "l", question: "q", answer: "a", practice: "p", completed: false };
+  const store = new Map();
+  let full = true;
+  const storage = { getItem: (key) => store.get(key) ?? null, setItem: (key, value) => { if (full) throw new Error("QuotaExceededError"); store.set(key, value); } };
+  assert.equal(records.writeRecords(storage, "m-1", [record]), false, "save fails while storage is full");
+  assert.deepEqual(records.readRecords(storage, "m-1"), []);
+  full = false;
+  assert.equal(records.writeRecords(storage, "m-1", [record]), true, "retry succeeds");
+  assert.deepEqual(records.readRecords(storage, "m-1").map((item) => item.id), ["d1"]);
+  full = true;
+  assert.equal(records.writeRecords(storage, "m-1", []), false, "delete fails");
+  assert.deepEqual(records.readRecords(storage, "m-1").map((item) => item.id), ["d1"], "the record is still there");
+});
+
+test("page follows sign-in changes and writes before it shows", async () => {
+  const page = await read("app/awareness/page.tsx");
+  const layout = await read("app/layout.tsx");
+  assert.match(layout, /<ClerkProvider[^>]*><ClerkIdentityProvider>\{content\}<\/ClerkIdentityProvider><\/ClerkProvider>/);
+  assert.match(page, /const identityKey = useIdentityKey\(\);/);
+  assert.match(page, /const \{ access, memberId, records \} = currentSession\(identityKey, session\);/);
+  assert.match(page, /\}, \[identityKey\]\);/, "the member check runs again for each new person");
+  assert.match(page, /if \(!active\) return;/, "a late reply for the previous person is ignored");
+  assert.match(page, /if \(seenIdentity !== identityKey\) \{[\s\S]*?setAnswer\(""\);/, "her unsaved answer is cleared");
+  assert.match(page, /if \(!writeRecords\(localStorage, memberId, next\)\) return false;\s*setSession/);
+  assert.match(page, /這筆紀錄沒有刪除成功，請再試一次。/);
+  assert.match(page, /暫時無法確認會員狀態/);
+  assert.doesNotMatch(page, /setRecords\(/);
 });

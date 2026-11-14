@@ -30,7 +30,10 @@ export type AwarenessMember = {
 };
 
 /** What the page shows below a card: the form, or which note. */
-export type AwarenessAccess = "loading" | "member" | "pending" | "expired" | "guest";
+export type AwarenessAccess = "loading" | "member" | "pending" | "expired" | "guest" | "unavailable";
+
+/** What one signed-in person may do here, and their records. `key` is who it belongs to. */
+export type AwarenessSession = { key: string; access: AwarenessAccess; memberId: string | null; records: AwarenessRecord[] };
 
 export function recordsKey(memberId: string) {
   return `${AWARENESS_RECORDS_PREFIX}:${memberId}`;
@@ -46,6 +49,38 @@ export function awarenessAccess(member: AwarenessMember | null | undefined, now 
     return Number.isFinite(expires) && expires > now ? "member" : "expired";
   }
   return "expired";
+}
+
+/**
+ * What the page may show right now. A session only counts for the person it was loaded for:
+ * after a sign-out or an account switch the old member's access and records are gone at once,
+ * before anything new has loaded.
+ */
+export function currentSession(identityKey: string | null, session: AwarenessSession | null) {
+  if (identityKey === null) return { access: "loading" as const, memberId: null, records: [] as AwarenessRecord[] };
+  if (identityKey === "signed-out") return { access: "guest" as const, memberId: null, records: [] as AwarenessRecord[] };
+  if (!session || session.key !== identityKey) return { access: "loading" as const, memberId: null, records: [] as AwarenessRecord[] };
+  return { access: session.access, memberId: session.memberId, records: session.access === "member" ? session.records : [] };
+}
+
+type Storage = { getItem(key: string): string | null; setItem(key: string, value: string): void };
+
+/** Writes the list; false when the browser refuses (full, private mode). Nothing is shown as saved unless this is true. */
+export function writeRecords(storage: Storage, memberId: string, list: AwarenessRecord[]) {
+  try {
+    storage.setItem(recordsKey(memberId), JSON.stringify(list));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function readRecords(storage: Storage, memberId: string) {
+  try {
+    return parseRecords(storage.getItem(recordsKey(memberId)));
+  } catch {
+    return [];
+  }
 }
 
 function isRecord(value: unknown): value is AwarenessRecord {

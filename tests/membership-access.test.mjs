@@ -204,6 +204,7 @@ test("root layout selects a closed fallback in production and retains developmen
       "./site-notice": { default: () => null },
       "./pearl-fonts": { default: () => null },
       "./membership-gate": { default: wrapper("authenticated"), UnconfiguredMembershipGate: wrapper("closed") },
+      "./auth-identity": { ClerkIdentityProvider: ({ children }) => children },
     } });
     const html = renderToStaticMarkup(React.createElement(mod.default, null, "VIP_SENTINEL"));
     if (expected === "preview") assert.doesNotMatch(html, /data-gate/);
