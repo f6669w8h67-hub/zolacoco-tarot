@@ -84,7 +84,13 @@ test("share image: 1080×1920 with the brand handle; 我的存檔 lists 覺察�
   assert.match(share, /BRAND_HANDLE = "@zolacoco_tarot"/);
   const admin = await read("app/admin/page.tsx");
   assert.match(admin, /\{ key: AWARENESS_RECORDS_PREFIX, title: "Zolacoco 覺察卡紀錄", href: "\/awareness"/);
-  assert.match(admin, /source\.key === AWARENESS_RECORDS_PREFIX \? \(memberId \? recordsKey\(memberId\) : null\) : source\.key/);
+  // 我的存檔 follows the signed-in member too: Clerk loading, sign-out and account switches
+  assert.match(admin, /const identityKey = useIdentityKey\(\);/);
+  assert.match(admin, /const awareness = currentSession\(identityKey, awarenessSession\);/);
+  assert.match(admin, /if \(!active\) return;[\s\S]*?setAwarenessSession\(\{ key: identityKey,/);
+  assert.match(admin, /\}, \[identityKey\]\);/);
+  assert.match(admin, /\[AWARENESS_RECORDS_PREFIX\]: awareness\.records/);
+  assert.match(admin, /source\.key === AWARENESS_RECORDS_PREFIX && !awarenessReady/);
   const header = await read("app/site-header.tsx");
   assert.match(header, /\{ href: "\/awareness", title: "Zolacoco 覺察卡"/);
 });
@@ -126,6 +132,9 @@ test("switching people on an open page: the old member's access and records neve
   assert.deepEqual(records.currentSession("user_B", sessionA), { access: "loading", memberId: null, records: [] });
   // Clerk still loading
   assert.equal(records.currentSession(null, sessionA).access, "loading");
+  // A's member check comes back late, after B signed in: stored under A's key, it still shows nothing for B
+  const lateA = { key: "user_A", access: "member", memberId: "m-A", records: [record] };
+  assert.deepEqual(records.currentSession("user_B", lateA).records, []);
   // a pending member never gets records shown
   assert.deepEqual(records.currentSession("user_A", { ...sessionA, access: "pending" }).records, []);
 });

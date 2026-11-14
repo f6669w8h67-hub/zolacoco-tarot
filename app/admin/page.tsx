@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { tarotCards } from "../tarot-data";
 import { loadMemberProfile } from "@/lib/member-client";
-import { AWARENESS_RECORDS_PREFIX, recordsKey } from "@/lib/awareness-records";
+import { AWARENESS_RECORDS_PREFIX, awarenessAccess, currentSession, readRecords, type AwarenessSession } from "@/lib/awareness-records";
+import { useIdentityKey } from "../auth-identity";
 
 type StoredValue = unknown[] | Record<string, string>;
 type Archive = Record<string, StoredValue>;
@@ -57,25 +58,43 @@ function itemDetail(item: unknown) {
 }
 
 export default function ArchivePage() {
-  const [archive, setArchive] = useState<Archive>({});
+  const [deviceArchive, setDeviceArchive] = useState<Archive>({});
   const [ready, setReady] = useState(false);
+  // 覺察卡 records are private to one member. They follow whoever is signed in now: after a
+  // sign-out or account switch the previous member's list is gone at once (currentSession), and a
+  // late reply for the previous member is ignored.
+  const identityKey = useIdentityKey();
+  const [awarenessSession, setAwarenessSession] = useState<AwarenessSession | null>(null);
+  const awareness = currentSession(identityKey, awarenessSession);
+  const awarenessReady = awareness.access !== "loading";
 
   useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      const next: Archive = {};
+      for (const source of sources) {
+        if (source.key === AWARENESS_RECORDS_PREFIX) continue;
+        try { next[source.key] = JSON.parse(localStorage.getItem(source.key) ?? (source.key.includes("journal") ? "{}" : "[]")); }
+        catch { next[source.key] = source.key.includes("journal") ? {} : []; }
+      }
+      setDeviceArchive(next);
+      setReady(true);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    if (identityKey === null || identityKey === "signed-out") return;
     let active = true;
     void loadMemberProfile().then((result) => {
       if (!active) return;
       const memberId = result.ok && result.member.id ? String(result.member.id) : null;
-      const next: Archive = {};
-      for (const source of sources) {
-        const storageKey = source.key === AWARENESS_RECORDS_PREFIX ? (memberId ? recordsKey(memberId) : null) : source.key;
-        try { next[source.key] = storageKey ? JSON.parse(localStorage.getItem(storageKey) ?? (source.key.includes("journal") ? "{}" : "[]")) : []; }
-        catch { next[source.key] = source.key.includes("journal") ? {} : []; }
-      }
-      setArchive(next);
-      setReady(true);
+      const access = result.ok ? awarenessAccess(result.member) : "unavailable";
+      setAwarenessSession({ key: identityKey, access, memberId, records: memberId ? readRecords(localStorage, memberId) : [] });
     });
     return () => { active = false; };
-  }, []);
+  }, [identityKey]);
+
+  const archive: Archive = useMemo(() => ({ ...deviceArchive, [AWARENESS_RECORDS_PREFIX]: awareness.records }), [deviceArchive, awareness.records]);
 
   const total = useMemo(() => sources.reduce((sum, source) => sum + count(archive[source.key]), 0), [archive]);
 
@@ -98,7 +117,7 @@ export default function ArchivePage() {
       const entries = Array.isArray(value) ? value : Object.entries(value ?? {}).map(([day, content]) => ({ question: `DAY ${Number(day) + 1}`, summary: content }));
       return <section className="admin-section archive-section" key={source.key} aria-labelledby={`archive-${source.key}`}>
         <header className="archive-section-head"><h2 id={`archive-${source.key}`}>{source.title}</h2><p className="admin-summary">{ready ? count(value) : "—"} 筆</p></header>
-        {!ready ? <div className="admin-empty">正在讀取存檔…</div> : entries.length === 0 ? <div className="admin-empty"><p>目前還沒有紀錄。</p><Link href={source.href}>{source.start} →</Link></div> : <div className="archive-list">{entries.slice(0, 30).map((item, index) => <article key={String((item as Record<string, unknown>).id ?? index)}><div><b>{itemTitle(item)}</b><small>{itemDetail(item)}</small></div>{source.key === "zolacoco-tarot-records-v1" ? <CardThumbs item={item} /> : null}<p>{String((item as Record<string, unknown>).summary ?? (item as Record<string, unknown>).note ?? (item as Record<string, unknown>).sentence ?? (item as Record<string, unknown>).answer ?? "")}</p></article>)}</div>}
+        {!ready || (source.key === AWARENESS_RECORDS_PREFIX && !awarenessReady) ? <div className="admin-empty">正在讀取存檔…</div> : entries.length === 0 ? <div className="admin-empty"><p>目前還沒有紀錄。</p><Link href={source.href}>{source.start} →</Link></div> : <div className="archive-list">{entries.slice(0, 30).map((item, index) => <article key={String((item as Record<string, unknown>).id ?? index)}><div><b>{itemTitle(item)}</b><small>{itemDetail(item)}</small></div>{source.key === "zolacoco-tarot-records-v1" ? <CardThumbs item={item} /> : null}<p>{String((item as Record<string, unknown>).summary ?? (item as Record<string, unknown>).note ?? (item as Record<string, unknown>).sentence ?? (item as Record<string, unknown>).answer ?? "")}</p></article>)}</div>}
       </section>;
     })}
   </main>;
