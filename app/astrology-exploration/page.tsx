@@ -389,7 +389,7 @@ function ChartResult({ computed, music, attachBirth, setAttachBirth, onEdit }: {
 
     <figure className="astro-wheel-wrap">
       <ChartWheel wheel={wheel} houses={chart.cusps !== null} />
-      <figcaption>{chart.timeKnown ? `外圈是十二星座，內圈是十二宮（${chart.houseSystem === "placidus" ? "Placidus 宮位制" : "等宮制"}）；日、月、水、金、火、木、土、天、海、冥、北代表各個星體。` : "沒有出生時間，所以只畫出星座與行星，不畫上升、天頂和宮位。"}</figcaption>
+      <figcaption>{chart.timeKnown ? `外圈是十二星座，內圈是十二宮（${chart.houseSystem === "placidus" ? "Placidus 宮位制" : "等宮制"}）；日、月、水、金、火、木、土、天、海、冥、北代表各個星體。` : "沒有出生時間，所以只畫出星座與行星，不畫上升、天頂和宮位。"}{wheel.aspects.length ? <span className="astro-wheel-legend"><span><i className="is-soft" aria-hidden="true" />藍線：和諧相位（六分、三分）</span><span><i className="is-hard" aria-hidden="true" />粉線：挑戰相位（四分、對分）</span>{chart.timeKnown ? null : <span>沒有出生時間時，月亮的位置不夠準，不畫月亮的相位。</span>}</span> : null}</figcaption>
     </figure>
     {chart.houseSystem === "equal" ? <p className="astro-note">出生地點緯度很高，Placidus 宮位在這個時刻無法計算，這裡改用從上升起算的等宮制。</p> : null}
     {!chart.timeKnown ? <p className="astro-note">沒有出生時間時，用出生當天中午排盤：不顯示上升星座、天頂和宮位{Object.keys(chart.uncertain).length ? "；當天換了星座的星體，會列出兩個可能。" : "。"}</p> : null}
@@ -444,36 +444,44 @@ function ChartResult({ computed, music, attachBirth, setAttachBirth, onEdit }: {
 }
 
 function ChartWheel({ wheel, houses }: { wheel: ReturnType<typeof wheelLayout>; houses: boolean }) {
-  const { center, outer, zodiacInner, inner } = WHEEL;
-  return <svg className="astro-wheel" viewBox="0 0 400 400" role="img" aria-label="本命盤圖：外圈十二星座、內圈宮位與各星體位置，詳細數值見下方表格">
+  const { center, rim, outer, zodiacInner, inner, aspect } = WHEEL;
+  // v2 (精緻金色星象儀): pearl rim, tinted zodiac band, 1° scale, planet seals, houses, aspect web.
+  return <svg className="astro-wheel" viewBox="0 0 400 400" role="img" aria-label="本命盤圖：外圈十二星座、刻度與各星體位置，內圈宮位，中間的線是相位，詳細數值見下方表格">
     <defs>
-      <radialGradient id="astro-wheel-pearl" cx="50%" cy="45%" r="60%"><stop offset="0%" stopColor="#ffffff" /><stop offset="70%" stopColor="#fdf7fa" /><stop offset="100%" stopColor="#f3f6fc" /></radialGradient>
-      <linearGradient id="astro-wheel-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#e3cd9c" /><stop offset="50%" stopColor="#c5a46f" /><stop offset="100%" stopColor="#d8be8a" /></linearGradient>
+      <radialGradient id="astro-wheel-pearl" cx="50%" cy="42%" r="62%"><stop offset="0%" stopColor="#ffffff" /><stop offset="72%" stopColor="#fdf8fb" /><stop offset="100%" stopColor="#f2f5fb" /></radialGradient>
+      <linearGradient id="astro-wheel-gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#ead7a8" /><stop offset="45%" stopColor="#c5a46f" /><stop offset="100%" stopColor="#dcc28d" /></linearGradient>
+      <radialGradient id="astro-wheel-seal" cx="40%" cy="35%" r="70%"><stop offset="0%" stopColor="#ffffff" /><stop offset="100%" stopColor="#fbf1f5" /></radialGradient>
     </defs>
-    <circle cx={center} cy={center} r={outer + 2} fill="url(#astro-wheel-pearl)" stroke="url(#astro-wheel-gold)" strokeWidth="2.4" />
-    {wheel.signs.map((sign) => <path key={`band-${sign.index}`} d={`M ${sign.edge[0].x} ${sign.edge[0].y} L ${sign.edge[1].x} ${sign.edge[1].y}`} stroke="#c5a46f" strokeWidth="1" />)}
-    <circle cx={center} cy={center} r={outer - 5} fill="none" stroke="#d8be8a" strokeWidth=".6" />
-    <circle cx={center} cy={center} r={zodiacInner} fill="#ffffff" stroke="url(#astro-wheel-gold)" strokeWidth="1.6" />
-    {wheel.ticks.map((tick, index) => <line key={`tick-${index}`} x1={tick.line[0].x} y1={tick.line[0].y} x2={tick.line[1].x} y2={tick.line[1].y} stroke="#c5a46f" strokeWidth={tick.major ? .9 : .5} />)}
+    <circle cx={center} cy={center} r={rim} fill="url(#astro-wheel-pearl)" stroke="url(#astro-wheel-gold)" strokeWidth="1.8" />
+    <circle cx={center} cy={center} r={rim - 5} fill="none" stroke="#d9bf8c" strokeWidth=".5" />
+    {wheel.pearls.map((pearl, index) => <circle key={`pearl-${index}`} cx={pearl.x} cy={pearl.y} r="1.35" fill="#fffaf2" stroke="#cfb07a" strokeWidth=".45" />)}
+    {wheel.signs.map((sign) => <path key={`band-${sign.index}`} d={sign.band} fill={sign.index % 2 === 0 ? "#fcf1f5" : "#f1f5fc"} stroke="#d2b47d" strokeWidth=".7" />)}
+    <circle cx={center} cy={center} r={outer} fill="none" stroke="url(#astro-wheel-gold)" strokeWidth="1.1" />
     {wheel.signs.map((sign) => <text key={`sign-${sign.index}`} x={sign.label.x} y={sign.label.y} className="astro-wheel-sign" textAnchor="middle" dominantBaseline="central">{SHORT_SIGN[sign.index]}</text>)}
+    <circle cx={center} cy={center} r={zodiacInner} fill="#fffdfb" stroke="url(#astro-wheel-gold)" strokeWidth="1.3" />
+    <g className="astro-wheel-scale">
+      {wheel.ticks.map((tick, index) => <line key={`tick-${index}`} x1={tick.line[0].x} y1={tick.line[0].y} x2={tick.line[1].x} y2={tick.line[1].y} stroke={tick.size === "minor" ? "#d8be8a" : "#c5a46f"} strokeWidth={tick.size === "major" ? 1 : tick.size === "mid" ? .75 : .5} />)}
+    </g>
     {houses ? wheel.houses.map((house) => <g key={`house-${house.number}`}>
-      <line x1={house.line[0].x} y1={house.line[0].y} x2={house.line[1].x} y2={house.line[1].y} stroke={house.angle ? "#c5a46f" : "#d8be8a"} strokeWidth={house.angle ? 1.4 : .7} />
+      <line x1={house.line[0].x} y1={house.line[0].y} x2={house.line[1].x} y2={house.line[1].y} stroke={house.angle ? "#c5a46f" : "#dcc69a"} strokeWidth={house.angle ? 1 : .55} />
       <text x={house.label.x} y={house.label.y} className="astro-wheel-house" textAnchor="middle" dominantBaseline="central">{house.number}</text>
     </g>) : null}
-    {wheel.axes.map((axis) => <g key={axis.name}>
-      <line x1={axis.line[0].x} y1={axis.line[0].y} x2={axis.line[1].x} y2={axis.line[1].y} stroke="#843450" strokeWidth="1.2" />
-    </g>)}
-    <circle cx={center} cy={center} r={inner} fill="url(#astro-wheel-pearl)" stroke="url(#astro-wheel-gold)" strokeWidth="1.4" />
-    <circle cx={center} cy={center} r={inner - 6} fill="none" stroke="#d8be8a" strokeWidth=".6" strokeDasharray="1.5 3" />
-    <g className="astro-wheel-rosette" stroke="#c5a46f" strokeWidth=".8" fill="none">
-      {Array.from({ length: 8 }, (_, index) => <path key={index} d={`M ${center} ${center - 22} L ${center + 5} ${center} L ${center} ${center + 22} L ${center - 5} ${center} Z`} transform={`rotate(${index * 22.5} ${center} ${center})`} />)}
-      <circle cx={center} cy={center} r="4" fill="#fceaf3" />
+    {wheel.axes.map((axis) => <line key={axis.name} x1={axis.line[0].x} y1={axis.line[0].y} x2={axis.line[1].x} y2={axis.line[1].y} stroke="#9a4a64" strokeWidth="1.1" />)}
+    <circle cx={center} cy={center} r={inner} fill="url(#astro-wheel-pearl)" stroke="url(#astro-wheel-gold)" strokeWidth="1.1" />
+    <circle cx={center} cy={center} r={aspect + 1.5} fill="none" stroke="#e2cfa6" strokeWidth=".4" strokeDasharray="1 2.6" />
+    <g className="astro-wheel-aspects">
+      {wheel.aspects.map((line) => <line key={`${line.a}-${line.b}`} x1={line.line[0].x} y1={line.line[0].y} x2={line.line[1].x} y2={line.line[1].y} stroke={line.kind === "soft" ? "#7f9fc8" : "#cf7f98"} strokeWidth={line.orb < 2 ? .95 : .65} strokeOpacity=".85" />)}
+      {wheel.planets.filter((planet) => wheel.aspects.some((line) => line.a === planet.id || line.b === planet.id)).map((planet) => <circle key={`dot-${planet.id}`} cx={planet.aspectAt.x} cy={planet.aspectAt.y} r="1.5" fill="#c5a46f" />)}
+    </g>
+    <g className="astro-wheel-star" fill="#e9d6aa" stroke="#c5a46f" strokeWidth=".5">
+      {Array.from({ length: 4 }, (_, index) => <path key={index} d={`M ${center} ${center - 7} L ${center + 1.6} ${center} L ${center} ${center + 7} L ${center - 1.6} ${center} Z`} transform={`rotate(${index * 45} ${center} ${center})`} />)}
     </g>
     {wheel.planets.map((planet) => <g key={planet.id} className="astro-wheel-planet">
-      <line x1={planet.tick[0].x} y1={planet.tick[0].y} x2={planet.tick[1].x} y2={planet.tick[1].y} stroke="#843450" strokeWidth="1.4" />
-      <circle cx={planet.marker.x} cy={planet.marker.y} r="11.5" fill="#ffffff" stroke="#c5a46f" strokeWidth="1" />
+      <line x1={planet.tick[0].x} y1={planet.tick[0].y} x2={planet.tick[1].x} y2={planet.tick[1].y} stroke="#9a4a64" strokeWidth="1.2" strokeLinecap="round" />
+      {planet.leader ? <line x1={planet.leader[0].x} y1={planet.leader[0].y} x2={planet.leader[1].x} y2={planet.leader[1].y} stroke="#d8be8a" strokeWidth=".45" /> : null}
+      <circle cx={planet.marker.x} cy={planet.marker.y} r="10" fill="url(#astro-wheel-seal)" stroke="url(#astro-wheel-gold)" strokeWidth=".9" />
       <text x={planet.marker.x} y={planet.marker.y} textAnchor="middle" dominantBaseline="central" className="astro-wheel-mark">{planet.mark}</text>
-      <text x={planet.label.x} y={planet.label.y} textAnchor="middle" dominantBaseline="central" className="astro-wheel-degree">{planet.degree}°{planet.retrograde ? "R" : ""}</text>
+      <text x={planet.label.x} y={planet.label.y} textAnchor="middle" dominantBaseline="central" className="astro-wheel-degree">{planet.degree}°{planet.retrograde ? <tspan className="astro-wheel-retro">R</tspan> : null}</text>
     </g>)}
     {wheel.axes.map((axis) => <text key={`label-${axis.name}`} x={axis.at.x} y={axis.at.y} className="astro-wheel-axis" textAnchor="middle" dominantBaseline="central">{axis.name}</text>)}
   </svg>;
