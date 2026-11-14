@@ -29,6 +29,8 @@ type Phase = "idle" | "shuffling" | "revealed";
 type Draw = { id: string; card: AwarenessCard };
 
 const SHUFFLE_MS = 1100;
+/** The deck grows from its shuffling size to the full card as it turns (awareness.css, .55s). */
+const GROW_MS = 600;
 
 function makeId() {
   return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -123,19 +125,24 @@ export default function AwarenessPage() {
     setShareState("idle");
     setFlipped(false);
     setAnnounce("洗牌中");
+    // Keep the deck on screen: while it shuffles (the button sits below it, so on a short phone the
+    // deck may be partly above the screen), and again once the turned card has grown to full size.
+    const keepDeckInView = () => {
+      const deck = deckRef.current;
+      if (!deck) return;
+      const box = deck.getBoundingClientRect();
+      if (box.top < 64 || box.bottom > window.innerHeight) deck.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
+    };
     const reveal = () => {
       setPhase("revealed");
       setFlipped(true);
       setAnnounce(`妳抽到了「${card.name}」：${card.line}`);
-      // Keep the turned card in view (its ACT line is on the face); the reading follows below it.
-      const deck = deckRef.current;
-      if (deck) {
-        const box = deck.getBoundingClientRect();
-        if (box.top < 64 || box.bottom > window.innerHeight) deck.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
-      }
+      if (reducedMotion()) keepDeckInView();
+      else later(keepDeckInView, GROW_MS);
     };
     if (reducedMotion()) { setPhase("revealed"); reveal(); return; }
     setPhase("shuffling");
+    keepDeckInView();
     later(reveal, SHUFFLE_MS);
   }
 

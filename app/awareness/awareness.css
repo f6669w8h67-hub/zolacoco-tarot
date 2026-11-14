@@ -5,7 +5,10 @@
 .awareness-page {
   --aw-ink: #263449; --aw-muted: #33445f; --aw-title: #843450; --aw-gold: #c5a46f;
   --aw-line: #e4d6e0; --aw-blue: #e8f2fc; --aw-blush: #fceaf3;
-  --aw-card: min(66vw, 300px);
+  /* The turned card is the big one. Before that (waiting and shuffling) the deck is smaller, so the
+     words above it, the deck and the button all fit on one phone screen and the shuffle stays inside it. */
+  --aw-card: min(66vw, 300px, calc((100svh - 140px) * .625));
+  --aw-card-small: min(54vw, 260px, calc((100svh - 250px) * .625));
   position: relative; min-height: 100svh; padding: 92px 18px 48px; color: var(--aw-ink); overflow-x: clip;
   font-family: "Noto Serif TC", serif;
 }
@@ -23,7 +26,8 @@
 /* ---------- draw stage ---------- */
 .aw-stage { max-width: 640px; margin: 22px auto 0; display: grid; justify-items: center; gap: 16px; text-align: center; }
 .aw-calm { min-height: 3.7em; max-width: 30em; font-size: 15px; }
-.aw-deck { position: relative; width: var(--aw-card); aspect-ratio: 5 / 8; margin: 6px 0 4px; perspective: 1400px; }
+.aw-deck { position: relative; width: var(--aw-card); aspect-ratio: 5 / 8; margin: 6px 0 4px; perspective: 1400px; transition: width .55s cubic-bezier(.3, .7, .2, 1); }
+.aw-deck.is-idle, .aw-deck.is-shuffling { width: var(--aw-card-small); }
 .aw-deck-back, .aw-flip, .aw-flip-back, .aw-flip-front { position: absolute; inset: 0; display: block; border-radius: 16px; }
 .aw-deck-back { overflow: hidden; border: 1.5px solid var(--aw-gold); background: #fff; box-shadow: 0 10px 24px rgba(132, 52, 80, .1); }
 .aw-deck-back.b1 { transform: translate(-7px, 7px) rotate(-3deg); }
@@ -38,9 +42,11 @@
 .aw-deck.is-shuffling .b1 { animation: aw-shuffle-left 1.1s ease-in-out both; }
 .aw-deck.is-shuffling .b2 { animation: aw-shuffle-right 1.1s ease-in-out both; }
 .aw-deck.is-shuffling .aw-flip { animation: aw-shuffle-top 1.1s ease-in-out both; }
-@keyframes aw-shuffle-left { 0%, 100% { transform: translate(-7px, 7px) rotate(-3deg); } 25%, 60% { transform: translate(-46%, 4px) rotate(-9deg); } }
-@keyframes aw-shuffle-right { 0%, 100% { transform: translate(7px, 4px) rotate(2.5deg); } 35%, 70% { transform: translate(46%, 2px) rotate(9deg); } }
-@keyframes aw-shuffle-top { 0%, 100% { transform: translateY(0); } 20% { transform: translateY(-14px) rotate(-2deg); } 50% { transform: translateY(6px) rotate(2deg); } 80% { transform: translateY(-6px); } }
+/* A small, quiet riffle: the two lower cards slide out about a quarter of a card and tuck back in,
+   so even on a narrow phone nothing leaves the screen. */
+@keyframes aw-shuffle-left { 0%, 100% { transform: translate(-7px, 7px) rotate(-3deg); } 28%, 58% { transform: translate(-24%, 8px) rotate(-6deg); } }
+@keyframes aw-shuffle-right { 0%, 100% { transform: translate(7px, 4px) rotate(2.5deg); } 40%, 70% { transform: translate(24%, 5px) rotate(6deg); } }
+@keyframes aw-shuffle-top { 0%, 100% { transform: translateY(0); } 22% { transform: translateY(-8px) rotate(-1.5deg); } 50% { transform: translateY(3px) rotate(1.2deg); } 78% { transform: translateY(-4px); } }
 
 /* Card face: the art, with the ACT line on a pearl ribbon over its quiet lower part. */
 .aw-face { position: absolute; inset: 0; display: block; container-type: inline-size; }
@@ -120,7 +126,7 @@
   .aw-panel, .aw-write, .aw-share, .aw-member-note { padding: 24px 28px 26px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .aw-flip { transition: none; }
+  .aw-flip, .aw-deck { transition: none; }
   .aw-deck.is-shuffling :is(.b1, .b2, .aw-flip) { animation: none; }
   .aw-deck.is-revealed .aw-deck-back { transition: none; }
 }
