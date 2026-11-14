@@ -414,6 +414,8 @@
 .admin-page .admin-empty { padding: 18px 8px 6px !important; display: grid; justify-items: center; gap: 8px; color: #8a6f77; }
 .admin-page .admin-empty p { margin: 0; color: #8a6f77; }
 .admin-page .admin-empty a { color: #744750; font-weight: 500; text-decoration: none; border-bottom: 1px solid #d8be96; }
+.admin-page .admin-empty a { min-height: 44px; display: inline-flex; align-items: center; } /* 44px tap target (step 6) */
+.admin-page .admin-top a { min-height: 44px; }
 .admin-page .archive-list article { border-color: #e6d3b5 !important; background: #fffaf2 !important; }
 .admin-page .archive-list b { color: #49343b; font-weight: 600; }
 .admin-page .archive-list small { color: #77552e !important; }
@@ -547,6 +549,21 @@
   cursor: pointer;
 }
 .site-notice button:focus-visible { outline: 2px solid #77552e; outline-offset: 2px; }
+/* Phones (ChatGPT, PR #31): a fixed notice sat on the first buttons (iPhone SE: 開始免費抽牌), so on phones
+   it joins the page flow right under the 64px header instead. The -56px bottom margin lets each page's own
+   header clearance begin just under the notice, so nothing is covered and nothing waits for a close tap.
+   Desktop keeps the small fixed card at the bottom. */
+@media (max-width: 760px) {
+  .site-notice {
+    position: relative;
+    z-index: 1;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    width: auto;
+    margin: 72px 12px -56px;
+  }
+}
 
 /* ---------- Draw section without shadows (owner request 2026-11-13) ---------- */
 #draw, #draw *:not(:focus-visible), #draw *::before, #draw *::after {

@@ -81,7 +81,7 @@ export default function ArchivePage() {
 
   return <main className="admin-page">
     <div className="admin-top"><div><p className="eyebrow">ZOLACOCO TAROT · MY ARCHIVE</p><h1>我的存檔</h1></div><div><Link href="/">返回網站</Link></div></div>
-    <section className="access-card"><b>手機版與電腦版都能存檔</b><br />紀錄會保存在你目前使用的瀏覽器；同一台裝置重新開啟網站仍可查看。換手機、換電腦或清除瀏覽器資料前，請先下載備份。</section>
+    <section className="access-card"><b>手機版與電腦版都能存檔</b><br />紀錄會保存在妳目前使用的瀏覽器；同一台裝置重新開啟網站仍可查看。換手機、換電腦或清除瀏覽器資料前，請先下載備份。</section>
     <div className="archive-toolbar"><span>目前共 {ready ? total : "—"} 筆存檔</span><button type="button" onClick={exportBackup} disabled={!ready}>下載全部備份</button></div>
     {sources.map((source) => {
       const value = archive[source.key];

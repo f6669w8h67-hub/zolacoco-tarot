@@ -55,6 +55,11 @@ const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
     return Response.json({ error: member?.status === "active" ? "MEMBERSHIP_EXPIRED" : member?.status?.toUpperCase() ?? "MEMBERSHIP_REQUIRED" }, { status: 403 });
   }
   return NextResponse.redirect(new URL("/account", request.url));
+}, {
+  // Signed-out visitors go to the site's own pearl /sign-in (with Clerk's redirect_url back to where they
+  // were going), never Clerk's hosted Account Portal. Who may enter is decided above, unchanged.
+  signInUrl: "/sign-in",
+  signUpUrl: "/sign-up",
 }) : null;
 
 export default function proxy(request: NextRequest, event: NextFetchEvent) {

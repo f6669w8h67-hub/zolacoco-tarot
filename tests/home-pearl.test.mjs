@@ -51,7 +51,7 @@ test("pearl palette: no browns, khaki, deep purple or dark buttons", () => {
 });
 
 test("headings break after the comma, never leaving one character alone", () => {
-  assert.match(page, /<h2>抽完牌，<span className="keep-line">再認識陪你讀牌的牠們<\/span><\/h2>/);
+  assert.match(page, /<h2>抽完牌，<span className="keep-line">再認識陪妳讀牌的牠們<\/span><\/h2>/);
   assert.match(page, /<h2>用塔羅，<span className="keep-line">更靠近內在的自己<\/span><\/h2>/);
   assert.match(css, /h2 \.keep-line \{ display: inline-block; \}/);
 });

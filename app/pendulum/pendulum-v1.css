@@ -386,6 +386,7 @@ html body .pendulum-page .pv-guide .guide-grid b { color: var(--pv-accent) !impo
 html body .pendulum-page .pv-guide .guide-grid p { color: var(--pv-ink) !important; }
 html body .pendulum-page > footer { background: transparent !important; color: var(--pv-muted) !important; }
 html body .pendulum-page > footer :is(.brand, a) { color: var(--pv-accent) !important; }
+html body .pendulum-page > footer a { min-height: 44px; display: inline-flex; align-items: center; } /* 44px tap target (step 6) */
 
 
 /* ===== background v2 (ChatGPT, 2026-11-13; owner: 背景很素) ===== */

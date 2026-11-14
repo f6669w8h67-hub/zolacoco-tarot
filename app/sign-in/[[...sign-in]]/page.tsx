@@ -14,6 +14,6 @@ export default function SignInPage() {
     <div className="rococo-divider" aria-hidden="true" />
     <h1 className="rococo-title">歡迎回到 Zolacoco</h1>
     <p className="rococo-description">妳的專屬占卜空間，正等待妳回來</p>
-    <SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" forceRedirectUrl="/account" appearance={clerkPearlPageAppearance} />
+    <SignIn routing="path" path="/sign-in" signUpUrl="/sign-up" fallbackRedirectUrl="/account" appearance={clerkPearlPageAppearance} />
   </section></main>;
 }

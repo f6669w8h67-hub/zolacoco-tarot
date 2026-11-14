@@ -17,7 +17,7 @@ const menuGroups = [
   {
     label: "內在探索",
     items: [
-      { href: "/?tool=archetype#explore", title: "內在原型", note: "看見此刻靠近你的能量" },
+      { href: "/?tool=archetype#explore", title: "內在原型", note: "看見此刻靠近妳的能量" },
       { href: "/?tool=intuition#explore", title: "直覺練習", note: "從牌面練習解讀" },
       { href: "/?tool=journal#explore", title: "七日塔羅筆記", note: "每天整理一個內在提問" },
     ],
@@ -26,7 +26,7 @@ const menuGroups = [
     label: "療癒空間",
     items: [
       { href: "/healing-room", title: "療癒小房間", note: "情緒、關係與睡前練習" },
-      { href: "/astrology-exploration", title: "探索你的星盤", note: "理解內在需求與人生課題" },
+      { href: "/astrology-exploration", title: "探索妳的星盤", note: "理解內在需求與人生課題" },
       { href: "/#consult", title: "問問 Zola", note: "一對一整理完整脈絡" },
     ],
   },
@@ -86,7 +86,7 @@ export default function SiteHeader() {
         {menuGroups.map((group) => <section key={group.label}><h3>{group.label}</h3>{group.items.map((item) => <Link href={item.href} key={item.title} onClick={() => setOpen(false)}><span><b>{item.title}</b><small>{item.note}</small></span><i aria-hidden="true">→</i></Link>)}</section>)}
       </div>
       <div className="font-tier-row" role="group" aria-label="調整網站字級">
-        <span><b>閱讀字級</b><small>會記住你的選擇</small></span>
+        <span><b>閱讀字級</b><small>會記住妳的選擇</small></span>
         {(["small", "medium", "large"] as FontTier[]).map((tier, index) => <button type="button" key={tier} className={fontTier === tier ? "active" : ""} aria-pressed={fontTier === tier} onClick={() => chooseFont(tier)}>{["小", "中", "大"][index]}</button>)}
       </div>
       <div className="global-account-panel">

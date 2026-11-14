@@ -21,7 +21,7 @@ import { type CardReading, othersLine, speaksForOthers, synthesisOpening, synthe
 // Explore v2 (2026-11-13): the three practices that open right here are tabs above their panel;
 // the pendulum and the astro dice have pages of their own, so they are picture cards that link there.
 const practiceTools = [
-  { id: "archetype", number: "01", title: "此刻的內在原型", short: "內在原型", desc: "從幾個直覺選擇，看見此刻最靠近你的大牌能量。" },
+  { id: "archetype", number: "01", title: "此刻的內在原型", short: "內在原型", desc: "從幾個直覺選擇，看見此刻最靠近妳的大牌能量。" },
   { id: "intuition", number: "02", title: "牌面直覺練習室", short: "直覺練習", desc: "先不看標準牌義，練習相信自己從畫面讀到的訊息。" },
   { id: "journal", number: "03", title: "七日塔羅內在筆記", short: "七日筆記", desc: "每天一個提問，慢慢整理情緒、關係與真正的需要。" },
 ] as const;
@@ -48,34 +48,34 @@ const soundscapes: Record<Soundscape, { icon: string; label: string; en: string;
 
 const archetypeQuestionSets = [
   [
-    { q: "最近的你，更接近哪一種狀態？", a: ["想安靜整理自己", "想突破停滯往前走", "想被理解與好好照顧"] },
-    { q: "面對不確定時，你最常怎麼做？", a: ["先觀察，不急著表態", "逼自己趕快做決定", "反覆確認別人的心意"] },
-    { q: "此刻你最需要找回的是？", a: ["內在的答案", "行動的力量", "接住自己的溫柔"] },
+    { q: "最近的妳，更接近哪一種狀態？", a: ["想安靜整理自己", "想突破停滯往前走", "想被理解與好好照顧"] },
+    { q: "面對不確定時，妳最常怎麼做？", a: ["先觀察，不急著表態", "逼自己趕快做決定", "反覆確認別人的心意"] },
+    { q: "此刻妳最需要找回的是？", a: ["內在的答案", "行動的力量", "接住自己的溫柔"] },
   ],
   [
-    { q: "當心裡有很多聲音時，你最想先做什麼？", a: ["暫時離開喧鬧，聽聽自己", "抓住一個方向開始行動", "找一個安心的人說說心情"] },
-    { q: "最近哪一種感受最貼近你？", a: ["有些答案還在慢慢沉澱", "知道自己不能再停在原地", "總在照顧別人，卻忘了自己"] },
-    { q: "如果今天能收到一份力量，你最想要的是？", a: ["清楚的內在直覺", "做出選擇的勇氣", "被溫柔接住的感覺"] },
+    { q: "當心裡有很多聲音時，妳最想先做什麼？", a: ["暫時離開喧鬧，聽聽自己", "抓住一個方向開始行動", "找一個安心的人說說心情"] },
+    { q: "最近哪一種感受最貼近妳？", a: ["有些答案還在慢慢沉澱", "知道自己不能再停在原地", "總在照顧別人，卻忘了自己"] },
+    { q: "如果今天能收到一份力量，妳最想要的是？", a: ["清楚的內在直覺", "做出選擇的勇氣", "被溫柔接住的感覺"] },
   ],
   [
-    { q: "面對一段反覆拉扯，你的第一個反應是？", a: ["退一步觀察真正發生的事", "想立刻打破僵局往前走", "想確認自己是不是被重視"] },
-    { q: "最近你最常對自己說哪一句話？", a: ["我需要再聽聽自己的心", "我不能一直停在這裡", "我也值得被好好對待"] },
-    { q: "哪一個畫面最像此刻的你？", a: ["獨自坐在安靜的月光下", "握緊方向盤準備出發", "在柔軟的花園裡慢慢休息"] },
+    { q: "面對一段反覆拉扯，妳的第一個反應是？", a: ["退一步觀察真正發生的事", "想立刻打破僵局往前走", "想確認自己是不是被重視"] },
+    { q: "最近妳最常對自己說哪一句話？", a: ["我需要再聽聽自己的心", "我不能一直停在這裡", "我也值得被好好對待"] },
+    { q: "哪一個畫面最像此刻的妳？", a: ["獨自坐在安靜的月光下", "握緊方向盤準備出發", "在柔軟的花園裡慢慢休息"] },
   ],
   [
-    { q: "當事情沒有照預期發展時，你通常會？", a: ["先整理線索，等待感受清楚", "調整策略，重新推進一次", "先照顧自己的失望與疲憊"] },
-    { q: "最近最消耗你的是什麼？", a: ["太多外界意見蓋過自己的聲音", "想前進，卻還沒有明確方向", "一直付出，卻沒有得到回應"] },
-    { q: "你希望接下來的自己更靠近哪種狀態？", a: ["相信自己的內在判斷", "有力量做出真正的選擇", "穩定地照顧自己的需要"] },
+    { q: "當事情沒有照預期發展時，妳通常會？", a: ["先整理線索，等待感受清楚", "調整策略，重新推進一次", "先照顧自己的失望與疲憊"] },
+    { q: "最近最消耗妳的是什麼？", a: ["太多外界意見蓋過自己的聲音", "想前進，卻還沒有明確方向", "一直付出，卻沒有得到回應"] },
+    { q: "妳希望接下來的自己更靠近哪種狀態？", a: ["相信自己的內在判斷", "有力量做出真正的選擇", "穩定地照顧自己的需要"] },
   ],
   [
-    { q: "在關係裡，你現在最想釐清的是？", a: ["我心裡真正相信的是什麼", "我是否願意採取新的行動", "我的需要有沒有被好好看見"] },
-    { q: "當對方的回應不如預期，你更容易？", a: ["沉默下來觀察彼此的變化", "想趕快做些什麼扭轉現況", "懷疑自己是不是不夠重要"] },
+    { q: "在關係裡，妳現在最想釐清的是？", a: ["我心裡真正相信的是什麼", "我是否願意採取新的行動", "我的需要有沒有被好好看見"] },
+    { q: "當對方的回應不如預期，妳更容易？", a: ["沉默下來觀察彼此的變化", "想趕快做些什麼扭轉現況", "懷疑自己是不是不夠重要"] },
     { q: "此刻的關係最需要補回哪一種能量？", a: ["誠實與清楚", "方向與決心", "溫柔與安全感"] },
   ],
   [
-    { q: "如果今天可以替自己留一點空間，你會？", a: ["安靜獨處，讓答案浮現", "完成一件一直拖延的事", "好好吃飯休息，不再勉強"] },
-    { q: "最近你最想鬆開哪一種壓力？", a: ["一定要立刻想清楚的壓力", "害怕做錯而不敢前進的壓力", "必須一直照顧別人的壓力"] },
-    { q: "今天的你，最值得被提醒的是？", a: ["你其實知道自己在意什麼", "方向可以邊走邊調整", "你的感受也需要被放在心上"] },
+    { q: "如果今天可以替自己留一點空間，妳會？", a: ["安靜獨處，讓答案浮現", "完成一件一直拖延的事", "好好吃飯休息，不再勉強"] },
+    { q: "最近妳最想鬆開哪一種壓力？", a: ["一定要立刻想清楚的壓力", "害怕做錯而不敢前進的壓力", "必須一直照顧別人的壓力"] },
+    { q: "今天的妳，最值得被提醒的是？", a: ["妳其實知道自己在意什麼", "方向可以邊走邊調整", "妳的感受也需要被放在心上"] },
   ],
 ];
 
@@ -85,9 +85,9 @@ const JOURNAL_STORAGE_KEY = "zolacoco-journal-notes-v1";
 const TAROT_STORAGE_KEY = "zolacoco-tarot-records-v1";
 
 const archetypeResults = [
-  { name: "女祭司", en: "THE HIGH PRIESTESS", text: "你不是沒有答案，而是外界的聲音暫時蓋過了自己的感受。此刻適合慢一點，留意那些還說不清楚、但心裡其實已經知道的事。" },
-  { name: "戰車", en: "THE CHARIOT", text: "你正在找回前進的主導權。真正的力量不是催促自己，而是先確認方向，再把分散的心力帶回同一條路上。" },
-  { name: "皇后", en: "THE EMPRESS", text: "你現在需要的可能不是再努力一點，而是先承認自己的需求。當你願意照顧內在，選擇才不會只建立在害怕失去之上。" },
+  { name: "女祭司", en: "THE HIGH PRIESTESS", text: "妳不是沒有答案，而是外界的聲音暫時蓋過了自己的感受。此刻適合慢一點，留意那些還說不清楚、但心裡其實已經知道的事。" },
+  { name: "戰車", en: "THE CHARIOT", text: "妳正在找回前進的主導權。真正的力量不是催促自己，而是先確認方向，再把分散的心力帶回同一條路上。" },
+  { name: "皇后", en: "THE EMPRESS", text: "妳現在需要的可能不是再努力一點，而是先承認自己的需求。當妳願意照顧內在，選擇才不會只建立在害怕失去之上。" },
 ];
 
 const journalPrompts = ["我現在真正的情緒是什麼？", "我正在逃避或延後面對什麼？", "我內在最需要哪一種支持？", "我在人際關係中反覆出現什麼習慣？", "金錢與安全感對我代表什麼？", "如果不必迎合任何人，我想成為怎樣的人？", "這一週，我最想帶走的核心提醒是什麼？"];
@@ -440,8 +440,8 @@ export default function Home() {
         <span className="pearl-corners" aria-hidden="true" />
         <div className="hero-copy">
           <p className="eyebrow">A MESSAGE FOR YOUR PRESENT MOMENT</p>
-          <h1><span>把問題放在心裡</span><em>抽一張屬於你的牌</em></h1>
-          <p className="intro">答案不替你決定人生，而是陪你看清此刻真正需要留意的方向。</p>
+          <h1><span>把問題放在心裡</span><em>抽一張屬於妳的牌</em></h1>
+          <p className="intro">答案不替妳決定人生，而是陪妳看清此刻真正需要留意的方向。</p>
           <div className="visitor-status member-status" role="status">
             <span aria-hidden="true" />
             <p>
@@ -455,7 +455,7 @@ export default function Home() {
             <a className="primary" href="#draw">開始免費抽牌 <span aria-hidden="true">↓</span></a>
             <a className="hero-secondary" href="#consult">預約一對一諮詢</a>
           </div>
-          <p className="ritual">深呼吸三次，想著一個你最近最在意的問題</p>
+          <p className="ritual">深呼吸三次，想著一個妳最近最在意的問題</p>
         </div>
         <div className="hero-portrait" aria-label="Zolacoco Tarot 主理人形象照">
           <img src="/zolacoco-hero-v2.png" alt="Zolacoco Tarot 主理人 Zola" />
@@ -463,7 +463,7 @@ export default function Home() {
             <span>THE READER</span>
             <strong>Zola</strong>
             <small>塔羅占卜師・關係與人生選擇的解讀者</small>
-            <p>累積五年以上身心靈學習與個案陪伴經驗，擅長從感情關係、工作選擇與人生卡點中，整理出真正需要被看見的核心。比起替你決定答案，我更希望陪你釐清盲點，找到能落地的下一步。</p>
+            <p>累積五年以上身心靈學習與個案陪伴經驗，擅長從感情關係、工作選擇與人生卡點中，整理出真正需要被看見的核心。比起替妳決定答案，我更希望陪妳釐清盲點，找到能落地的下一步。</p>
           </div>
         </div>
       </section>
@@ -643,7 +643,7 @@ export default function Home() {
         <span className="pearl-corners" aria-hidden="true" />
         <div className="cat-story-heading">
           <p className="eyebrow">THE HEARTS BEHIND THE DECK</p>
-          <h2>抽完牌，<span className="keep-line">再認識陪你讀牌的牠們</span></h2>
+          <h2>抽完牌，<span className="keep-line">再認識陪妳讀牌的牠們</span></h2>
           <p>這套 78 張貓咪塔羅，以萊恩與蝦蝦為原型。牠們有不同的個性，也把不同的情緒與生命經驗帶進每一張牌裡。</p>
         </div>
         <div className="cat-profiles">
@@ -656,7 +656,7 @@ export default function Home() {
             <div><span>SHRIMP · 蝦蝦</span><h3>膽小敏感，卻一直努力相信愛</h3><p>蝦蝦也是領養回家的貓咪。牠年紀比較大、個性敏感膽小，需要更多耐心與安全感。在牌組裡，牠陪我們看見脆弱、依戀、療癒，以及被好好接住之後重新安心的可能。</p></div>
           </article>
         </div>
-        <p className="cat-story-note">牠們不是裝飾，而是整副牌的靈魂：有時由萊恩帶你向前，有時由蝦蝦陪你停下來照顧自己。</p>
+        <p className="cat-story-note">牠們不是裝飾，而是整副牌的靈魂：有時由萊恩帶妳向前，有時由蝦蝦陪妳停下來照顧自己。</p>
       </section>
 
       <section className="explore" id="explore">
@@ -664,7 +664,7 @@ export default function Home() {
         <div className="explore-heading">
           <p className="eyebrow">TAROT AS A MIRROR</p>
           <h2>用塔羅，<span className="keep-line">更靠近內在的自己</span></h2>
-          <p>塔羅不只是預測結果，也是一種整理感受、理解模式的語言。你不需要會背牌義，先從此刻最有感覺的練習開始。</p>
+          <p>塔羅不只是預測結果，也是一種整理感受、理解模式的語言。妳不需要會背牌義，先從此刻最有感覺的練習開始。</p>
         </div>
 
         <div className="explore-layout ex-layout">
@@ -690,10 +690,10 @@ export default function Home() {
               {archetypeResult === null ? <>
                 <div className="tool-progress"><span>INNER ARCHETYPE</span><b>{archetypeStep + 1} / {archetypeQuestions.length}</b></div>
                 <h3>{archetypeQuestions[archetypeStep].q}</h3>
-                <p className="tool-hint">不用想哪一個比較正確，選擇第一個讓你有感覺的答案。</p>
+                <p className="tool-hint">不用想哪一個比較正確，選擇第一個讓妳有感覺的答案。</p>
                 <div className="answer-list">{archetypeQuestions[archetypeStep].a.map((answer, index) => <button key={answer} onClick={() => answerArchetype(index)}><span>{String.fromCharCode(65 + index)}</span>{answer}</button>)}</div>
               </> : <div className="archetype-result practice-reveal">
-                <span>你此刻的內在原型</span>{archetypeCard && <PracticeCard card={archetypeCard} />}
+                <span>妳此刻的內在原型</span>{archetypeCard && <PracticeCard card={archetypeCard} />}
                 <p>{archetypeResults[archetypeResult].en}</p><h3>{archetypeResults[archetypeResult].name}</h3>
                 <blockquote>{archetypeResults[archetypeResult].text}</blockquote>
                 <div className="practice-lesson"><b>這一題沒有標準答案</b><p>原型測驗練習的是辨認自己的感受；真正進入解牌時，才需要把直覺和牌面證據分開。</p></div>
@@ -705,7 +705,7 @@ export default function Home() {
               <div className="tool-progress"><span>INTUITIVE READING</span><b>觀察有依據，推論有界線</b></div>
               {intuitionStage === 0 ? <>
                 <PracticeCard card={intuitionCard} hidden flipped={false} />
-                <h3>先讓心慢下來，翻開一張練習牌</h3><p className="tool-hint">這次先不急著知道牌名，看看畫面最先把你的視線帶到哪裡。</p>
+                <h3>先讓心慢下來，翻開一張練習牌</h3><p className="tool-hint">這次先不急著知道牌名，看看畫面最先把妳的視線帶到哪裡。</p>
                 <div className="flow-actions"><button className="flow-button primary-flow" onClick={() => drawIntuitionCard(1)}>下一步・隨機翻一張牌 <b>→</b></button></div>
               </> : <>
                 <div className="practice-reveal"><PracticeCard card={intuitionCard} /></div>
@@ -715,7 +715,7 @@ export default function Home() {
                   <div className="feeling-list teaching-options">{intuitionOptions.map((option, index) => <button className={intuitionChoice === option.text ? "active" : ""} key={option.text} onClick={() => { setIntuitionChoice(option.text); setIntuitionFeedback(option); }}><span>{String.fromCharCode(65 + index)}</span>{option.text}</button>)}</div>
                   {intuitionFeedback && <div className={`answer-feedback ${intuitionFeedback.correct ? "correct" : "trap"}`}><b>{intuitionFeedback.correct ? "這個判斷有依據" : "這是一個常見解牌陷阱"}</b><p>{intuitionFeedback.note}</p></div>}
                   <div className="flow-actions"><button className="flow-button secondary-flow" onClick={() => { setIntuitionStage(0); setIntuitionChoice(""); setIntuitionFeedback(null); }}>上一步</button><button className="flow-button primary-flow" disabled={!intuitionFeedback?.correct} onClick={() => setIntuitionStage(2)}>{intuitionFeedback && !intuitionFeedback.correct ? "再選一個有依據的答案" : "下一步・揭曉牌義"} <b>→</b></button></div>
-                </> : <><div className="reveal-copy"><span>{intuitionCard.name} · {intuitionCard.en}</span><p>{intuitionCard.truth}</p><p><b>容易掉進的盲點：</b>{intuitionCard.blindSpot}</p><p><b>可以嘗試的下一步：</b>{intuitionCard.action}</p><small>你剛才練習的，是先辨認客觀畫面，再把象徵、感受與生活情境連成一段有依據的解讀。</small></div><div className="flow-actions"><button className="flow-button secondary-flow" onClick={() => drawIntuitionCard(1)}>換一張牌繼續練習</button><button className="flow-button primary-flow" onClick={() => { setExploreTool("journal"); setIntuitionStage(0); setIntuitionChoice(""); setIntuitionFeedback(null); }}>下一步・開始內在筆記 <b>→</b></button></div></>}
+                </> : <><div className="reveal-copy"><span>{intuitionCard.name} · {intuitionCard.en}</span><p>{intuitionCard.truth}</p><p><b>容易掉進的盲點：</b>{intuitionCard.blindSpot}</p><p><b>可以嘗試的下一步：</b>{intuitionCard.action}</p><small>妳剛才練習的，是先辨認客觀畫面，再把象徵、感受與生活情境連成一段有依據的解讀。</small></div><div className="flow-actions"><button className="flow-button secondary-flow" onClick={() => drawIntuitionCard(1)}>換一張牌繼續練習</button><button className="flow-button primary-flow" onClick={() => { setExploreTool("journal"); setIntuitionStage(0); setIntuitionChoice(""); setIntuitionFeedback(null); }}>下一步・開始內在筆記 <b>→</b></button></div></>}
               </>}
             </div>}
 
@@ -744,16 +744,16 @@ export default function Home() {
 
         <div className="learning-bridge">
           <span>FROM SELF-EXPLORATION TO TAROT READING</span>
-          <h3>剛剛的你，其實已經開始在讀牌了</h3>
-          <p>觀察畫面、辨認感受、找出象徵與生活的連結，正是學習塔羅最重要的起點。你不需要天生有靈感，也不必先背完 78 張牌；我會帶你建立能理解、能表達，也能實際運用的解牌邏輯。</p>
+          <h3>剛剛的妳，其實已經開始在讀牌了</h3>
+          <p>觀察畫面、辨認感受、找出象徵與生活的連結，正是學習塔羅最重要的起點。妳不需要天生有靈感，也不必先背完 78 張牌；我會帶妳建立能理解、能表達，也能實際運用的解牌邏輯。</p>
           <div><a href="https://www.instagram.com/zolacoco_tarot" target="_blank" rel="noreferrer">了解塔羅教學 <b>↗</b></a><a href="https://www.instagram.com/zolacoco_tarot" target="_blank" rel="noreferrer">我適合學塔羅嗎？</a></div>
         </div>
       </section>
 
       <section className="consult" id="consult">
         <span className="pearl-corners" aria-hidden="true" />
-        <div className="consult-copy"><p className="eyebrow">ONE-ON-ONE TAROT READING</p><h2>一張牌可以安放此刻<br />完整諮詢陪你看清整段脈絡</h2><p>如果你正卡在反覆拉扯的感情、工作選擇或一個遲遲做不了的決定，我會從你的真實處境整理問題，陪你看見盲點、關係動態與下一步，而不是只告訴你一個結果。</p></div>
-        <div className="consult-card"><span>適合現在的你，如果——</span><ul><li>同一個問題已經反覆困擾很久</li><li>知道要放下，情緒卻一直被拉回去</li><li>需要的不只是答案，而是具體方向</li></ul><a href={ZOLA_LINE_URL} target="_blank" rel="noreferrer">前往官方 LINE 預約 <b>↗</b></a><small>由 Zola 親自回覆，依你的實際狀況整理適合的諮詢方式</small></div>
+        <div className="consult-copy"><p className="eyebrow">ONE-ON-ONE TAROT READING</p><h2>一張牌可以安放此刻<br />完整諮詢陪妳看清整段脈絡</h2><p>如果妳正卡在反覆拉扯的感情、工作選擇或一個遲遲做不了的決定，我會從妳的真實處境整理問題，陪妳看見盲點、關係動態與下一步，而不是只告訴妳一個結果。</p></div>
+        <div className="consult-card"><span>適合現在的妳，如果——</span><ul><li>同一個問題已經反覆困擾很久</li><li>知道要放下，情緒卻一直被拉回去</li><li>需要的不只是答案，而是具體方向</li></ul><a href={ZOLA_LINE_URL} target="_blank" rel="noreferrer">前往官方 LINE 預約 <b>↗</b></a><small>由 Zola 親自回覆，依妳的實際狀況整理適合的諮詢方式</small></div>
       </section>
 
       <section className="about" id="about">
@@ -762,7 +762,7 @@ export default function Home() {
         <p>免費抽牌適合當作當下的提醒。無論是學習塔羅，或透過諮詢整理問題，真正重要的都不是把人生交給一張牌，而是更理解自己的選擇。</p>
       </section>
 
-      <footer><div className="brand">ZOLACOCO <span>TAROT</span></div><p>願你不只得到答案，也更靠近自己。</p><small>僅供自我探索與娛樂參考</small></footer>
+      <footer><div className="brand">ZOLACOCO <span>TAROT</span></div><p>願妳不只得到答案，也更靠近自己。</p><small>僅供自我探索與娛樂參考</small></footer>
     </main>
   );
 }
