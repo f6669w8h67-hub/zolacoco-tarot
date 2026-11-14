@@ -179,11 +179,6 @@ export default function AwarenessPage() {
     };
     if (!persist(upsertRecord(records, record))) { setSaveState("error"); return; }
     setSaveState("saved");
-    void fetch("/api/activity", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ type: "awareness_card", title: `覺察卡・${card.name}`, summary: text.slice(0, 300), details: record }),
-    }).catch(() => undefined);
   }
 
   async function makeShare() {
