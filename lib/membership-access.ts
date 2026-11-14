@@ -40,6 +40,12 @@ export function isStudentRoute(pathname: string) {
   );
 }
 
+/** The 學員練習室 page itself is open to everyone: signed out or not a student, it shows a short note
+ * and loads nothing private. Its APIs (/api/practice…) are not open: they need a signed-in student. */
+export function isStudentPage(pathname: string) {
+  return pathname === "/practice" || pathname === "/practice/";
+}
+
 /** Admin always; a member Zola marked as her student, unless suspended. Independent of VIP months. */
 export function hasStudentAccess(member: {
   role?: string;

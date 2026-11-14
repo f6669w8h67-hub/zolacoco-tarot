@@ -8,6 +8,7 @@ import {
   isClerkConfigured,
   isMembershipServiceRoute,
   isPublicMembershipPage,
+  isStudentPage,
   isStudentRoute,
 } from "./lib/membership-access";
 
@@ -22,6 +23,8 @@ function unavailable(request: NextRequest, error: string) {
 
 const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
   if (isPublicMembershipPage(request.nextUrl.pathname) || isMembershipServiceRoute(request.nextUrl.pathname)) return NextResponse.next();
+  // /practice shows signed-out visitors its own short note; its data APIs still need a signed-in student.
+  if (isStudentPage(request.nextUrl.pathname)) return NextResponse.next();
 
   const session = await clerkAuth();
   if (!session.userId) {
@@ -67,7 +70,7 @@ const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
 
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
   if (!handler) {
-    if (isPublicMembershipPage(request.nextUrl.pathname)) return NextResponse.next();
+    if (isPublicMembershipPage(request.nextUrl.pathname) || isStudentPage(request.nextUrl.pathname)) return NextResponse.next();
     if (allowsMembershipPreview(process.env) && !isMembershipServiceRoute(request.nextUrl.pathname)) {
       return NextResponse.next();
     }

@@ -258,3 +258,40 @@ test("pages: /practice gets questions only from the API; account and admin show 
   const palette = new Set(["#263449", "#33445f", "#843450", "#c5a46f", "#e4d6e0", "#e8f2fc", "#fceaf3", "#b9c7d8", "#b4405f", "#ffffff", "#fffdf8"]);
   for (const hex of css.match(/#[0-9a-fA-F]{6}\b/g) ?? []) assert.ok(palette.has(hex.toLowerCase()), hex);
 });
+
+test("review #33 B1: a slow reply for student A never shows under student B", async () => {
+  const { latestRequest } = await import("../lib/latest-request.ts");
+  const requests = latestRequest();
+  const a = requests.start();
+  const b = requests.start();
+  assert.equal(a.signal.aborted, true, "opening B cancels A's fetch");
+  assert.equal(a.isCurrent(), false, "A finishing after B is ignored");
+  assert.equal(b.isCurrent(), true);
+  const c = requests.start();
+  assert.equal(b.isCurrent(), false, "B failing after C started is ignored too");
+  requests.cancel();
+  assert.equal(c.isCurrent(), false, "going back or leaving the page drops C");
+  assert.equal(c.signal.aborted, true);
+  const page = await read("app/zola-admin/practice/page.tsx");
+  const open = page.slice(page.indexOf("async function open("), page.indexOf("function closeStudent()"));
+  assert.match(open, /const request = studentRequest\.current\.start\(\);/);
+  assert.match(open, /signal: request\.signal/);
+  assert.match(open, /if \(!request\.isCurrent\(\)\) return;\n      setAnswers\(data\.answers\);/);
+  assert.match(open, /catch \{\n      if \(!request\.isCurrent\(\)\) return;/);
+  assert.match(page, /function closeStudent\(\) \{\n    studentRequest\.current\.cancel\(\);/);
+  assert.match(page, /return \(\) => requests\.cancel\(\);/, "leaving the page cancels too");
+});
+
+test("review #33 B2: signed out, /practice shows its short note; the practice APIs stay closed", async () => {
+  assert.equal(access.isStudentPage("/practice"), true);
+  assert.equal(access.isStudentPage("/api/practice"), false);
+  assert.equal(access.isStudentPage("/practice/anything"), false);
+  const proxy = await read("proxy.ts");
+  const pagePass = proxy.indexOf("if (isStudentPage(request.nextUrl.pathname)) return NextResponse.next();");
+  const signIn = proxy.indexOf("return session.redirectToSignIn");
+  assert.ok(pagePass > 0 && pagePass < signIn, "the page is let through before the sign-in redirect");
+  assert.match(proxy, /if \(isPublicMembershipPage\(request\.nextUrl\.pathname\) \|\| isStudentPage\(request\.nextUrl\.pathname\)\) return NextResponse\.next\(\);/);
+  const page = await read("app/practice/page.tsx");
+  assert.match(page, /"signed-out": \["這裡是學員練習室", "由 Zola 開通學員身分後才能使用。已經是學員的話，請先登入。"\]/);
+  assert.match(page, /"not-student": \["這裡是學員練習室", "由 Zola 開通學員身分後才能使用。"\]/);
+});

@@ -3,9 +3,10 @@
 // 學員練習 (Zola only): every student's progress, their answers question by question, and Zola's reply.
 // Data from /api/practice/admin (requireAdmin) and the question texts from /api/practice (admin sees drafts).
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { tarotCards } from "@/app/tarot-data";
+import { latestRequest } from "@/lib/latest-request";
 import type { PublicAnswer } from "@/lib/practice-input";
 import "../../styles/pearl-page.css";
 import "../../practice/practice.css";
@@ -30,6 +31,13 @@ export default function PracticeAdminPage() {
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<Student | null>(null);
   const [answers, setAnswers] = useState<AdminAnswer[] | null>(null);
+  // One student's answers at a time: switching students, going back or leaving the page makes any
+  // earlier request harmless, so a slow reply for A never shows under B's name.
+  const studentRequest = useRef(latestRequest());
+  useEffect(() => {
+    const requests = studentRequest.current;
+    return () => requests.cancel();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -52,16 +60,27 @@ export default function PracticeAdminPage() {
   const questions = useMemo(() => new Map(units.flatMap((unit) => unit.questions.map((question) => [question.id, { question, unit }] as const))), [units]);
 
   async function open(student: Student) {
+    const request = studentRequest.current.start();
     setSelected(student);
     setAnswers(null);
+    setNotice("");
     try {
-      const response = await fetch(`/api/practice/admin?memberId=${encodeURIComponent(student.id)}`, { cache: "no-store" });
+      const response = await fetch(`/api/practice/admin?memberId=${encodeURIComponent(student.id)}`, { cache: "no-store", signal: request.signal });
       if (!response.ok) throw new Error("load");
-      setAnswers((await response.json()).answers);
+      const data = await response.json();
+      if (!request.isCurrent()) return;
+      setAnswers(data.answers);
     } catch {
+      if (!request.isCurrent()) return;
       setNotice("暫時無法讀取這位學員的作答，請再試一次。");
       setAnswers([]);
     }
+  }
+
+  function closeStudent() {
+    studentRequest.current.cancel();
+    setSelected(null);
+    setAnswers(null);
   }
 
   function replaceAnswer(answer: AdminAnswer) {
@@ -83,7 +102,7 @@ export default function PracticeAdminPage() {
     {notice ? <p className="pr-notice" aria-live="polite">{notice}</p> : null}
 
     {selected ? <section className="pa-student">
-      <button type="button" className="pr-back" onClick={() => { setSelected(null); setAnswers(null); }}>← 全部學員</button>
+      <button type="button" className="pr-back" onClick={closeStudent}>← 全部學員</button>
       <h2>{selected.full_name || selected.email}</h2>
       <p>{selected.email}{selected.is_student ? "" : "・已取消學員身分（作答仍保留）"}</p>
       {answers === null ? <p className="pr-notice">正在讀取作答…</p> : visibleAnswers.length === 0 ? <p className="pr-empty">{answers.length === 0 ? "還沒有作答。" : "沒有符合篩選的作答。"}</p> : <ul className="pa-answers">

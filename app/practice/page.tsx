@@ -87,7 +87,7 @@ function PracticeRoom({ waiting }: { waiting: boolean }) {
   if (load.state !== "ready") {
     const copy = {
       loading: ["正在打開學員練習室…", "請稍候。"],
-      "signed-out": ["請先登入", "學員練習室需要用妳的會員帳號登入。"],
+      "signed-out": ["這裡是學員練習室", "由 Zola 開通學員身分後才能使用。已經是學員的話，請先登入。"],
       "not-student": ["這裡是學員練習室", "由 Zola 開通學員身分後才能使用。"],
       error: ["暫時打不開練習室", "可能是網路不穩，請稍後重新整理。"],
     }[load.state];
