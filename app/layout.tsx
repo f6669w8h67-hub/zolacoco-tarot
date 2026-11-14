@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkIdentityProvider } from "./auth-identity";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "./rococo-membership.css";
@@ -59,7 +60,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {authConfigured ? <ClerkProvider localization={clerkLocalization} appearance={clerkPearlAppearance}>{content}</ClerkProvider> : content}
+        {authConfigured ? <ClerkProvider localization={clerkLocalization} appearance={clerkPearlAppearance}><ClerkIdentityProvider>{content}</ClerkIdentityProvider></ClerkProvider> : content}
       </body>
     </html>
   );

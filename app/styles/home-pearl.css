@@ -200,9 +200,9 @@ html body #explore :is(.flow-button.secondary-flow, .learning-bridge a:not(:firs
 html body #explore :is(.flow-button, .tool-primary):disabled { background: #ebebf1 !important; border-color: #c9ced9 !important; color: #59657a !important; }
 html body #explore :is(button, a, textarea):focus-visible { outline: 2px solid var(--hp-title) !important; outline-offset: 3px !important; }
 
-/* the pendulum and the astro dice: picture cards that open their own pages */
+/* 覺察卡, the pendulum and the astro dice: picture cards that open their own pages */
 html body #explore .ex-more { margin-top: 44px; }
-html body #explore .ex-more-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+html body #explore .ex-more-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 html body #explore .ex-more-card {
   display: grid; grid-template-rows: 150px auto; overflow: hidden; border: 1px solid var(--hp-gold); border-radius: 18px;
   background: #ffffff; color: inherit; text-decoration: none; box-shadow: 0 14px 30px rgba(132, 52, 80, .08);
@@ -211,11 +211,12 @@ html body #explore .ex-more-card {
 @media (hover: hover) { html body #explore .ex-more-card:hover { transform: translateY(-3px); box-shadow: 0 20px 36px rgba(132, 52, 80, .13); } }
 html body #explore .ex-more-art { position: relative; display: block; overflow: hidden; border-bottom: 1px solid var(--hp-line); }
 html body #explore .ex-more-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 40%; }
+html body #explore .ex-more-card[href="/awareness"] .ex-more-art img { object-position: center; }
 /* the tool itself floats in its room: the pendulum hangs from the top, the die rests in the light */
 html body #explore .ex-more-charm { position: absolute; left: 50%; filter: drop-shadow(0 8px 10px rgba(38, 52, 73, .22)); }
 html body #explore .ex-more-charm img { position: absolute !important; inset: 0 !important; width: 100% !important; height: 100% !important; object-fit: contain !important; }
-html body #explore .ex-more-card:first-child .ex-more-charm { top: -18px; width: 32px; height: 156px; transform: translateX(-50%) rotate(4deg); transform-origin: 50% 0; }
-html body #explore .ex-more-card:last-child .ex-more-charm { top: 50%; width: 84px; height: 84px; transform: translate(-50%, -46%) rotate(-8deg); }
+html body #explore .ex-more-card[href="/pendulum"] .ex-more-charm { top: -18px; width: 32px; height: 156px; transform: translateX(-50%) rotate(4deg); transform-origin: 50% 0; }
+html body #explore .ex-more-card[href="/astro-dice"] .ex-more-charm { top: 50%; width: 84px; height: 84px; transform: translate(-50%, -46%) rotate(-8deg); }
 html body #explore .ex-more-copy { display: grid; gap: 6px; padding: 16px 18px 18px; }
 html body #explore .ex-more-copy i { color: var(--hp-gold); font: italic 600 15px/1 "Cormorant Garamond", serif !important; }
 html body #explore .ex-more-copy b { color: var(--hp-title); font: 700 18px/1.5 "Noto Serif TC", serif; }
@@ -244,8 +245,8 @@ html body #explore .learning-bridge p { color: var(--hp-muted) !important; font-
   html body #explore .ex-more-grid { grid-template-columns: 1fr; gap: 12px; }
   html body #explore .ex-more-card { grid-template-rows: none; grid-template-columns: 112px minmax(0, 1fr); }
   html body #explore .ex-more-art { border-bottom: 0; border-right: 1px solid var(--hp-line); min-height: 132px; }
-  html body #explore .ex-more-card:first-child .ex-more-charm { top: -14px; width: 28px; height: 136px; }
-  html body #explore .ex-more-card:last-child .ex-more-charm { width: 64px; height: 64px; }
+  html body #explore .ex-more-card[href="/pendulum"] .ex-more-charm { top: -14px; width: 28px; height: 136px; }
+  html body #explore .ex-more-card[href="/astro-dice"] .ex-more-charm { width: 64px; height: 64px; }
   html body #explore .ex-more-copy { padding: 14px 14px 16px; gap: 4px; }
   html body #explore .ex-more-copy b { font-size: 17px; }
   html body #explore .ex-more-copy em { font-size: 13px; line-height: 1.7; }

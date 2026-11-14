@@ -13,9 +13,10 @@ test("the cat photos stay the same two portraits, now in arched gold-framed wind
   assert.match(page, /import "\.\/styles\/home-pearl\.css";/);
 });
 
-test("the three practices that open here are tabs right above their panel", () => {
+test("the practices that open here are tabs right above their panel; 內在原型 is gone", () => {
   const ids = [...page.matchAll(/\{ id: "(archetype|intuition|journal)", number: "0[1-3]"/g)].map((match) => match[1]);
-  assert.deepEqual(ids, ["archetype", "intuition", "journal"]);
+  assert.deepEqual(ids, ["intuition", "journal"]);
+  assert.doesNotMatch(page, /archetypeQuestionSets|answerArchetype|className="archetype-tool"/);
   assert.match(page, /<div className="ex-tabs" role="tablist"/);
   assert.match(page, /role="tab" aria-selected=\{exploreTool === tool\.id\} aria-controls="ex-panel"/);
   assert.match(page, /tabIndex=\{exploreTool === tool\.id \? 0 : -1\}/, "roving tabindex");
@@ -23,7 +24,9 @@ test("the three practices that open here are tabs right above their panel", () =
   assert.match(page, /<div className="tool-stage" id="ex-panel" role="tabpanel"/);
 });
 
-test("the pendulum and the astro dice are links to their own pages, not tabs that jump away", () => {
+test("覺察卡, the pendulum and the astro dice are links to their own pages, not tabs that jump away", () => {
+  assert.match(page, /\{ href: "\/awareness", number: "03", title: "Zolacoco 覺察卡"/);
+  assert.match(page, /if \(requestedTool === "archetype" \|\| requestedTool === "awareness"\) \{ window\.location\.replace\("\/awareness"\); return; \}/, "old links still arrive");
   assert.match(page, /\{ href: "\/pendulum", number: "04"/);
   assert.match(page, /\{ href: "\/astro-dice", number: "05"/);
   assert.match(page, /<a key=\{tool\.href\} className="ex-more-card" href=\{tool\.href\}>/);

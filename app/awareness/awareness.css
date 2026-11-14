@@ -1,0 +1,135 @@
+/* ===== Zolacoco 覺察卡 · /awareness =====
+   Pearl ground and header from pearl-page.css. 蝦蝦 card art is the picture; the page around it stays
+   quiet: white panels with gold hairlines, rose titles, ink text. Phone first. Scoped to .awareness-page. */
+
+.awareness-page {
+  --aw-ink: #263449; --aw-muted: #33445f; --aw-title: #843450; --aw-gold: #c5a46f;
+  --aw-line: #e4d6e0; --aw-blue: #e8f2fc; --aw-blush: #fceaf3;
+  /* The turned card is the big one. Before that (waiting and shuffling) the deck is smaller, so the
+     words above it, the deck and the button all fit on one phone screen and the shuffle stays inside it. */
+  --aw-card: min(66vw, 300px, calc((100svh - 140px) * .625));
+  --aw-card-small: min(54vw, 260px, calc((100svh - 250px) * .625));
+  position: relative; min-height: 100svh; padding: 92px 18px 48px; color: var(--aw-ink); overflow-x: clip;
+  font-family: "Noto Serif TC", serif;
+}
+.awareness-page *, .awareness-page *::before, .awareness-page *::after { box-sizing: border-box; }
+.awareness-page .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.awareness-page p { margin: 0; color: var(--aw-muted); line-height: 1.85; overflow-wrap: anywhere; }
+.awareness-page a { color: var(--aw-title); }
+
+/* ---------- hero ---------- */
+.aw-hero { max-width: 640px; margin: 0 auto; text-align: center; }
+.aw-kicker { color: var(--aw-title) !important; font: italic 600 17px/1.4 "Cormorant Garamond", "Noto Serif TC", serif; letter-spacing: .06em; }
+.aw-hero h1 { margin: 8px 0 12px; color: var(--aw-title); font: 700 clamp(26px, 6.4vw, 44px)/1.4 "Noto Serif TC", serif; letter-spacing: .02em; }
+.aw-lead { font-size: 15px; }
+
+/* ---------- draw stage ---------- */
+.aw-stage { max-width: 640px; margin: 22px auto 0; display: grid; justify-items: center; gap: 16px; text-align: center; }
+.aw-calm { min-height: 3.7em; max-width: 30em; font-size: 15px; }
+.aw-deck { position: relative; width: var(--aw-card); aspect-ratio: 5 / 8; margin: 6px 0 4px; perspective: 1400px; transition: width .55s cubic-bezier(.3, .7, .2, 1); }
+.aw-deck.is-idle, .aw-deck.is-shuffling { width: var(--aw-card-small); }
+.aw-deck-back, .aw-flip, .aw-flip-back, .aw-flip-front { position: absolute; inset: 0; display: block; border-radius: 16px; }
+.aw-deck-back { overflow: hidden; border: 1.5px solid var(--aw-gold); background: #fff; box-shadow: 0 10px 24px rgba(132, 52, 80, .1); }
+.aw-deck-back.b1 { transform: translate(-7px, 7px) rotate(-3deg); }
+.aw-deck-back.b2 { transform: translate(7px, 4px) rotate(2.5deg); }
+/* Shuffling is one slow breath: the cards stay still while a pearl glow behind them swells (吸氣) and
+   settles (吐氣), then the top card turns. */
+.aw-breath {
+  position: absolute; left: 50%; top: 50%; width: 175%; height: 132%; border-radius: 50%; translate: -50% -50%;
+  opacity: 0; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, .95) 48%, rgba(252, 234, 243, .95) 60%, rgba(132, 52, 80, .14) 74%, rgba(185, 199, 216, .4) 86%, rgba(232, 242, 252, 0) 100%);
+}
+.aw-deck.is-revealed .aw-deck-back { opacity: 0; transition: opacity .4s ease .5s; }
+.aw-deck-back img, .aw-flip-back img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.aw-flip { transform-style: preserve-3d; transition: transform .7s cubic-bezier(.3, .7, .2, 1); }
+.aw-flip.is-flipped { transform: rotateY(180deg); }
+.aw-flip-back, .aw-flip-front { overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; border: 1.5px solid var(--aw-gold); background: #fff; box-shadow: 0 16px 36px rgba(132, 52, 80, .16); }
+.aw-flip-front { transform: rotateY(180deg); }
+
+.aw-deck.is-shuffling { animation: aw-breathe-deck 2.8s ease-in-out both; }
+.aw-deck.is-shuffling .aw-breath { animation: aw-breathe-glow 2.8s ease-in-out both; }
+@keyframes aw-breathe-glow { 0% { opacity: 0; scale: .7; } 50% { opacity: 1; scale: 1.12; } 100% { opacity: 0; scale: .8; } }
+@keyframes aw-breathe-deck { 0%, 100% { scale: 1; } 50% { scale: 1.04; } }
+
+/* Card face: the art, with the ACT line on a pearl ribbon over its quiet lower part. */
+.aw-face { position: absolute; inset: 0; display: block; container-type: inline-size; }
+.aw-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.aw-ribbon {
+  position: absolute; left: 0; right: 0; bottom: 0; min-height: 22%; padding: 7cqi 8cqi 8cqi;
+  display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;
+  background: linear-gradient(to bottom, rgba(255, 253, 250, 0), rgba(255, 253, 250, .88) 32%, rgba(255, 253, 250, .94));
+  color: var(--aw-title); font: 600 6.6cqi/1.6 "Noto Serif TC", serif; letter-spacing: .03em;
+}
+.aw-ribbon-line { display: block; white-space: nowrap; }
+.aw-ribbon.lines-3 { padding-top: 5cqi; padding-bottom: 6cqi; font-size: 6cqi; line-height: 1.5; }
+.aw-phrase { display: inline-block; }
+
+.aw-primary, .aw-secondary, .aw-danger {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 10px 26px; border-radius: 999px;
+  font: 600 16px/1.3 "Noto Serif TC", serif; letter-spacing: .06em; text-decoration: none; cursor: pointer;
+}
+.aw-primary { border: 1px solid var(--aw-title); background: var(--aw-title); color: #fff !important; box-shadow: 0 8px 20px rgba(132, 52, 80, .18); }
+.aw-secondary { border: 1px solid #b9c7d8; background: #fff; color: var(--aw-ink) !important; }
+.aw-danger { border: 1px solid #b4405f; background: #fff; color: #b4405f !important; }
+.aw-primary:disabled, .aw-secondary:disabled { opacity: .55; cursor: default; box-shadow: none; }
+.aw-primary:focus-visible, .aw-secondary:focus-visible, .aw-danger:focus-visible, .aw-text-button:focus-visible, .aw-record-head:focus-visible { outline: 2px solid var(--aw-gold); outline-offset: 3px; }
+.aw-stage > .aw-primary { min-width: 220px; }
+.aw-note { font-size: 13px; }
+.aw-note a, .aw-status a { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---------- reading ---------- */
+.aw-result { max-width: 640px; margin: 34px auto 0; scroll-margin-top: 84px; text-align: center; }
+.aw-theme { display: inline-block; padding: 4px 14px; border: 1px solid var(--aw-gold); border-radius: 999px; background: #fff; color: var(--aw-title) !important; font-size: 13px; }
+.aw-result h2 { margin: 12px 0 6px; color: var(--aw-title); font: 700 clamp(24px, 6vw, 34px)/1.4 "Noto Serif TC", serif; }
+.aw-result h2:focus { outline: none; }
+.aw-line { margin-bottom: 20px !important; color: var(--aw-title) !important; font-size: 18px; font-weight: 600; }
+.aw-panel, .aw-write, .aw-share, .aw-member-note { margin-top: 14px; padding: 20px 20px 22px; border: 1px solid var(--aw-line); border-radius: 18px; background: rgba(255, 255, 255, .92); text-align: left; box-shadow: 0 8px 22px rgba(38, 52, 73, .04); }
+.aw-panel h3, .aw-write h3, .aw-share h3, .aw-member-note h3 { margin: 0 0 8px; color: var(--aw-title); font: 700 17px/1.5 "Noto Serif TC", serif; letter-spacing: .04em; }
+.aw-panel p { font-size: 16px; }
+.aw-question { background: linear-gradient(160deg, #fff, var(--aw-blush)); }
+.aw-practice { background: linear-gradient(160deg, #fff, var(--aw-blue)); }
+.aw-write { display: grid; gap: 12px; }
+.aw-write .aw-member-note { margin: 0; padding: 0; border: 0; box-shadow: none; background: none; }
+.aw-write textarea { width: 100%; min-height: 132px; padding: 14px; border: 1px solid #b9c7d8; border-radius: 14px; background: #fff; color: var(--aw-ink); font: 16px/1.8 "Noto Serif TC", serif; resize: vertical; }
+.aw-write textarea:focus { outline: 2px solid var(--aw-gold); outline-offset: 1px; }
+.aw-check { display: flex; align-items: center; gap: 10px; min-height: 44px; color: var(--aw-ink); font-size: 15px; cursor: pointer; }
+.aw-check input { width: 22px; height: 22px; accent-color: var(--aw-title); }
+.aw-status { font-size: 14px; }
+.aw-status.is-error { color: #b4405f !important; }
+.aw-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.aw-share { display: grid; gap: 12px; justify-items: start; }
+.aw-share-preview { width: min(240px, 70%); border-radius: 14px; border: 1px solid var(--aw-line); box-shadow: 0 10px 24px rgba(38, 52, 73, .08); }
+
+/* ---------- my records ---------- */
+.aw-records { max-width: 640px; margin: 40px auto 0; }
+.aw-records h2 { margin: 0 0 6px; color: var(--aw-title); font: 700 22px/1.5 "Noto Serif TC", serif; text-align: center; }
+.aw-records > .aw-note { text-align: center; }
+.aw-empty { margin-top: 14px !important; padding: 18px; border: 1px dashed var(--aw-line); border-radius: 16px; background: rgba(255, 255, 255, .8); text-align: center; font-size: 14px; }
+.aw-records ul { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 10px; }
+.aw-records li { border: 1px solid var(--aw-line); border-radius: 16px; background: rgba(255, 255, 255, .94); overflow: hidden; }
+.aw-record-head { width: 100%; display: flex; align-items: center; gap: 14px; padding: 12px 14px; border: 0; background: none; text-align: left; cursor: pointer; font-family: inherit; }
+.aw-record-head img { width: 48px; aspect-ratio: 5 / 8; object-fit: cover; border-radius: 6px; border: 1px solid var(--aw-gold); flex: none; }
+.aw-record-head span { display: grid; gap: 2px; min-width: 0; }
+.aw-record-head small { color: var(--aw-muted); font-size: 12px; }
+.aw-record-head b { color: var(--aw-title); font-size: 16px; }
+.aw-record-head em { color: var(--aw-muted); font-style: normal; font-size: 14px; line-height: 1.6; }
+.aw-record-body { padding: 0 16px 16px; display: grid; gap: 8px; }
+.aw-record-body p { font-size: 15px; }
+.aw-record-body b { display: block; color: var(--aw-title); font-size: 13px; }
+.aw-done { display: inline-block; margin-left: 8px; padding: 1px 10px; border-radius: 999px; background: var(--aw-blue); color: var(--aw-ink); font-size: 12px; }
+.aw-text-button { justify-self: start; min-height: 44px; padding: 0; border: 0; background: none; color: #b4405f; font: 14px "Noto Serif TC", serif; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+/* ---------- foot ---------- */
+.aw-foot { max-width: 640px; margin: 44px auto 0; padding: 20px 0 0; border-top: 1px solid var(--aw-line); background: none; text-align: center; display: grid; gap: 12px; }
+.aw-foot p { margin: 0; font-size: 13px; color: var(--aw-muted); }
+.aw-foot a { justify-self: center; min-height: 44px; display: inline-flex; align-items: center; }
+
+@media (min-width: 761px) {
+  .awareness-page { --aw-card: 300px; padding-top: 112px; }
+  .aw-panel, .aw-write, .aw-share, .aw-member-note { padding: 24px 28px 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aw-flip, .aw-deck { transition: none; }
+  .aw-deck.is-shuffling, .aw-deck.is-shuffling .aw-breath { animation: none; }
+  .aw-deck.is-revealed .aw-deck-back { transition: none; }
+}

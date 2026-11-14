@@ -17,7 +17,7 @@ const menuGroups = [
   {
     label: "內在探索",
     items: [
-      { href: "/?tool=archetype#explore", title: "內在原型", note: "看見此刻靠近妳的能量" },
+      { href: "/awareness", title: "Zolacoco 覺察卡", note: "抽一張此刻的覺察卡" },
       { href: "/?tool=intuition#explore", title: "直覺練習", note: "從牌面練習解讀" },
       { href: "/?tool=journal#explore", title: "七日塔羅筆記", note: "每天整理一個內在提問" },
     ],

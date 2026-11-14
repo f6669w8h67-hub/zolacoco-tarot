@@ -72,7 +72,7 @@ test("six member spaces with gold line icons; locked ones keep words and a lock,
   assert.equal((locked.match(/class="account-space-icon"/g) || []).length, 6);
   assert.equal((locked.match(/class="account-space-lock"><svg/g) || []).length, 6);
   assert.equal((open.match(/class="account-space-arrow" aria-hidden="true">→/g) || []).length, 6);
-  for (const href of ["/#draw", "/pendulum", "/astro-dice", "/astrology-exploration", "/?tool=archetype#explore", "/healing-room"]) assert.ok(open.includes(`href="${href}"`), href);
+  for (const href of ["/#draw", "/pendulum", "/astro-dice", "/astrology-exploration", "/#explore", "/healing-room"]) assert.ok(open.includes(`href="${href}"`), href);
   assert.equal(locked.includes('href="/pendulum"'), false, "locked cards are not links");
   assert.match(css, /\.account-space-grid \{ display: grid; grid-template-columns: repeat\(3, 1fr\)/);
   assert.match(css, /@media \(max-width: 780px\) \{[\s\S]*?\.account-space-grid \{ grid-template-columns: 1fr 1fr;/);
