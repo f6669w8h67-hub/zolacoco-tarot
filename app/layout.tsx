@@ -13,7 +13,6 @@ import { allowsMembershipPreview, isClerkConfigured } from "@/lib/membership-acc
 import { clerkLocalization } from "@/lib/clerk-localization";
 import { clerkPearlAppearance } from "@/lib/clerk-pearl-appearance";
 import SiteHeader from "./site-header";
-import SiteNotice from "./site-notice";
 import PearlFonts from "./pearl-fonts";
 
 const geistSans = Geist({
@@ -47,7 +46,6 @@ export default function RootLayout({
   const content = <>
     <PearlFonts />
     <SiteHeader />
-    <SiteNotice />
     {authConfigured ? (
       <MembershipGate>{children}</MembershipGate>
     ) : allowsMembershipPreview(process.env) ? children : (

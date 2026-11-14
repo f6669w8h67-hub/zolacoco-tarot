@@ -15,13 +15,18 @@ test("the site speaks to her as 妳 everywhere, the brand line included", async 
   assert.match(await read("lib/tarot-reading.ts"), /"你好 Zola ✨"/);
 });
 
-test("on phones the maintenance notice sits in the page under the header, so it never covers a button", async () => {
-  const css = await read("app/styles/rococo-tarot.css");
-  const rule = css.slice(css.indexOf("@media (max-width: 760px) {\n  .site-notice {"));
-  assert.match(rule, /position: relative;/);
-  assert.match(rule, /transform: none;/);
-  assert.match(rule, /margin: 72px 12px -56px;/, "64px header + 8px; the page's own header space starts under it");
-  assert.match(css, /\.site-notice \{\s*position: fixed;/, "desktop keeps the small fixed card");
+test("every page has its own tab title (site check 2026-11-14)", async () => {
+  const titles = {
+    pendulum: "靈擺直覺問答", "astro-dice": "星骰此刻指引", "healing-room": "療癒小房間", account: "會員中心", "sign-in": "登入", "sign-up": "註冊",
+    awareness: "Zolacoco 覺察卡", "astrology-exploration": "探索妳的星盤", journal: "七日陪跑筆記", practice: "學員練習室", admin: "我的存檔", "zola-admin": "Zola 會員後台",
+  };
+  for (const [dir, title] of Object.entries(titles)) assert.match(await read(`app/${dir}/layout.tsx`), new RegExp(`title: "${title}｜Zolacoco Tarot"`), dir);
+});
+
+test("the maintenance notice is gone (Zola, 2026-11-14): no banner, no leftover styles", async () => {
+  await assert.rejects(read("app/site-notice.tsx"), "the component is removed");
+  assert.doesNotMatch(await read("app/layout.tsx"), /SiteNotice/);
+  for (const file of ["app/styles/rococo-tarot.css", "app/styles/pearl-page.css"]) assert.doesNotMatch(await read(file), /site-notice/, file);
 });
 
 test("header brand, menu links and the small links found in the check are 44px; menu text is readable", async () => {

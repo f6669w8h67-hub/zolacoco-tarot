@@ -59,13 +59,3 @@ html body:has(main.pearl-page) .global-account-panel { border-color: var(--pearl
 html body:has(main.pearl-page) .global-account-panel b, html body:has(main.pearl-page) .global-account-panel a, html body:has(main.pearl-page) .global-admin-link { color: var(--pearl-title) !important; }
 html body:has(main.pearl-page) .global-account-panel small { color: var(--pearl-muted) !important; }
 
-/* ---------- maintenance notice ---------- */
-html body:has(main.pearl-page) .site-notice {
-  border: 1px solid var(--pearl-border) !important;
-  background: var(--pearl-surface) !important;
-  box-shadow: 0 6px 22px rgba(38, 52, 73, .08) !important;
-  color: var(--pearl-ink) !important;
-}
-html body:has(main.pearl-page) .site-notice b { color: var(--pearl-title) !important; }
-html body:has(main.pearl-page) .site-notice button { color: var(--pearl-muted) !important; }
-html body:has(main.pearl-page) .site-notice button:focus-visible { outline-color: var(--pearl-title) !important; }
