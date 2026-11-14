@@ -116,3 +116,21 @@ html body #explore .journal-tool .js-line { justify-self: center; text-decoratio
 html body #explore .journal-tool .js-review > .js-link { justify-self: center; }
 html body #explore .journal-tool .js-warn { color: #b4405f !important; }
 html body #explore .journal-tool .js-next .js-small .js-link { margin-left: 6px; min-height: 44px; font-size: 14px; }
+
+/* 寫完當天馬上有回應 (Zola 2026-11-14): a pearl card that rises in right after a save. */
+html body #explore .journal-tool .js-response { margin: 14px 0 6px; padding: 18px 18px 16px; border: 1px solid #e4d6e0; border-radius: 18px; background: linear-gradient(160deg, #ffffff 0%, #fdf8fb 55%, #f3f8fd 100%); text-align: left; animation: js-response-rise .45s ease-out both; }
+html body #explore .journal-tool .js-response-kicker { display: block; color: #b4405f; font: 600 11px/1.4 "Cormorant Garamond", "Noto Serif TC", serif; letter-spacing: .18em; }
+html body #explore .journal-tool .js-response h4 { margin: 4px 0 10px; color: #843450; font: 600 17px/1.5 "Noto Serif TC", serif; }
+html body #explore .journal-tool .js-response-echo { margin: 0 0 10px; padding: 8px 12px; border-left: 2px solid #c5a46f; background: rgba(255, 255, 255, .7); color: #33445f; font-size: 14px; line-height: 1.7; }
+html body #explore .journal-tool .js-response-echo span { display: block; color: rgba(51, 68, 95, .7); font-size: 12px; }
+html body #explore .journal-tool .js-response-reply { margin: 0 0 12px; color: #33445f; font-size: 15px; line-height: 1.85; }
+html body #explore .journal-tool .js-response-practice { margin: 0 0 12px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 255, 255, .78); }
+html body #explore .journal-tool .js-response-practice b { color: #843450; font-size: 13px; }
+html body #explore .journal-tool .js-response-practice p { margin: 2px 0 0; color: #33445f; font-size: 14px; line-height: 1.75; }
+html body #explore .journal-tool .js-response-next { display: grid; gap: 2px; margin: 0 0 10px; color: #33445f; font-size: 13px; }
+html body #explore .journal-tool .js-response-next b { color: #263449; font: 600 15px/1.6 "Noto Serif TC", serif; }
+html body #explore .journal-tool .js-response-next .js-link { justify-self: start; min-height: 44px; margin-top: 6px; padding: 0 18px; border: 1px solid #c5a46f; border-radius: 999px; background: #ffffff; color: #843450; font-weight: 600; text-decoration: none; }
+html body #explore .journal-tool .js-response-card { display: inline-flex; align-items: center; min-height: 44px; color: #843450; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
+html body #explore .journal-tool .js-response-open { display: inline-flex; align-items: center; min-height: 44px; margin-top: 6px; }
+@keyframes js-response-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { html body #explore .journal-tool .js-response { animation: none; } }
