@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { tarotCards, topicLens, type TarotCard } from "./tarot-data";
 import { TarotCardBack, TarotCardFace } from "./tarot-card";
 import DrawFan from "./draw-fan";
+import { PracticeCard } from "./practice-card";
 import { MOTION } from "@/lib/draw-fan-math";
 import "./styles/draw-pearl.css";
 import "./styles/draw-fan.css";
@@ -11,7 +12,7 @@ import "./styles/pearl-page.css";
 import "./styles/home-pearl.css";
 import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
 import { loadMemberProfile } from "@/lib/member-client";
-import { journalCardIds, journalPrompts } from "@/lib/journal-prompts";
+import { JournalTool } from "./journal/journal-tool";
 import {
   QUESTION_LIMIT, SPREADS, TAROT_TOPICS, type SpreadId, cleanQuestion, consultMessage,
   memberExpiryLabel, recommendedSpread, relationshipLens, spreadAfterTopicChange, spreadForTopic, spreadsForTopic, tarotRecord,
@@ -48,21 +49,12 @@ const soundscapes: Record<Soundscape, { icon: string; label: string; en: string;
   meditation: { icon: "◇", label: "冥想淨化", en: "HEALING FREQUENCY · MEDITATION", videoId: "kqo9Z5Br63c" },
 };
 
-const JOURNAL_STORAGE_KEY = "zolacoco-journal-notes-v1";
 const TAROT_STORAGE_KEY = "zolacoco-tarot-records-v1";
 
 
 
 type IntuitionOption = { text: string; correct: boolean; note: string };
 
-function PracticeCard({ card, hidden = false, flipped = true }: { card: TarotCard; hidden?: boolean; flipped?: boolean }) {
-  return <div className={`practice-tarot-card ${flipped ? "is-flipped" : ""}`} aria-label={hidden ? "尚未翻開的塔羅練習牌" : `${card.name}塔羅牌`}>
-    <div className="practice-tarot-inner">
-      <TarotCardBack className="practice-tarot-back" />
-      <TarotCardFace card={card} className="practice-tarot-front" />
-    </div>
-  </div>;
-}
 
 function intuitionOptionsFor(card: TarotCard, cardIndex: number): IntuitionOption[] {
   const options: IntuitionOption[] = [
@@ -161,9 +153,6 @@ export default function Home() {
   const [intuitionCardIndex, setIntuitionCardIndex] = useState(9);
   const [intuitionChoice, setIntuitionChoice] = useState("");
   const [intuitionFeedback, setIntuitionFeedback] = useState<IntuitionOption | null>(null);
-  const [journalDay, setJournalDay] = useState(0);
-  const [journalNotes, setJournalNotes] = useState<Record<number, string>>({});
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [tarotSaveState, setTarotSaveState] = useState<"idle" | "saved" | "error">("idle");
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [soundscape, setSoundscape] = useState<Soundscape>("forest");
@@ -185,7 +174,6 @@ export default function Home() {
   const recommendedId = recommendedSpread(topic);
   const intuitionCard = tarotCards[intuitionCardIndex] ?? tarotCards[0];
   const intuitionOptions = intuitionOptionsFor(intuitionCard, intuitionCardIndex);
-  const journalCard = tarotCards.find((card) => card.id === journalCardIds[journalDay]) ?? tarotCards[journalDay];
 
   function sendPlayerCommand(target: Soundscape, func: string, args: unknown[] = []) {
     audioFrames.current[target]?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), "*");
@@ -253,23 +241,7 @@ export default function Home() {
     // 內在原型 became Zolacoco 覺察卡, which has its own page.
     if (requestedTool === "archetype" || requestedTool === "awareness") { window.location.replace("/awareness"); return; }
     if (requestedTool === "intuition" || requestedTool === "journal") setExploreTool(requestedTool);
-    try {
-      const savedNotes = JSON.parse(localStorage.getItem(JOURNAL_STORAGE_KEY) ?? "{}") as Record<number, string>;
-      setJournalNotes(savedNotes);
-    } catch { /* keep empty notes */ }
   }, []);
-
-  function saveJournal() {
-    const content = (journalNotes[journalDay] ?? "").trim();
-    if (!content) return;
-    setSaveState("saving");
-    try {
-      const next = { ...journalNotes, [journalDay]: content };
-      localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(next));
-      setJournalNotes(next);
-      setSaveState("saved");
-    } catch { setSaveState("error"); }
-  }
 
   // Every way of starting over goes through here, so a new reading never inherits the
   // previous one's 已儲存 / 已複製 state (PR #10 review).
@@ -641,16 +613,7 @@ export default function Home() {
               </>}
             </div>}
 
-            {exploreTool === "journal" && <div className="journal-tool">
-              <div className="tool-progress"><span>SEVEN-DAY JOURNAL</span><b>DAY {journalDay + 1}</b></div>
-              <div className="journal-card-row"><PracticeCard card={journalCard} /><div className="journal-date"><i>{journalDay + 1}</i><span>今天的內在提問</span></div></div>
-              <h3>{journalPrompts[journalDay]}</h3>
-              <div className="journal-lenses"><span>先看見畫面</span><span>再辨認感受</span><span>最後連回生活</span></div>
-              <textarea value={journalNotes[journalDay] ?? ""} onChange={(event) => { setJournalNotes((notes) => ({ ...notes, [journalDay]: event.target.value })); setSaveState("idle"); }} aria-label="寫下今天的內在筆記" placeholder="不用急著寫得完整，先記下第一個浮現的念頭……" />
-              <div className="day-picker">{journalPrompts.map((_, index) => <button aria-label={`第 ${index + 1} 天`} className={journalDay === index ? "active" : ""} onClick={() => setJournalDay(index)} key={index}>{index + 1}</button>)}</div>
-              <button className="tool-primary journal-save" disabled={saveState === "saving" || !(journalNotes[journalDay] ?? "").trim()} onClick={saveJournal}>{saveState === "saving" ? "儲存中…" : saveState === "saved" ? "已儲存 ✓" : saveState === "error" ? "存檔失敗，請再試一次" : "儲存今天的筆記"}</button>
-              <p className="privacy-note">筆記會保存在目前使用的手機或電腦瀏覽器中，重新開啟網站仍可繼續查看，不會公開顯示。</p>
-            </div>}
+            {exploreTool === "journal" && <JournalTool place="home" />}
           </div>
 
           <div className="ex-more">

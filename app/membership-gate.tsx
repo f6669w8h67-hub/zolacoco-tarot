@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { isPublicMembershipPage, isStudentRoute } from "@/lib/membership-access";
+import { isCoachingRoute, isPublicMembershipPage, isStudentRoute } from "@/lib/membership-access";
 import { ZOLA_LINE_URL } from "@/lib/contact";
 import "./styles/pearl-page.css";
 
@@ -15,7 +15,7 @@ type AccessState = {
 
 export function UnconfiguredMembershipGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  if (isPublicMembershipPage(pathname) || isStudentRoute(pathname)) return children;
+  if (isPublicMembershipPage(pathname) || isStudentRoute(pathname) || isCoachingRoute(pathname)) return children;
   return <AccessScreen tone="setup" eyebrow="member access" title="會員服務設定中" message="目前無法確認會員權限，請稍後再試或聯絡 Zola。" />;
 }
 
@@ -23,8 +23,8 @@ export default function MembershipGate({ children }: { children: React.ReactNode
   const pathname = usePathname();
   const { isLoaded, isSignedIn } = useAuth();
   const [access, setAccess] = useState<AccessState>({ status: "loading" });
-  // /practice shows its own student / not-a-student screens; its data comes only from checked APIs.
-  const isOpenPath = isPublicMembershipPage(pathname) || isStudentRoute(pathname);
+  // /practice and /journal show their own screens for who may use them; their data comes only from checked APIs.
+  const isOpenPath = isPublicMembershipPage(pathname) || isStudentRoute(pathname) || isCoachingRoute(pathname);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn || isOpenPath) return;

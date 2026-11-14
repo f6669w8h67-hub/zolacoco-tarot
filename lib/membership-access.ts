@@ -59,7 +59,15 @@ export function hasStudentAccess(member: {
 // being her student. Like the practice routes, the coaching APIs skip the VIP lookup in proxy.ts once
 // signed in and check the person themselves on the server (requireCoaching / requireAdmin / the owner).
 export function isCoachingRoute(pathname: string) {
-  return pathname === "/api/coaching" || pathname.startsWith("/api/coaching/");
+  return ["/journal", "/api/coaching"].some(
+    (path) => pathname === path || pathname.startsWith(`${path}/`),
+  );
+}
+
+/** The 七日陪跑筆記 page itself is open to everyone: signed out or not 陪跑中, it shows a short note and
+ * loads nothing private. Its APIs (/api/coaching…) are not open: they check the person on the server. */
+export function isCoachingPage(pathname: string) {
+  return pathname === "/journal" || pathname === "/journal/";
 }
 
 /** Admin always; a member Zola marked as 陪跑中, unless suspended. Independent of VIP months. */

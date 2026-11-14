@@ -15,7 +15,7 @@ type Archive = Record<string, StoredValue>;
 // `href` is where an empty section sends the visitor to make her first record.
 const sources = [
   { key: "zolacoco-tarot-records-v1", title: "塔羅抽牌紀錄", href: "/#draw", start: "去抽一次牌" },
-  { key: "zolacoco-journal-notes-v1", title: "七日內在筆記", href: "/#explore", start: "寫第一天的筆記" },
+  { key: "zolacoco-journal-notes-v1", title: "七日內在筆記（這台裝置）", href: "/?tool=journal#explore", start: "寫第一天的筆記" },
   { key: "zolacoco-pendulum-records-v1", title: "靈擺問答紀錄", href: "/pendulum", start: "問靈擺一個問題" },
   { key: "zolacoco-astro-dice-records-v1", title: "星骰探索紀錄", href: "/astro-dice", start: "擲一次星骰" },
   { key: "zolacoco-healing-records-v1", title: "療癒小房間紀錄", href: "/healing-room", start: "走進療癒小房間" },
@@ -118,7 +118,7 @@ export default function ArchivePage() {
 
   return <main className="admin-page pearl-page">
     <div className="admin-top"><div><p className="eyebrow">Zolacoco · My Archive</p><h1>我的存檔</h1></div><div><Link href="/">返回網站</Link></div></div>
-    <section className="access-card"><b>紀錄存在這台裝置</b><br />占卜、筆記和覺察卡的紀錄保存在妳目前使用的瀏覽器，同一台裝置重新打開網站都看得到。換手機、換電腦或清除瀏覽器資料前，請先下載備份。</section>
+    <section className="access-card"><b>紀錄存在這台裝置</b><br />占卜、筆記和覺察卡的紀錄保存在妳目前使用的瀏覽器，同一台裝置重新打開網站都看得到。換手機、換電腦或清除瀏覽器資料前，請先下載備份。<br /><small className="archive-sync-note">唯一的例外是陪跑筆記：妳在陪跑中勾選「同步給 Zola」的那幾輪，存在 Zolacoco 的會員資料庫，只有妳和 Zola 看得到，不在這份備份裡，請到 <Link href="/journal">七日陪跑筆記</Link> 查看。</small></section>
     <div className="archive-toolbar"><span>目前共 {archiveReady ? total : "—"} 筆存檔</span><button type="button" onClick={exportBackup} disabled={!archiveReady}>{archiveReady ? "下載全部備份" : "正在讀取存檔…"}</button></div>
     {sources.map((source) => {
       const value = archive[source.key];

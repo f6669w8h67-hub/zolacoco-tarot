@@ -6,7 +6,8 @@ import test from "node:test";
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const css = await read("app/styles/rococo-tarot.css");
 const component = await read("app/tarot-card.tsx");
-const page = await read("app/page.tsx");
+// The small practice card (直覺練習, 七日筆記) moved to app/practice-card.tsx for /journal; check it with the page.
+const page = (await read("app/page.tsx")) + (await read("app/practice-card.tsx"));
 const healing = await read("app/healing-room/page.tsx");
 const globals = await read("app/globals.css");
 

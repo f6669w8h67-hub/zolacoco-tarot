@@ -1,0 +1,84 @@
+/* ===== 七日塔羅筆記 × 陪跑 (journal-tool.tsx) =====
+   The journal itself keeps the home page look (home-pearl.css: #explore .journal-tool). These are the
+   parts added for 陪跑: the where-to-keep switch, the round line, consent, Zola's reply, the other-tab
+   version and stopping a round. Pearl only: white panels, gold hairlines, rose titles, porcelain blue. */
+html body #explore .journal-tool .js-mode {
+  margin: 0 auto 18px; padding: 4px; width: max-content; max-width: 100%;
+  display: flex; gap: 4px; border: 1px solid var(--hp-line); border-radius: 999px; background: #ffffff;
+}
+html body #explore .journal-tool .js-mode button {
+  min-height: 44px; padding: 6px 18px; border: 0; border-radius: 999px; background: transparent;
+  color: var(--hp-muted); font: 600 15px/1.3 "Noto Serif TC", serif; cursor: pointer;
+}
+html body #explore .journal-tool .js-mode button.active { background: var(--hp-selected); color: var(--hp-title); box-shadow: inset 0 0 0 1px var(--hp-gold); }
+
+html body #explore .journal-tool .js-round {
+  margin: 14px 0 4px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px;
+  color: var(--hp-muted); font-size: 14px; text-align: center;
+}
+html body #explore .journal-tool .js-round b { color: var(--hp-title); font-size: 16px; }
+html body #explore .journal-tool .js-round select {
+  min-height: 44px; padding: 6px 12px; border: 1px solid var(--hp-line); border-radius: 12px; background: #ffffff;
+  color: var(--hp-title); font: 600 15px "Noto Serif TC", serif;
+}
+
+html body #explore .journal-tool :is(.js-consent, .js-reply, .js-conflict, .js-stop) {
+  margin: 16px 0; padding: 16px 18px; display: grid; gap: 8px; text-align: left;
+  border: 1px solid var(--hp-line); border-radius: 16px; background: #fdf8fb;
+}
+html body #explore .journal-tool .js-consent { border-color: var(--hp-gold); background: #ffffff; }
+html body #explore .journal-tool :is(.js-consent, .js-reply, .js-conflict) > b { color: var(--hp-title); font-size: 16px; }
+html body #explore .journal-tool :is(.js-consent, .js-reply, .js-conflict, .js-stop) p { margin: 0; color: var(--hp-muted); font-size: 15px; line-height: 1.8; white-space: pre-wrap; overflow-wrap: anywhere; }
+html body #explore .journal-tool .js-small { font-size: 13px !important; }
+html body #explore .journal-tool .js-check { display: flex; align-items: flex-start; gap: 10px; min-height: 44px; padding: 8px 0; color: var(--hp-ink); font-size: 15px; line-height: 1.6; cursor: pointer; }
+html body #explore .journal-tool .js-check input { flex: none; width: 20px; height: 20px; margin: 2px 0 0; accent-color: #843450; }
+html body #explore .journal-tool .js-consent .tool-primary { justify-self: start; }
+
+html body #explore .journal-tool .js-reply { border-color: #b9c7d8; background: #f3f8fd; }
+html body #explore .journal-tool .js-reply small { color: var(--hp-muted); font-size: 13px; }
+html body #explore .journal-tool .js-new { margin-left: 8px; padding: 2px 10px; border-radius: 999px; background: #843450; color: #ffffff; font-size: 12px; font-style: normal; vertical-align: 2px; }
+html body #explore .journal-tool .js-waiting { margin: 4px 0 12px; color: var(--hp-muted); font-size: 14px; text-align: center; }
+html body #explore .journal-tool .js-conflict { border-style: dashed; border-color: var(--hp-gold); }
+
+html body #explore .journal-tool .js-link {
+  min-height: 44px; padding: 6px 4px; border: 0; background: none; color: var(--hp-title);
+  font: 600 15px/1.4 "Noto Serif TC", serif; text-decoration: underline; text-underline-offset: 4px; cursor: pointer;
+}
+html body #explore .journal-tool .js-stop-link { display: block; margin: 6px auto 0; color: var(--hp-muted); font-weight: 500; font-size: 14px; }
+html body #explore .journal-tool .js-stop > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+html body #explore .journal-tool .js-danger {
+  min-height: 44px; padding: 6px 20px; border: 1px solid #b4405f; border-radius: 12px; background: #ffffff;
+  color: #b4405f; font: 700 15px/1.3 "Noto Serif TC", serif; cursor: pointer;
+}
+html body #explore .journal-tool :is(.js-danger, .js-link):disabled { opacity: .5; }
+html body #explore .journal-tool .js-notice { margin: 10px 0 0; font-size: 14px; line-height: 1.7; text-align: center; }
+html body #explore .journal-tool .js-notice.is-ok { color: var(--hp-title); }
+html body #explore .journal-tool .js-notice.is-error { color: #b4405f; }
+
+/* days with a synced note get a gold dot; a new reply makes it rose */
+html body #explore .journal-tool .day-picker button { position: relative; }
+html body #explore .journal-tool .day-picker button.js-written::after,
+html body #explore .journal-tool .day-picker button.js-unread::after {
+  content: ""; position: absolute; left: 50%; bottom: 4px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #c5a46f;
+}
+html body #explore .journal-tool .day-picker button.js-unread::after { width: 7px; height: 7px; margin-left: -3.5px; background: #843450; }
+html body #explore .journal-tool textarea[readonly] { background: #fdf8fb !important; }
+
+html body #explore .journal-tool .js-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+html body #explore .journal-tool :is(.js-mode button, .js-link, .js-danger, .js-round select, .js-check input):focus-visible { outline: 2px solid #c5a46f; outline-offset: 3px; }
+
+/* /journal: a short note when the page is not for this visitor */
+html body #explore .journal-tool.js-state { display: grid; justify-items: center; gap: 12px; padding: 24px 4px; text-align: center; }
+html body #explore .journal-tool.js-state p { margin: 0; color: var(--hp-muted); line-height: 1.85; }
+html body #explore .journal-tool.js-state .tool-primary { text-decoration: none; }
+
+/* 320px phones: the seven day buttons used to set the panel's width (7 × 34px + gaps) and pushed the
+   journal past the panel's right edge. The panel now gives the journal the width it has, and the day
+   buttons share it, staying round. */
+html body #explore .tool-stage:has(> .journal-tool) { grid-template-columns: minmax(0, 1fr); }
+html body #explore .journal-tool { width: 100%; min-width: 0; }
+html body #explore .journal-tool .day-picker { gap: clamp(4px, 1.6vw, 8px); }
+html body #explore .journal-tool .day-picker button { flex: 1 1 0; min-width: 0; max-width: 34px; height: auto; aspect-ratio: 1 / 1; padding: 0; }
+@media (max-width: 360px) {
+  html body #explore .tool-stage:has(> .journal-tool) { padding-left: 12px !important; padding-right: 12px !important; }
+}
