@@ -34,7 +34,7 @@ test("B1 the proxy only asks students to sign in; the practice APIs check the st
   const vipLookup = proxy.indexOf("SELECT role, status, access_expires_at");
   assert.ok(signIn > 0 && studentPass > signIn && vipLookup > studentPass, "signed in first, then students skip the VIP lookup");
   const gate = await read("app/membership-gate.tsx");
-  assert.match(gate, /const isOpenPath = isPublicMembershipPage\(pathname\) \|\| isStudentRoute\(pathname\);/);
+  assert.match(gate, /const isOpenPath = isPublicMembershipPage\(pathname\) \|\| isStudentRoute\(pathname\)( \|\| isCoachingRoute\(pathname\))?;/);
   const membership = await read("lib/membership.ts");
   assert.match(membership, /export async function requireStudent\(\) \{\n  const member = await syncCurrentMember\(\);\n  if \(!hasStudentAccess\(member\)\) throw new MembershipError\("NOT_STUDENT", 403\);/);
   for (const file of ["app/api/practice/route.ts", "app/api/practice/check/route.ts", "app/api/practice/seen/route.ts"]) {
@@ -290,7 +290,7 @@ test("review #33 B2: signed out, /practice shows its short note; the practice AP
   const pagePass = proxy.indexOf("if (isStudentPage(request.nextUrl.pathname)) return NextResponse.next();");
   const signIn = proxy.indexOf("return session.redirectToSignIn");
   assert.ok(pagePass > 0 && pagePass < signIn, "the page is let through before the sign-in redirect");
-  assert.match(proxy, /if \(isPublicMembershipPage\(request\.nextUrl\.pathname\) \|\| isStudentPage\(request\.nextUrl\.pathname\)\) return NextResponse\.next\(\);/);
+  assert.match(proxy, /if \(isPublicMembershipPage\(request\.nextUrl\.pathname\) \|\| isStudentPage\(request\.nextUrl\.pathname\)( \|\| isCoachingPage\(request\.nextUrl\.pathname\))?\) return NextResponse\.next\(\);/);
   const page = await read("app/practice/page.tsx");
   assert.match(page, /"signed-out": \["這裡是學員練習室", "由 Zola 開通學員身分後才能使用。已經是學員的話，請先登入。"\]/);
   assert.match(page, /"not-student": \["這裡是學員練習室", "由 Zola 開通學員身分後才能使用。"\]/);

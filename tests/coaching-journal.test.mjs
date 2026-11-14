@@ -28,8 +28,8 @@ test("access: 陪跑中 is separate from VIP months and from being a student", (
   assert.equal(access.hasStudentAccess({ role: "member", status: "active", is_coaching: true }), false, "and 陪跑 does not open the practice room");
   assert.equal(access.hasCoachingAccess(undefined), false);
   assert.equal(access.hasMemberAccess({ role: "member", status: "expired", is_coaching: true, access_expires_at: "2026-10-01T00:00:00Z" }, now), false, "the VIP rule itself is unchanged");
-  for (const path of ["/api/coaching", "/api/coaching/journal", "/api/coaching/journal/seen", "/api/coaching/admin"]) assert.equal(access.isCoachingRoute(path), true, path);
-  for (const path of ["/api/coachingx", "/zola-admin/coaching", "/api/journal", "/"]) assert.equal(access.isCoachingRoute(path), false, path);
+  for (const path of ["/journal", "/api/coaching", "/api/coaching/journal", "/api/coaching/journal/seen", "/api/coaching/admin"]) assert.equal(access.isCoachingRoute(path), true, path);
+  for (const path of ["/api/coachingx", "/journals", "/zola-admin/coaching", "/api/journal", "/"]) assert.equal(access.isCoachingRoute(path), false, path);
 });
 
 test("proxy: signed in first; coaching APIs then skip the VIP lookup and check the person themselves", async () => {
@@ -326,6 +326,7 @@ test("prompts: the home journal and Zola's page read the same seven questions", 
   assert.equal(prompts.journalPromptFor(1, 7), "這一週，我最想帶走的核心提醒是什麼？");
   assert.equal(prompts.journalPromptFor(99, 3), prompts.journalPrompts[2], "an unknown version falls back to today's questions");
   const home = await read("app/page.tsx");
-  assert.match(home, /import \{ journalCardIds, journalPrompts \} from "@\/lib\/journal-prompts";/);
   assert.doesNotMatch(home, /const journalPrompts = \[/);
+  const tool = await read("app/journal/journal-tool.tsx");
+  assert.match(tool, /from "@\/lib\/journal-prompts";/);
 });

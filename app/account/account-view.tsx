@@ -391,11 +391,14 @@ export function MemberAccountView({ member, now, onSave, signOut }: {
   const hasAccess = stage === "admin" || stage === "active" || stage === "expiring";
   // 學員練習室: only Zola's students (and Zola) see the way in; it does not depend on VIP months.
   const student = stage === "admin" || (member.is_student === true && stage !== "suspended");
+  // 七日陪跑筆記: members Zola marked 陪跑中 (and Zola); also independent of VIP months.
+  const coaching = stage === "admin" || (member.is_coaching === true && stage !== "suspended");
   return <main className="account-page pearl-page">
     <div ref={hero} className="account-hero-anchor">
       <Hero status={stage === "expiring" && remainingDays === 0 ? "今天到期" : statusLabels[stage]} statusClass={statusClass} title={title}>{heroBody}</Hero>
     </div>
     {student ? <Link className="account-records-link account-student-link" href="/practice"><b>學員練習室</b><small>先看畫面、寫下自己的解讀，Zola 會在這裡回覆妳</small><span aria-hidden="true">→</span></Link> : null}
+    {coaching ? <Link className="account-records-link account-student-link account-coaching-link" href="/journal"><b>七日陪跑筆記</b><small>每天寫下一個內在提問的答案，Zola 會逐天回覆妳</small><span aria-hidden="true">→</span></Link> : null}
     {hasAccess ? <MemberSpaces locked={false} /> : null}
     <ProfileCard member={member} stage={stage} now={now} onSave={onSave} onSaved={focusNextStep} signOut={signOut} />
     {hasAccess ? null : <MemberSpaces locked />}

@@ -6,6 +6,7 @@ import {
   allowsMembershipPreview,
   hasMemberAccess,
   isClerkConfigured,
+  isCoachingPage,
   isCoachingRoute,
   isMembershipServiceRoute,
   isPublicMembershipPage,
@@ -26,6 +27,8 @@ const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
   if (isPublicMembershipPage(request.nextUrl.pathname) || isMembershipServiceRoute(request.nextUrl.pathname)) return NextResponse.next();
   // /practice shows signed-out visitors its own short note; its data APIs still need a signed-in student.
   if (isStudentPage(request.nextUrl.pathname)) return NextResponse.next();
+  // So does /journal (七日陪跑筆記); its notes come only from the coaching APIs below.
+  if (isCoachingPage(request.nextUrl.pathname)) return NextResponse.next();
 
   const session = await clerkAuth();
   if (!session.userId) {
@@ -36,7 +39,7 @@ const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
   }
   // Students need not hold VIP months: the practice page and APIs check the student on the server.
   if (isStudentRoute(request.nextUrl.pathname)) return NextResponse.next();
-  // 陪跑中 members need not hold VIP months either: every coaching API checks the person itself.
+  // 陪跑中 members need not hold VIP months either: /journal and every coaching API check the person itself.
   if (isCoachingRoute(request.nextUrl.pathname)) return NextResponse.next();
   if (!process.env.DATABASE_URL) return unavailable(request, "MEMBERSHIP_NOT_CONFIGURED");
 
@@ -73,7 +76,7 @@ const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
 
 export default function proxy(request: NextRequest, event: NextFetchEvent) {
   if (!handler) {
-    if (isPublicMembershipPage(request.nextUrl.pathname) || isStudentPage(request.nextUrl.pathname)) return NextResponse.next();
+    if (isPublicMembershipPage(request.nextUrl.pathname) || isStudentPage(request.nextUrl.pathname) || isCoachingPage(request.nextUrl.pathname)) return NextResponse.next();
     if (allowsMembershipPreview(process.env) && !isMembershipServiceRoute(request.nextUrl.pathname)) {
       return NextResponse.next();
     }
