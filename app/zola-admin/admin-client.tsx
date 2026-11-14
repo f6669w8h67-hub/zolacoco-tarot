@@ -18,6 +18,8 @@ type Member = {
   created_at: string;
   /** Zola's student (學員練習室), separate from VIP months. */
   is_student?: boolean;
+  /** 陪跑中 (七日塔羅筆記 × 陪跑), separate from VIP months. */
+  is_coaching?: boolean;
 };
 
 const statusLabels = { pending: "等待開通", active: "使用中", suspended: "已暫停", expired: "已到期" };
@@ -63,6 +65,16 @@ export default function AdminClient() {
     await load();
   }
 
+  async function toggleCoaching(member: Member) {
+    const coaching = !member.is_coaching;
+    setBusy(`${member.id}-coaching`); setNotice("");
+    const result = await runMemberAction({ memberId: member.id, action: "coaching", coaching });
+    setBusy(null);
+    if (!result.ok) { setNotice(result.message); return; }
+    setNotice(coaching ? `已將 ${member.full_name ?? member.email} 設為陪跑中。對方在七日筆記勾選「同步給 Zola」後，筆記才會出現在陪跑筆記。` : `已結束 ${member.full_name ?? member.email} 的陪跑，已同步的筆記與妳的回覆仍保留。`);
+    await load();
+  }
+
   async function operate(member: Member, action: "activate" | "suspend" | "restore") {
     setBusy(`${member.id}-${action}`); setNotice("");
     // runMemberAction never throws, so the busy state is always released below.
@@ -74,7 +86,7 @@ export default function AdminClient() {
   }
 
   return <main className="zola-admin-page pearl-page">
-    <header><div><p className="eyebrow">Zolacoco Private Admin</p><h1>VIP 會員權限後台</h1><p>選擇月份後開通；到期會自動停權，也可以隨時手動暫停或恢復。</p></div><nav className="zola-admin-links"><Link href="/zola-admin/practice">學員練習 →</Link><Link href="/account">返回會員中心</Link></nav></header>
+    <header><div><p className="eyebrow">Zolacoco Private Admin</p><h1>VIP 會員權限後台</h1><p>選擇月份後開通；到期會自動停權，也可以隨時手動暫停或恢復。</p></div><nav className="zola-admin-links"><Link href="/zola-admin/practice">學員練習 →</Link><Link href="/zola-admin/coaching">陪跑筆記 →</Link><Link href="/account">返回會員中心</Link></nav></header>
     <section className="admin-stat-grid">
       <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}><small>全部會員</small><strong>{members.filter((item) => item.role === "member").length}</strong></button>
       {(["pending", "active", "suspended", "expired"] as const).map((status) => <button key={status} className={filter === status ? "active" : ""} onClick={() => setFilter(status)}><small>{statusLabels[status]}</small><strong>{counts[status] ?? 0}</strong></button>)}
@@ -82,12 +94,13 @@ export default function AdminClient() {
     <p className="admin-notice" aria-live="polite">{notice}</p>
     <section className="member-admin-list">
       {visible.map((member) => <article key={member.id}>
-        <div className="member-admin-identity"><span className={`member-status status-${member.effective_status}`}>{statusLabels[member.effective_status]}</span>{member.is_student ? <span className="member-status member-student">學員</span> : null}<h2>{member.full_name || "尚未填寫姓名"}</h2><p>{member.email}</p><small>LINE：{member.line_id || "尚未填寫"}　生日：{member.birthday?.slice(0, 10) || "尚未填寫"}</small></div>
+        <div className="member-admin-identity"><span className={`member-status status-${member.effective_status}`}>{statusLabels[member.effective_status]}</span>{member.is_student ? <span className="member-status member-student">學員</span> : null}{member.is_coaching ? <span className="member-status member-coaching">陪跑中</span> : null}<h2>{member.full_name || "尚未填寫姓名"}</h2><p>{member.email}</p><small>LINE：{member.line_id || "尚未填寫"}　生日：{member.birthday?.slice(0, 10) || "尚未填寫"}</small></div>
         <div className="member-admin-expiry"><small>目前期限</small><strong>{member.access_expires_at ? new Date(member.access_expires_at).toLocaleDateString("zh-TW") : "尚未開通"}</strong><span>{new Date(member.created_at).toLocaleDateString("zh-TW")} 申請</span></div>
         <div className="member-admin-actions">
           <label>增加月份<select value={months[member.id] ?? 1} onChange={(event) => setMonths((value) => ({ ...value, [member.id]: Number(event.target.value) }))}>{Array.from({ length: 12 }, (_, index) => index + 1).map((value) => <option value={value} key={value}>{value} 個月</option>)}</select></label>
           <button disabled={Boolean(busy)} onClick={() => operate(member, "activate")}>{member.effective_status === "active" ? "增加月份" : "立即開通"}</button>
           <button className="secondary member-student-toggle" disabled={Boolean(busy)} aria-pressed={Boolean(member.is_student)} onClick={() => toggleStudent(member)}>{member.is_student ? "取消學員" : "設為學員"}</button>
+          <button className="secondary member-coaching-toggle" disabled={Boolean(busy)} aria-pressed={Boolean(member.is_coaching)} onClick={() => toggleCoaching(member)}>{member.is_coaching ? "結束陪跑" : "設為陪跑中"}</button>
           {member.effective_status === "suspended" ? <button className="secondary" disabled={Boolean(busy)} onClick={() => operate(member, "restore")}>恢復原期限</button> : <button className="danger" disabled={Boolean(busy)} onClick={() => operate(member, "suspend")}>手動停權</button>}
         </div>
       </article>)}

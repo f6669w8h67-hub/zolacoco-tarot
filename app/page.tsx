@@ -11,6 +11,7 @@ import "./styles/pearl-page.css";
 import "./styles/home-pearl.css";
 import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
 import { loadMemberProfile } from "@/lib/member-client";
+import { journalCardIds, journalPrompts } from "@/lib/journal-prompts";
 import {
   QUESTION_LIMIT, SPREADS, TAROT_TOPICS, type SpreadId, cleanQuestion, consultMessage,
   memberExpiryLabel, recommendedSpread, relationshipLens, spreadAfterTopicChange, spreadForTopic, spreadsForTopic, tarotRecord,
@@ -51,7 +52,6 @@ const JOURNAL_STORAGE_KEY = "zolacoco-journal-notes-v1";
 const TAROT_STORAGE_KEY = "zolacoco-tarot-records-v1";
 
 
-const journalPrompts = ["我現在真正的情緒是什麼？", "我正在逃避或延後面對什麼？", "我內在最需要哪一種支持？", "我在人際關係中反覆出現什麼習慣？", "金錢與安全感對我代表什麼？", "如果不必迎合任何人，我想成為怎樣的人？", "這一週，我最想帶走的核心提醒是什麼？"];
 
 type IntuitionOption = { text: string; correct: boolean; note: string };
 
@@ -75,7 +75,6 @@ function intuitionOptionsFor(card: TarotCard, cardIndex: number): IntuitionOptio
   return [...options.slice(offset), ...options.slice(0, offset)];
 }
 
-const journalCardIds = ["cups-13", "swords-08", "major-08", "cups-06", "pentacles-04", "major-17", "major-21"];
 
 const positionLens: Record<string,string[]> = {
   healing:["這是妳現在值得溫柔看見的訊息。"],

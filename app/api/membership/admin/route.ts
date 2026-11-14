@@ -33,9 +33,10 @@ export async function POST(request: Request) {
     const admin = await requireAdmin();
     const body = (await request.json()) as {
       memberId?: string;
-      action?: "activate" | "suspend" | "restore" | "student";
+      action?: "activate" | "suspend" | "restore" | "student" | "coaching";
       months?: number;
       student?: boolean;
+      coaching?: boolean;
     };
     const memberId = body.memberId?.trim();
     const action = body.action;
@@ -61,6 +62,27 @@ export async function POST(request: Request) {
         )
         INSERT INTO member_access_audit (member_id, admin_email, action, previous_status, new_status, previous_expires_at, new_expires_at, previous_student, new_student, note)
         SELECT id, ${admin.email}, 'updated', status, status, access_expires_at, access_expires_at, ${!student}, ${student}, 'student'
+        FROM updated
+      `;
+      const rows = await sql`SELECT * FROM members WHERE id = ${memberId}`;
+      return Response.json({ member: rows[0] });
+    }
+
+    // 七日塔羅筆記 × 陪跑: Zola marks or ends 陪跑中. Same rules as the student switch: separate from VIP
+    // months, audited before/after in the same statement, the current value again changes nothing.
+    // Ending 陪跑 keeps the member's notes and Zola's replies.
+    if (action === "coaching") {
+      if (typeof body.coaching !== "boolean") return Response.json({ error: "陪跑設定不正確。" }, { status: 400 });
+      const coaching = body.coaching;
+      if (Boolean(current.is_coaching) === coaching) return Response.json({ member: current, unchanged: true });
+      await sql`
+        WITH updated AS (
+          UPDATE members SET is_coaching = ${coaching}
+          WHERE id = ${memberId} AND role = 'member' AND is_coaching IS DISTINCT FROM ${coaching}
+          RETURNING id, status, access_expires_at
+        )
+        INSERT INTO member_access_audit (member_id, admin_email, action, previous_status, new_status, previous_expires_at, new_expires_at, previous_coaching, new_coaching, note)
+        SELECT id, ${admin.email}, 'updated', status, status, access_expires_at, access_expires_at, ${!coaching}, ${coaching}, 'coaching'
         FROM updated
       `;
       const rows = await sql`SELECT * FROM members WHERE id = ${memberId}`;

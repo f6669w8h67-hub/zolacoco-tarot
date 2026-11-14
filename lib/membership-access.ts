@@ -55,6 +55,22 @@ export function hasStudentAccess(member: {
   return member?.role === "admin" || Boolean(member?.is_student === true && member.status !== "suspended");
 }
 
+// 七日塔羅筆記 × 陪跑. Zola marks a member as 陪跑中 (is_coaching), separately from VIP months and from
+// being her student. Like the practice routes, the coaching APIs skip the VIP lookup in proxy.ts once
+// signed in and check the person themselves on the server (requireCoaching / requireAdmin / the owner).
+export function isCoachingRoute(pathname: string) {
+  return pathname === "/api/coaching" || pathname.startsWith("/api/coaching/");
+}
+
+/** Admin always; a member Zola marked as 陪跑中, unless suspended. Independent of VIP months. */
+export function hasCoachingAccess(member: {
+  role?: string;
+  status?: string;
+  is_coaching?: boolean | null;
+} | undefined) {
+  return member?.role === "admin" || Boolean(member?.is_coaching === true && member.status !== "suspended");
+}
+
 export function hasMemberAccess(member: {
   role?: string;
   status?: string;
