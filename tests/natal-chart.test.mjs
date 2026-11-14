@@ -102,6 +102,9 @@ test("review #34 B1: a birth time skipped or repeated by a daylight-saving chang
   assert.throws(() => chart.computeNatalChart({ ...place, date: "1974-09-30", time: "23:30" }), /BIRTH_TIME_REPEATED/);
   const second = chart.computeNatalChart({ ...place, date: "1974-09-30", time: "23:30", utc: "1974-09-30T15:30:00.000Z" });
   assert.equal(second.utc, "1974-09-30T15:30:00.000Z", "her choice is used as given");
+  // A given instant must really be that local time at the place (review #34 non-blocking).
+  assert.throws(() => chart.computeNatalChart({ ...place, date: "1974-09-30", time: "23:30", utc: "1974-09-30T12:00:00.000Z" }), /BIRTH_TIME_MISMATCH/);
+  assert.throws(() => chart.computeNatalChart({ ...place, date: "1974-09-30", time: "23:30", utc: "not a date" }), /BIRTH_TIME_MISMATCH/);
   const noTime = chart.computeNatalChart({ ...place, date: "1974-04-01", time: null });
   assert.equal(noTime.timeKnown, false, "a day that starts inside the gap still works without a birth time");
 });
