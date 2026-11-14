@@ -153,17 +153,28 @@ export function localToUtc(date: string, time: string, timeZone: string) {
 }
 
 export class BirthTimeError extends Error {
-  reason: "gap" | "repeated";
-  constructor(reason: "gap" | "repeated") {
-    super(reason === "gap" ? "BIRTH_TIME_SKIPPED" : "BIRTH_TIME_REPEATED");
+  /** gap: the time never happened there; repeated: it happened twice; mismatch: the given `utc` is not that time. */
+  reason: "gap" | "repeated" | "mismatch";
+  constructor(reason: "gap" | "repeated" | "mismatch") {
+    super(reason === "gap" ? "BIRTH_TIME_SKIPPED" : reason === "repeated" ? "BIRTH_TIME_REPEATED" : "BIRTH_TIME_MISMATCH");
     this.reason = reason;
   }
 }
 
-/** The birth instant for a known time: exact, or the page's resolved choice; never a silent guess. */
+/**
+ * The birth instant for a known time: exact, or the page's resolved choice; never a silent guess.
+ * A given `utc` must be one of the instants that really show this date and time at the place, so a
+ * caller that skipped resolveLocalTime cannot chart a different moment (review #34, non-blocking).
+ */
 function birthInstant(input: BirthInput) {
-  if (input.utc) return new Date(input.utc);
   const resolved = resolveLocalTime(input.date, input.time!, input.timeZone);
+  if (input.utc) {
+    const given = new Date(input.utc).getTime();
+    const candidates = resolved.kind === "exact" ? [resolved.utc] : resolved.kind === "repeated" ? resolved.options.map((option) => option.utc) : [];
+    const match = candidates.find((candidate) => candidate.getTime() === given);
+    if (!match) throw new BirthTimeError("mismatch");
+    return match;
+  }
   if (resolved.kind === "gap") throw new BirthTimeError("gap");
   if (resolved.kind === "repeated") throw new BirthTimeError("repeated");
   return resolved.utc;
