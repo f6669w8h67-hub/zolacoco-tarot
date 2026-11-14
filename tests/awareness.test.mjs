@@ -68,6 +68,14 @@ test("page: public, shuffle then flip one card, no fan; the face shows the ACT l
   assert.match(page, /<span className=\{`aw-ribbon lines-\$\{lines\.length\}`\}>/);
   assert.match(page, /prefers-reduced-motion: reduce/);
   assert.match(page, /aria-live="polite"/);
+  // shuffling is one breath: the glow behind the deck, 吸氣 then 吐氣, then the card turns
+  assert.match(page, /const BREATH_MS = 2800;/);
+  assert.match(page, /<span className="aw-breath" aria-hidden="true" \/>/);
+  assert.match(page, /later\(\(\) => setBreath\("out"\), BREATH_MS \/ 2\);\n    later\(reveal, BREATH_MS\);/);
+  assert.match(page, /breath === "in" \? "吸氣……" : "吐氣……"/);
+  const css = await read("app/awareness/awareness.css");
+  assert.match(css, /\.aw-deck\.is-shuffling \.aw-breath \{ animation: aw-breathe-glow 2\.8s ease-in-out both; \}/);
+  assert.doesNotMatch(css, /aw-shuffle/, "the cards no longer slide out to the sides");
   // members write and keep; everyone else gets a note, never the form
   assert.match(page, /access === "member" \? <>\s*<h3>寫下這次的覺察<\/h3>/);
   assert.match(page, /會員尚待 Zola 開通/);

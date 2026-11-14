@@ -28,7 +28,8 @@ import { renderShareCard } from "./share-card";
 type Phase = "idle" | "shuffling" | "revealed";
 type Draw = { id: string; card: AwarenessCard };
 
-const SHUFFLE_MS = 1100;
+/** Shuffling is one breath with the glow behind the deck: 吸氣 for half, 吐氣 for half (awareness.css, 2.8s). */
+const BREATH_MS = 2800;
 /** The deck grows from its shuffling size to the full card as it turns (awareness.css, .55s). */
 const GROW_MS = 600;
 
@@ -61,6 +62,7 @@ export default function AwarenessPage() {
   const [flipped, setFlipped] = useState(false);
   const [draw, setDraw] = useState<Draw | null>(null);
   const [announce, setAnnounce] = useState("");
+  const [breath, setBreath] = useState<"in" | "out">("in");
   const timers = useRef<number[]>([]);
   const deckRef = useRef<HTMLDivElement>(null);
 
@@ -124,7 +126,8 @@ export default function AwarenessPage() {
     setShare(null);
     setShareState("idle");
     setFlipped(false);
-    setAnnounce("洗牌中");
+    setBreath("in");
+    setAnnounce("洗牌中，跟著牌後面的光慢慢吸氣、吐氣");
     // Keep the deck on screen: while it shuffles (the button sits below it, so on a short phone the
     // deck may be partly above the screen), and again once the turned card has grown to full size.
     const keepDeckInView = () => {
@@ -143,7 +146,8 @@ export default function AwarenessPage() {
     if (reducedMotion()) { setPhase("revealed"); reveal(); return; }
     setPhase("shuffling");
     keepDeckInView();
-    later(reveal, SHUFFLE_MS);
+    later(() => setBreath("out"), BREATH_MS / 2);
+    later(reveal, BREATH_MS);
   }
 
   /** Saves first; the list on screen changes only when the browser really kept it. */
@@ -219,8 +223,9 @@ export default function AwarenessPage() {
     </header>
 
     <section className="aw-stage" aria-label="抽牌">
-      <p className="aw-calm">{phase === "idle" ? "先慢慢呼吸一次，想想此刻的自己。沒有正確答案，也不需要急著改變什麼。" : phase === "shuffling" ? "洗牌中……" : "這是妳此刻抽到的覺察卡。"}</p>
+      <p className="aw-calm">{phase === "idle" ? "先慢慢呼吸一次，想想此刻的自己。沒有正確答案，也不需要急著改變什麼。" : phase === "shuffling" ? (breath === "in" ? "吸氣……" : "吐氣……") : "這是妳此刻抽到的覺察卡。"}</p>
       <div className={`aw-deck is-${phase}`} ref={deckRef}>
+        <span className="aw-breath" aria-hidden="true" />
         <span className="aw-deck-back b1" aria-hidden="true"><img src={AWARENESS_BACK} alt="" /></span>
         <span className="aw-deck-back b2" aria-hidden="true"><img src={AWARENESS_BACK} alt="" /></span>
         <span className={`aw-flip${flipped ? " is-flipped" : ""}`}>

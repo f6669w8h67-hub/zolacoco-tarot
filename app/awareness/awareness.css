@@ -32,6 +32,13 @@
 .aw-deck-back { overflow: hidden; border: 1.5px solid var(--aw-gold); background: #fff; box-shadow: 0 10px 24px rgba(132, 52, 80, .1); }
 .aw-deck-back.b1 { transform: translate(-7px, 7px) rotate(-3deg); }
 .aw-deck-back.b2 { transform: translate(7px, 4px) rotate(2.5deg); }
+/* Shuffling is one slow breath: the cards stay still while a pearl glow behind them swells (吸氣) and
+   settles (吐氣), then the top card turns. */
+.aw-breath {
+  position: absolute; left: 50%; top: 50%; width: 175%; height: 132%; border-radius: 50%; translate: -50% -50%;
+  opacity: 0; pointer-events: none;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, .95) 48%, rgba(252, 234, 243, .95) 60%, rgba(132, 52, 80, .14) 74%, rgba(185, 199, 216, .4) 86%, rgba(232, 242, 252, 0) 100%);
+}
 .aw-deck.is-revealed .aw-deck-back { opacity: 0; transition: opacity .4s ease .5s; }
 .aw-deck-back img, .aw-flip-back img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .aw-flip { transform-style: preserve-3d; transition: transform .7s cubic-bezier(.3, .7, .2, 1); }
@@ -39,14 +46,10 @@
 .aw-flip-back, .aw-flip-front { overflow: hidden; backface-visibility: hidden; -webkit-backface-visibility: hidden; border: 1.5px solid var(--aw-gold); background: #fff; box-shadow: 0 16px 36px rgba(132, 52, 80, .16); }
 .aw-flip-front { transform: rotateY(180deg); }
 
-.aw-deck.is-shuffling .b1 { animation: aw-shuffle-left 1.1s ease-in-out both; }
-.aw-deck.is-shuffling .b2 { animation: aw-shuffle-right 1.1s ease-in-out both; }
-.aw-deck.is-shuffling .aw-flip { animation: aw-shuffle-top 1.1s ease-in-out both; }
-/* A small, quiet riffle: the two lower cards slide out about a quarter of a card and tuck back in,
-   so even on a narrow phone nothing leaves the screen. */
-@keyframes aw-shuffle-left { 0%, 100% { transform: translate(-7px, 7px) rotate(-3deg); } 28%, 58% { transform: translate(-24%, 8px) rotate(-6deg); } }
-@keyframes aw-shuffle-right { 0%, 100% { transform: translate(7px, 4px) rotate(2.5deg); } 40%, 70% { transform: translate(24%, 5px) rotate(6deg); } }
-@keyframes aw-shuffle-top { 0%, 100% { transform: translateY(0); } 22% { transform: translateY(-8px) rotate(-1.5deg); } 50% { transform: translateY(3px) rotate(1.2deg); } 78% { transform: translateY(-4px); } }
+.aw-deck.is-shuffling { animation: aw-breathe-deck 2.8s ease-in-out both; }
+.aw-deck.is-shuffling .aw-breath { animation: aw-breathe-glow 2.8s ease-in-out both; }
+@keyframes aw-breathe-glow { 0% { opacity: 0; scale: .7; } 50% { opacity: 1; scale: 1.12; } 100% { opacity: 0; scale: .8; } }
+@keyframes aw-breathe-deck { 0%, 100% { scale: 1; } 50% { scale: 1.04; } }
 
 /* Card face: the art, with the ACT line on a pearl ribbon over its quiet lower part. */
 .aw-face { position: absolute; inset: 0; display: block; container-type: inline-size; }
@@ -127,6 +130,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .aw-flip, .aw-deck { transition: none; }
-  .aw-deck.is-shuffling :is(.b1, .b2, .aw-flip) { animation: none; }
+  .aw-deck.is-shuffling, .aw-deck.is-shuffling .aw-breath { animation: none; }
   .aw-deck.is-revealed .aw-deck-back { transition: none; }
 }
