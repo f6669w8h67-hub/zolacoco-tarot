@@ -114,3 +114,5 @@ html body #explore .journal-tool .js-preview {
 }
 html body #explore .journal-tool .js-line { justify-self: center; text-decoration: none; }
 html body #explore .journal-tool .js-review > .js-link { justify-self: center; }
+html body #explore .journal-tool .js-warn { color: #b4405f !important; }
+html body #explore .journal-tool .js-next .js-small .js-link { margin-left: 6px; min-height: 44px; font-size: 14px; }

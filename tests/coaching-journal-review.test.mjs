@@ -70,3 +70,12 @@ test("pearl and phone-sized", async () => {
   const palette = new Set(["#263449", "#33445f", "#843450", "#c5a46f", "#e4d6e0", "#e8f2fc", "#fceaf3", "#b9c7d8", "#b4405f", "#ffffff", "#fdf8fb", "#f3f8fd"]);
   for (const hex of css.match(/#[0-9a-fA-F]{6}\b/g) ?? []) assert.ok(palette.has(hex.toLowerCase()), hex);
 });
+
+test("review #38: a hand-edited summary can take the two boxes back in; a browser that keeps nothing says so", () => {
+  const part = tool.slice(tool.indexOf("function SevenDayReview("));
+  assert.match(part, /\{attach && edited !== null \? <p className="js-small">這段重點妳改過了，上面兩欄再修改也不會自動更新這裡。<button type="button" className="js-link" onClick=\{\(\) => setEdited\(null\)\}>重新帶入上面兩欄<\/button><\/p> : null\}/);
+  assert.match(part, /setNotKept\(!writeReviewNotes\(storeKey, next\)\);/);
+  assert.match(part, /這個瀏覽器目前沒辦法保存這兩欄/);
+  const write = tool.slice(tool.indexOf("function writeReviewNotes("), tool.indexOf("// 七日回顧: her seven answers"));
+  assert.match(write, /return true;\n  \} catch \{\n    return false;/);
+});

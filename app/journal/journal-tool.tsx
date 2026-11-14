@@ -355,11 +355,15 @@ function readReviewNotes(storeKey: string): ReviewNotes {
   }
 }
 
+/** false when this browser would not keep them (private mode, storage full): the boxes still work for this visit. */
 function writeReviewNotes(storeKey: string, notes: ReviewNotes) {
   try {
     const all = JSON.parse(localStorage.getItem(JOURNAL_REVIEW_KEY) ?? "{}") as Record<string, ReviewNotes>;
     localStorage.setItem(JOURNAL_REVIEW_KEY, JSON.stringify({ ...(all && typeof all === "object" ? all : {}), [storeKey]: notes }));
-  } catch { /* the boxes still work for this visit */ }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // 七日回顧: her seven answers, two boxes for her own words (this device only, never guessed for her) and
@@ -372,14 +376,17 @@ function SevenDayReview({ days, storeKey, coaching, onClose }: {
 }) {
   const [notes, setNotes] = useState(() => readReviewNotes(storeKey));
   const [attach, setAttach] = useState(false);
+  // The summary follows the two boxes until she edits it by hand; then it is hers, and she can bring
+  // the boxes back in (review #38).
   const [edited, setEdited] = useState<string | null>(null);
+  const [notKept, setNotKept] = useState(false);
   const highlights = edited ?? defaultHighlights(notes);
   const message = reviewMessage({ coaching, attach, highlights });
 
   function change(field: keyof ReviewNotes, value: string) {
     const next = { ...notes, [field]: value };
     setNotes(next);
-    writeReviewNotes(storeKey, next);
+    setNotKept(!writeReviewNotes(storeKey, next));
   }
 
   return <section className="js-review" aria-labelledby="js-review-title">
@@ -398,6 +405,7 @@ function SevenDayReview({ days, storeKey, coaching, onClose }: {
       <textarea value={notes.direction} maxLength={REVIEW_TEXT_LIMIT} onChange={(event) => change("direction", event.target.value)} rows={3} />
     </label>
     <p className="js-small">這兩欄只存在這台裝置。</p>
+    {notKept ? <p className="js-small js-warn" role="status">這個瀏覽器目前沒辦法保存這兩欄（可能是無痕模式或空間已滿），關掉頁面後會消失；下方的 LINE 訊息不受影響。</p> : null}
 
     <div className="js-next">
       <b>{coaching ? "下一步" : "想有人陪妳一起整理嗎？"}</b>
@@ -406,6 +414,7 @@ function SevenDayReview({ days, storeKey, coaching, onClose }: {
       {attach ? <label className="js-field"><span>要附上的重點（可以修改）</span>
         <textarea value={highlights} maxLength={REVIEW_TEXT_LIMIT} onChange={(event) => setEdited(event.target.value)} rows={4} placeholder="先在上面兩欄寫下重點，或直接在這裡寫。" />
       </label> : null}
+      {attach && edited !== null ? <p className="js-small">這段重點妳改過了，上面兩欄再修改也不會自動更新這裡。<button type="button" className="js-link" onClick={() => setEdited(null)}>重新帶入上面兩欄</button></p> : null}
       <p className="js-small">打開 LINE 後會先放進輸入框，妳確認後再按送出；七天的筆記原文不會附上：</p>
       <pre className="js-preview">{message}</pre>
       <a className="tool-primary js-line" href={lineMessageUrl(message)} target="_blank" rel="noreferrer">{coaching ? "傳 LINE 約下一次陪跑" : "傳 LINE 預約 Zola 陪跑"} <b aria-hidden="true">→</b></a>
