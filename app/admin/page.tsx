@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { tarotCards } from "../tarot-data";
+import { loadMemberProfile } from "@/lib/member-client";
+import { AWARENESS_RECORDS_PREFIX, recordsKey } from "@/lib/awareness-records";
 
 type StoredValue = unknown[] | Record<string, string>;
 type Archive = Record<string, StoredValue>;
@@ -15,6 +17,8 @@ const sources = [
   { key: "zolacoco-astro-dice-records-v1", title: "星骰探索紀錄", href: "/astro-dice", start: "擲一次星骰" },
   { key: "zolacoco-healing-records-v1", title: "療癒小房間紀錄", href: "/healing-room", start: "走進療癒小房間" },
   { key: "zolacoco-astrology-exploration-records-v1", title: "星盤內在探索紀錄", href: "/astrology-exploration", start: "開始星盤探索" },
+  // Zolacoco 覺察卡 keeps one list per member (lib/awareness-records); read with the signed-in member's id.
+  { key: AWARENESS_RECORDS_PREFIX, title: "Zolacoco 覺察卡紀錄", href: "/awareness", start: "抽一張覺察卡" },
 ] as const;
 
 function count(value: StoredValue | undefined) {
@@ -24,6 +28,7 @@ function count(value: StoredValue | undefined) {
 function itemTitle(item: unknown) {
   if (!item || typeof item !== "object") return "已儲存紀錄";
   const row = item as Record<string, unknown>;
+  if (row.deck === "zolacoco-awareness") return String(row.name ?? "覺察卡");
   // An empty question (optional since Issue #9) falls back to the topic.
   return String((row.question || undefined) ?? row.topic ?? row.type ?? row.theme ?? row.title ?? "已儲存紀錄");
 }
@@ -46,6 +51,7 @@ function CardThumbs({ item }: { item: unknown }) {
 function itemDetail(item: unknown) {
   if (!item || typeof item !== "object") return "";
   const row = item as Record<string, unknown>;
+  if (row.deck === "zolacoco-awareness") return String(row.line ?? "");
   if (Array.isArray(row.cards)) return row.cards.map((card) => String((card as Record<string, unknown>).name ?? "")).filter(Boolean).join("・");
   return String(row.result_label ?? row.card ?? row.planet_name ?? row.summary ?? row.date ?? "");
 }
@@ -55,16 +61,20 @@ export default function ArchivePage() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
+    let active = true;
+    void loadMemberProfile().then((result) => {
+      if (!active) return;
+      const memberId = result.ok && result.member.id ? String(result.member.id) : null;
       const next: Archive = {};
       for (const source of sources) {
-        try { next[source.key] = JSON.parse(localStorage.getItem(source.key) ?? (source.key.includes("journal") ? "{}" : "[]")); }
+        const storageKey = source.key === AWARENESS_RECORDS_PREFIX ? (memberId ? recordsKey(memberId) : null) : source.key;
+        try { next[source.key] = storageKey ? JSON.parse(localStorage.getItem(storageKey) ?? (source.key.includes("journal") ? "{}" : "[]")) : []; }
         catch { next[source.key] = source.key.includes("journal") ? {} : []; }
       }
       setArchive(next);
       setReady(true);
     });
-    return () => cancelAnimationFrame(frame);
+    return () => { active = false; };
   }, []);
 
   const total = useMemo(() => sources.reduce((sum, source) => sum + count(archive[source.key]), 0), [archive]);
@@ -88,7 +98,7 @@ export default function ArchivePage() {
       const entries = Array.isArray(value) ? value : Object.entries(value ?? {}).map(([day, content]) => ({ question: `DAY ${Number(day) + 1}`, summary: content }));
       return <section className="admin-section archive-section" key={source.key} aria-labelledby={`archive-${source.key}`}>
         <header className="archive-section-head"><h2 id={`archive-${source.key}`}>{source.title}</h2><p className="admin-summary">{ready ? count(value) : "—"} 筆</p></header>
-        {!ready ? <div className="admin-empty">正在讀取存檔…</div> : entries.length === 0 ? <div className="admin-empty"><p>目前還沒有紀錄。</p><Link href={source.href}>{source.start} →</Link></div> : <div className="archive-list">{entries.slice(0, 30).map((item, index) => <article key={String((item as Record<string, unknown>).id ?? index)}><div><b>{itemTitle(item)}</b><small>{itemDetail(item)}</small></div>{source.key === "zolacoco-tarot-records-v1" ? <CardThumbs item={item} /> : null}<p>{String((item as Record<string, unknown>).summary ?? (item as Record<string, unknown>).note ?? (item as Record<string, unknown>).sentence ?? "")}</p></article>)}</div>}
+        {!ready ? <div className="admin-empty">正在讀取存檔…</div> : entries.length === 0 ? <div className="admin-empty"><p>目前還沒有紀錄。</p><Link href={source.href}>{source.start} →</Link></div> : <div className="archive-list">{entries.slice(0, 30).map((item, index) => <article key={String((item as Record<string, unknown>).id ?? index)}><div><b>{itemTitle(item)}</b><small>{itemDetail(item)}</small></div>{source.key === "zolacoco-tarot-records-v1" ? <CardThumbs item={item} /> : null}<p>{String((item as Record<string, unknown>).summary ?? (item as Record<string, unknown>).note ?? (item as Record<string, unknown>).sentence ?? (item as Record<string, unknown>).answer ?? "")}</p></article>)}</div>}
       </section>;
     })}
   </main>;

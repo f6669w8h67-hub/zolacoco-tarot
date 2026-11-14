@@ -11,8 +11,8 @@ const configured = {
   CLERK_SECRET_KEY: "sk_test_stub", DATABASE_URL: "postgresql://stub",
 };
 const active = { role: "member", status: "active", effective_status: "active", access_expires_at: "2099-01-01" };
-const publicPages = ["/account", "/account/", "/sign-in", "/sign-in/factor-one", "/sign-up", "/sign-up/verify-email-address"];
-const protectedPaths = ["/", "/healing-room", "/zola-admin", "/api/journal", "/trpc/private", "/accounting", "/sign-in-extra", "/api/membership/me-extra", "/api/membership/admin/extra"];
+const publicPages = ["/account", "/account/", "/sign-in", "/sign-in/factor-one", "/sign-up", "/sign-up/verify-email-address", "/awareness"];
+const protectedPaths = ["/", "/healing-room", "/zola-admin", "/api/journal", "/api/activity", "/trpc/private", "/accounting", "/sign-in-extra", "/awareness-extra", "/api/membership/me-extra", "/api/membership/admin/extra"];
 
 async function boundary({ env = configured, userId = "user_1", member = active, databaseError = false } = {}) {
   let lookups = 0;

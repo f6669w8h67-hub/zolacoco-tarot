@@ -18,14 +18,15 @@ import {
 import { type CardReading, othersLine, speaksForOthers, synthesisOpening, synthesisParts, topicReading } from "@/lib/tarot-synthesis";
 
 
-// Explore v2 (2026-11-13): the three practices that open right here are tabs above their panel;
-// the pendulum and the astro dice have pages of their own, so they are picture cards that link there.
+// Explore v2 (2026-11-13): the practices that open right here are tabs above their panel; tools with
+// pages of their own are picture cards that link there. 覺察卡 (2026-11-14) replaced 內在原型 and has
+// its own public page, /awareness (old ?tool=archetype links go there).
 const practiceTools = [
-  { id: "archetype", number: "01", title: "此刻的內在原型", short: "內在原型", desc: "從幾個直覺選擇，看見此刻最靠近妳的大牌能量。" },
-  { id: "intuition", number: "02", title: "牌面直覺練習室", short: "直覺練習", desc: "先不看標準牌義，練習相信自己從畫面讀到的訊息。" },
-  { id: "journal", number: "03", title: "七日塔羅內在筆記", short: "七日筆記", desc: "每天一個提問，慢慢整理情緒、關係與真正的需要。" },
+  { id: "intuition", number: "01", title: "牌面直覺練習室", short: "直覺練習", desc: "先不看標準牌義，練習相信自己從畫面讀到的訊息。" },
+  { id: "journal", number: "02", title: "七日塔羅內在筆記", short: "七日筆記", desc: "每天一個提問，慢慢整理情緒、關係與真正的需要。" },
 ] as const;
 const pageTools = [
+  { href: "/awareness", number: "03", title: "Zolacoco 覺察卡", desc: "洗牌抽一張原創覺察卡，用一句提醒、一個提問和一個小練習，陪妳靠近此刻的感受。", room: "/awareness/entry.webp", charm: [] as string[] },
   { href: "/pendulum", number: "04", title: "靈擺直覺問答", desc: "把問題整理成是非題，透過擺動停下來聽見此刻的直覺。", room: "/pendulum/hero-desktop.webp", charm: ["/pendulum/metal.webp", "/pendulum/crystal.webp"] },
   { href: "/astro-dice", number: "05", title: "星骰此刻指引", desc: "擲出行星、星座與宮位，拆解此刻的能量、表現方式與生活領域。", room: "/astro-dice/hero-desktop.webp", charm: ["/astro-dice/die.webp"] },
 ] as const;
@@ -46,49 +47,9 @@ const soundscapes: Record<Soundscape, { icon: string; label: string; en: string;
   meditation: { icon: "◇", label: "冥想淨化", en: "HEALING FREQUENCY · MEDITATION", videoId: "kqo9Z5Br63c" },
 };
 
-const archetypeQuestionSets = [
-  [
-    { q: "最近的妳，更接近哪一種狀態？", a: ["想安靜整理自己", "想突破停滯往前走", "想被理解與好好照顧"] },
-    { q: "面對不確定時，妳最常怎麼做？", a: ["先觀察，不急著表態", "逼自己趕快做決定", "反覆確認別人的心意"] },
-    { q: "此刻妳最需要找回的是？", a: ["內在的答案", "行動的力量", "接住自己的溫柔"] },
-  ],
-  [
-    { q: "當心裡有很多聲音時，妳最想先做什麼？", a: ["暫時離開喧鬧，聽聽自己", "抓住一個方向開始行動", "找一個安心的人說說心情"] },
-    { q: "最近哪一種感受最貼近妳？", a: ["有些答案還在慢慢沉澱", "知道自己不能再停在原地", "總在照顧別人，卻忘了自己"] },
-    { q: "如果今天能收到一份力量，妳最想要的是？", a: ["清楚的內在直覺", "做出選擇的勇氣", "被溫柔接住的感覺"] },
-  ],
-  [
-    { q: "面對一段反覆拉扯，妳的第一個反應是？", a: ["退一步觀察真正發生的事", "想立刻打破僵局往前走", "想確認自己是不是被重視"] },
-    { q: "最近妳最常對自己說哪一句話？", a: ["我需要再聽聽自己的心", "我不能一直停在這裡", "我也值得被好好對待"] },
-    { q: "哪一個畫面最像此刻的妳？", a: ["獨自坐在安靜的月光下", "握緊方向盤準備出發", "在柔軟的花園裡慢慢休息"] },
-  ],
-  [
-    { q: "當事情沒有照預期發展時，妳通常會？", a: ["先整理線索，等待感受清楚", "調整策略，重新推進一次", "先照顧自己的失望與疲憊"] },
-    { q: "最近最消耗妳的是什麼？", a: ["太多外界意見蓋過自己的聲音", "想前進，卻還沒有明確方向", "一直付出，卻沒有得到回應"] },
-    { q: "妳希望接下來的自己更靠近哪種狀態？", a: ["相信自己的內在判斷", "有力量做出真正的選擇", "穩定地照顧自己的需要"] },
-  ],
-  [
-    { q: "在關係裡，妳現在最想釐清的是？", a: ["我心裡真正相信的是什麼", "我是否願意採取新的行動", "我的需要有沒有被好好看見"] },
-    { q: "當對方的回應不如預期，妳更容易？", a: ["沉默下來觀察彼此的變化", "想趕快做些什麼扭轉現況", "懷疑自己是不是不夠重要"] },
-    { q: "此刻的關係最需要補回哪一種能量？", a: ["誠實與清楚", "方向與決心", "溫柔與安全感"] },
-  ],
-  [
-    { q: "如果今天可以替自己留一點空間，妳會？", a: ["安靜獨處，讓答案浮現", "完成一件一直拖延的事", "好好吃飯休息，不再勉強"] },
-    { q: "最近妳最想鬆開哪一種壓力？", a: ["一定要立刻想清楚的壓力", "害怕做錯而不敢前進的壓力", "必須一直照顧別人的壓力"] },
-    { q: "今天的妳，最值得被提醒的是？", a: ["妳其實知道自己在意什麼", "方向可以邊走邊調整", "妳的感受也需要被放在心上"] },
-  ],
-];
-
-const ARCHETYPE_LOGIN_SET_KEY = "zolacoco-archetype-login-set";
-const ARCHETYPE_LAST_SET_KEY = "zolacoco-archetype-last-set";
 const JOURNAL_STORAGE_KEY = "zolacoco-journal-notes-v1";
 const TAROT_STORAGE_KEY = "zolacoco-tarot-records-v1";
 
-const archetypeResults = [
-  { name: "女祭司", en: "THE HIGH PRIESTESS", text: "妳不是沒有答案，而是外界的聲音暫時蓋過了自己的感受。此刻適合慢一點，留意那些還說不清楚、但心裡其實已經知道的事。" },
-  { name: "戰車", en: "THE CHARIOT", text: "妳正在找回前進的主導權。真正的力量不是催促自己，而是先確認方向，再把分散的心力帶回同一條路上。" },
-  { name: "皇后", en: "THE EMPRESS", text: "妳現在需要的可能不是再努力一點，而是先承認自己的需求。當妳願意照顧內在，選擇才不會只建立在害怕失去之上。" },
-];
 
 const journalPrompts = ["我現在真正的情緒是什麼？", "我正在逃避或延後面對什麼？", "我內在最需要哪一種支持？", "我在人際關係中反覆出現什麼習慣？", "金錢與安全感對我代表什麼？", "如果不必迎合任何人，我想成為怎樣的人？", "這一週，我最想帶走的核心提醒是什麼？"];
 
@@ -114,7 +75,6 @@ function intuitionOptionsFor(card: TarotCard, cardIndex: number): IntuitionOptio
   return [...options.slice(offset), ...options.slice(0, offset)];
 }
 
-const archetypeCardIds = ["major-02", "major-07", "major-03"];
 const journalCardIds = ["cups-13", "swords-08", "major-08", "cups-06", "pentacles-04", "major-17", "major-21"];
 
 const positionLens: Record<string,string[]> = {
@@ -197,11 +157,7 @@ export default function Home() {
     }, ms);
     drawTimers.current.push(id);
   }
-  const [exploreTool, setExploreTool] = useState("archetype");
-  const [archetypeStep, setArchetypeStep] = useState(0);
-  const [archetypeScores, setArchetypeScores] = useState([0, 0, 0]);
-  const [archetypeResult, setArchetypeResult] = useState<number | null>(null);
-  const [archetypeSetIndex, setArchetypeSetIndex] = useState(0);
+  const [exploreTool, setExploreTool] = useState("intuition");
   const [intuitionStage, setIntuitionStage] = useState(0);
   const [intuitionCardIndex, setIntuitionCardIndex] = useState(9);
   const [intuitionChoice, setIntuitionChoice] = useState("");
@@ -230,8 +186,6 @@ export default function Home() {
   const recommendedId = recommendedSpread(topic);
   const intuitionCard = tarotCards[intuitionCardIndex] ?? tarotCards[0];
   const intuitionOptions = intuitionOptionsFor(intuitionCard, intuitionCardIndex);
-  const archetypeQuestions = archetypeQuestionSets[archetypeSetIndex] ?? archetypeQuestionSets[0];
-  const archetypeCard = archetypeResult === null ? null : tarotCards.find((card) => card.id === archetypeCardIds[archetypeResult]);
   const journalCard = tarotCards.find((card) => card.id === journalCardIds[journalDay]) ?? tarotCards[journalDay];
 
   function sendPlayerCommand(target: Soundscape, func: string, args: unknown[] = []) {
@@ -297,19 +251,13 @@ export default function Home() {
 
   useEffect(() => {
     const requestedTool = new URLSearchParams(window.location.search).get("tool");
-    if (requestedTool === "archetype" || requestedTool === "intuition" || requestedTool === "journal") setExploreTool(requestedTool);
+    // 內在原型 became Zolacoco 覺察卡, which has its own page.
+    if (requestedTool === "archetype" || requestedTool === "awareness") { window.location.replace("/awareness"); return; }
+    if (requestedTool === "intuition" || requestedTool === "journal") setExploreTool(requestedTool);
     try {
       const savedNotes = JSON.parse(localStorage.getItem(JOURNAL_STORAGE_KEY) ?? "{}") as Record<number, string>;
       setJournalNotes(savedNotes);
-      const previousSet = Number(localStorage.getItem(ARCHETYPE_LAST_SET_KEY));
-      const availableSets = archetypeQuestionSets.map((_, index) => index).filter((index) => index !== previousSet);
-      const nextSet = availableSets[Math.floor(Math.random() * availableSets.length)] ?? 0;
-      setArchetypeSetIndex(nextSet);
-      localStorage.setItem(ARCHETYPE_LAST_SET_KEY, String(nextSet));
-      localStorage.setItem(ARCHETYPE_LOGIN_SET_KEY, JSON.stringify({ index: nextSet }));
-    } catch {
-      setArchetypeSetIndex(Math.floor(Math.random() * archetypeQuestionSets.length));
-    }
+    } catch { /* keep empty notes */ }
   }, []);
 
   function saveJournal() {
@@ -413,16 +361,6 @@ export default function Home() {
     setSpreadId(item); setSpreadChosen(true); clearReading();
   }
 
-  function answerArchetype(answer: number) {
-    const scores = archetypeScores.map((score, index) => score + (index === answer ? 1 : 0));
-    setArchetypeScores(scores);
-    if (archetypeStep === archetypeQuestions.length - 1) setArchetypeResult(scores.indexOf(Math.max(...scores)));
-    else setArchetypeStep((step) => step + 1);
-  }
-
-  function resetArchetype() {
-    setArchetypeStep(0); setArchetypeScores([0, 0, 0]); setArchetypeResult(null);
-  }
 
   function drawIntuitionCard(nextStage = 1) {
     let nextIndex = Math.floor(Math.random() * tarotCards.length);
@@ -686,21 +624,6 @@ export default function Home() {
           <p className="ex-desc"><b>{practiceTools.find((tool) => tool.id === exploreTool)?.title}</b>{practiceTools.find((tool) => tool.id === exploreTool)?.desc}</p>
 
           <div className="tool-stage" id="ex-panel" role="tabpanel" aria-labelledby={`ex-tab-${exploreTool}`}>
-            {exploreTool === "archetype" && <div className="archetype-tool">
-              {archetypeResult === null ? <>
-                <div className="tool-progress"><span>INNER ARCHETYPE</span><b>{archetypeStep + 1} / {archetypeQuestions.length}</b></div>
-                <h3>{archetypeQuestions[archetypeStep].q}</h3>
-                <p className="tool-hint">不用想哪一個比較正確，選擇第一個讓妳有感覺的答案。</p>
-                <div className="answer-list">{archetypeQuestions[archetypeStep].a.map((answer, index) => <button key={answer} onClick={() => answerArchetype(index)}><span>{String.fromCharCode(65 + index)}</span>{answer}</button>)}</div>
-              </> : <div className="archetype-result practice-reveal">
-                <span>妳此刻的內在原型</span>{archetypeCard && <PracticeCard card={archetypeCard} />}
-                <p>{archetypeResults[archetypeResult].en}</p><h3>{archetypeResults[archetypeResult].name}</h3>
-                <blockquote>{archetypeResults[archetypeResult].text}</blockquote>
-                <div className="practice-lesson"><b>這一題沒有標準答案</b><p>原型測驗練習的是辨認自己的感受；真正進入解牌時，才需要把直覺和牌面證據分開。</p></div>
-                <button onClick={resetArchetype}>重新感受一次</button>
-              </div>}
-            </div>}
-
             {exploreTool === "intuition" && <div className="intuition-tool">
               <div className="tool-progress"><span>INTUITIVE READING</span><b>觀察有依據，推論有界線</b></div>
               {intuitionStage === 0 ? <>

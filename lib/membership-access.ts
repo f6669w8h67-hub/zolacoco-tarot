@@ -1,6 +1,8 @@
 // Shared by the server boundary and the client gate. All other routes are VIP-only.
+// /awareness (Zolacoco 覺察卡) is open to everyone; writing and saving answers stays member-only
+// on the page itself, and every data API is still checked on the server.
 export function isPublicMembershipPage(pathname: string) {
-  return ["/account", "/sign-in", "/sign-up"].some(
+  return ["/account", "/sign-in", "/sign-up", "/awareness"].some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
 }

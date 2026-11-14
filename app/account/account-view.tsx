@@ -34,7 +34,7 @@ const memberSpaces: { href: string; title: string; note: string; icon: SpaceIcon
   { href: "/pendulum", title: "靈擺占卜", note: "直覺問答與生活指引", icon: "pendulum" },
   { href: "/astro-dice", title: "星骰指引", note: "行星 × 星座 × 宮位", icon: "dice" },
   { href: "/astrology-exploration", title: "探索妳的星盤", note: "理解內在需求與人生課題", icon: "chart" },
-  { href: "/?tool=archetype#explore", title: "內在探索", note: "內在原型、直覺練習與七日筆記", icon: "bloom" },
+  { href: "/#explore", title: "內在探索", note: "覺察卡、直覺練習與七日筆記", icon: "bloom" },
   { href: "/healing-room", title: "療癒小房間", note: "情緒、關係與睡前練習", icon: "heart" },
 ];
 
@@ -139,7 +139,7 @@ function MemberSpaces({ locked }: { locked: boolean }) {
         ? <div className="account-space is-locked" key={space.title}><SpaceIcon name={space.icon} /><b>{space.title}</b><small>{space.note}</small><span className="account-space-lock"><LockIcon />開通後開放</span></div>
         : <Link className="account-space" href={space.href} key={space.title}><SpaceIcon name={space.icon} /><b>{space.title}</b><small>{space.note}</small><span className="account-space-arrow" aria-hidden="true">→</span></Link>)}
     </div>
-    {locked ? null : <Link className="account-records-link" href="/admin"><b>我的占卜紀錄</b><small>查看儲存在這台裝置上的占卜紀錄</small><span aria-hidden="true">→</span></Link>}
+    {locked ? null : <Link className="account-records-link" href="/admin"><b>我的占卜紀錄</b><small>查看儲存在這台裝置上的占卜與覺察卡紀錄</small><span aria-hidden="true">→</span></Link>}
   </section>;
 }
 
