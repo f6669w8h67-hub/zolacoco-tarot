@@ -105,11 +105,17 @@
 .astro-birth-line { margin: 0 0 14px; font-size: 15px; }
 .astro-wheel-wrap { margin: 0 auto 10px; padding: 14px; width: min(100%, 520px); border: 1px solid var(--ap-line); border-radius: 26px; background: rgba(255, 255, 255, .78); }
 .astro-wheel { display: block; width: 100%; height: auto; }
-.astro-wheel-sign { fill: #843450; font: 600 12.5px "Noto Serif TC", serif; letter-spacing: .02em; }
-.astro-wheel-house { fill: #6d7a90; font: 500 9.5px "Noto Serif TC", serif; }
-.astro-wheel-mark { fill: #843450; font: 700 12.5px "Noto Serif TC", serif; }
-.astro-wheel-degree { fill: #33445f; font: 500 9.5px "Noto Serif TC", serif; }
-.astro-wheel-axis { fill: #843450; font: 700 10px "Noto Serif TC", serif; paint-order: stroke; stroke: #ffffff; stroke-width: 3px; }
+.astro-wheel-sign { fill: #8a3c57; font: 600 11.5px "Noto Serif TC", serif; letter-spacing: .08em; }
+.astro-wheel-house { fill: #7b879b; font: 500 8.5px "Noto Serif TC", serif; }
+.astro-wheel-mark { fill: #8a3c57; font: 700 11px "Noto Serif TC", serif; }
+.astro-wheel-degree { fill: #3d4c66; font: 500 8.5px "Noto Serif TC", serif; }
+.astro-wheel-retro { fill: #b0607c; font-size: 7px; }
+.astro-wheel-axis { fill: #8a3c57; font: 700 9px "Noto Serif TC", serif; letter-spacing: .06em; paint-order: stroke; stroke: #fffdfb; stroke-width: 3px; }
+.astro-wheel-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px 16px; margin-top: 6px; }
+.astro-wheel-legend > span { white-space: nowrap; }
+.astro-wheel-legend > span:nth-child(n + 3), .astro-wheel-legend > span:only-child { white-space: normal; flex-basis: 100%; }
+.astro-wheel-legend i { display: inline-block; width: 18px; height: 0; margin: 0 6px 3px 0; border-top: 1.5px solid #7f9fc8; vertical-align: middle; }
+.astro-wheel-legend i.is-hard { border-top-color: #cf7f98; }
 .astro-wheel-wrap figcaption { margin-top: 8px; color: var(--ap-muted); font-size: 13px; line-height: 1.7; text-align: center; }
 .astro-note { margin: 8px 0; padding: 10px 14px; border-left: 3px solid var(--ap-gold); background: #ffffff; font-size: 14px; }
 .astro-section-title { margin: 28px 0 12px; font-size: 22px; text-align: center; }

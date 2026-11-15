@@ -121,8 +121,42 @@ test("the wheel: Ascendant on the left, rounded points, planets fanned out so ma
     assert.ok(next - sorted[i] >= 9 - 1e-6, `gap ${next - sorted[i]}`);
   }
   assert.ok(Math.abs(spread[4] - 200) < 1e-9, "a planet with room keeps its place");
-  assert.match(page, /aria-label="本命盤圖：外圈十二星座、內圈宮位與各星體位置，詳細數值見下方表格"/);
+  assert.match(page, /aria-label="本命盤圖：外圈十二星座、刻度與各星體位置，內圈宮位，中間的線是相位，詳細數值見下方表格"/);
   assert.equal(Object.values(wheel.PLANET_MARKS).join(""), "日月水金火木土天海冥北", "Chinese marks, never emoji glyphs");
+});
+
+test("wheel v2 (Zola 2026-11-14 盤面更細更漂亮): 1° scale, pearl rim, seals that never touch, aspect web", () => {
+  const placement = (id, longitude) => ({ id, longitude, sign: "aries", degree: longitude % 30, retrograde: false, house: null });
+  const chart = {
+    utc: "2000-01-01T00:00:00Z", timeKnown: true, ascendant: 100, midheaven: 10, houseSystem: "placidus", uncertain: {},
+    cusps: Array.from({ length: 12 }, (_, index) => (100 + index * 30) % 360),
+    placements: [placement("sun", 10), placement("moon", 130), placement("mercury", 12), placement("venus", 100.5), placement("mars", 190), placement("node", 70)],
+  };
+  const layout = wheel.wheelLayout(chart);
+  assert.equal(layout.ticks.length, 360, "a tick for every degree");
+  assert.deepEqual(layout.ticks.filter((tick) => tick.size === "major").length, 36);
+  assert.equal(layout.pearls.length, 72);
+  assert.equal(layout.signs.length, 12);
+  assert.ok(layout.signs.every((sign) => sign.band.startsWith("M ") && sign.band.endsWith(" Z")));
+  // seals 20px wide at radius 133 never touch: at least PLANET_GAP degrees apart
+  assert.ok(wheel.PLANET_GAP * Math.PI / 180 * wheel.WHEEL.planet >= 21, "10° at r=133 is wider than a seal");
+  const sun = layout.planets.find((planet) => planet.id === "sun");
+  assert.ok(sun.leader, "sun and mercury 2° apart: each seal moves aside and keeps a hairline to its true degree");
+  assert.equal(layout.planets.find((planet) => planet.id === "mars").leader, null, "a planet with room keeps its place, no leader");
+  const names = layout.aspects.map((aspect) => `${aspect.a}-${aspect.b}:${aspect.name}`);
+  // sun 10 / moon 130 / mercury 12 / venus 100.5 / mars 190: exact angles within their orbs
+  for (const expected of ["sun-moon:三分", "sun-venus:四分", "sun-mars:對分", "moon-mercury:三分", "mercury-venus:四分", "mercury-mars:對分", "venus-mars:四分"]) assert.ok(names.includes(expected), expected);
+  assert.ok(!names.includes("sun-mercury:六分"), "2° apart is a conjunction, which draws no line");
+  assert.ok(!names.some((name) => name.includes("node")), "the lunar node takes no aspects");
+  const noTime = wheel.aspectsOf({ ...chart, timeKnown: false });
+  assert.ok(!noTime.some((aspect) => aspect.a === "moon" || aspect.b === "moon"), "without a birth time the Moon takes no aspects");
+  assert.ok(noTime.length > 0);
+  assert.equal(layout.axes.length, 2);
+  assert.match(page, /藍線：和諧相位（六分、三分）/);
+  assert.match(page, /粉線：挑戰相位（四分、對分）/);
+  assert.match(page, /沒有出生時間時，月亮的位置不夠準，不畫月亮的相位。/);
+  assert.match(page, /相位要放在整張星盤裡一起看。/, "blue is not always easy, rose is not always hard (review #44)");
+  assert.match(page, /\{chart\.timeKnown \? null : <span>沒有出生時間時，月亮的位置不夠準/, "the Moon note shows even when no aspect is drawn");
 });
 
 test("music never starts by itself, loads only after a tap, and says so when the browser blocks it", () => {
