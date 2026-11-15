@@ -16,7 +16,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "牠站在懸崖邊，代表一定會摔下去、計畫會失敗。", correct: false, note: "陷阱：把風險當成結果保證；畫面停在出發前。" },
       { id: "c", text: "牠站在懸崖邊、手拿白玫瑰仰望晨光，帶著輕盈的心準備出發；新的開始很美，也要看一眼腳下的路。", correct: true, note: "有依據：懸崖、仰望、很小的包袱：充滿信任地出發，也有還沒看見的風險。" },
     ],
-    sample: null,
+    sample: "我先看到牠背著小包袱、站在懸崖花園的邊緣仰望晨光，蝦蝦在腳邊雀躍地跟著。這個畫面讓我感覺輕盈、好奇，也有一點還沒看清腳下的天真。愚者是踏上旅程的人：帶著信任踏出新的一步，也記得看一眼腳下的路。",
   },
   {
     id: "major-01-a", version: 1, status: "published", unit: "major", cardId: "major-01",
@@ -28,7 +28,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "頭上有無限符號，代表這段關係會永遠不變。", correct: false, note: "陷阱：把一個符號放大成永久保證。" },
       { id: "c", text: "一爪舉杖向天、一爪指向地面，桌上四種元素都擺好了：資源已經在手上，關鍵是把想法落地。", correct: true, note: "有依據：上下連結的手勢，加上桌上齊全的工具。" },
     ],
-    sample: null,
+    sample: "我看到牠一爪舉杖向天、一爪指向地面，桌上四種元素都擺好了。我感覺到一種專注、準備好要開始的能量。魔術師是開始運用力量的人：妳需要的資源其實都在手上，現在是把想法變成行動的時候。",
   },
   {
     id: "major-02-a", version: 1, status: "published", unit: "major", cardId: "major-02",
@@ -40,7 +40,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "牠安靜坐在兩根柱子之間，膝上放著卷軸、身後帷幔遮住後方：答案還沒完全浮現，現在適合先觀察、聽內在的聲音。", correct: true, note: "有依據：靜坐、卷軸、被遮住的後方。" },
       { id: "c", text: "腳邊有新月，代表要等到下個月才會有結果。", correct: false, note: "陷阱：把符號硬套成具體時間。" },
     ],
-    sample: null,
+    sample: "我看到牠安靜地坐在兩根柱子之間，膝上放著卷軸，身後的帷幔遮住了後方。這讓我感覺沉靜、內斂，好像答案還沒有完全浮現。女祭司理解內在的智慧：先別急著行動，聽聽內在的聲音。",
   },
   {
     id: "major-03-a", version: 1, status: "published", unit: "major", cardId: "major-03",
@@ -52,7 +52,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "皇后代表一定會懷孕。", correct: false, note: "陷阱：把豐饒的象徵當成懷孕判斷；塔羅不做這類斷定。" },
       { id: "c", text: "皇后是女性牌，問男生的事抽到就不準。", correct: false, note: "陷阱：牌讀的是能量與狀態，不是性別。" },
     ],
-    sample: null,
+    sample: "我看到牠在麥田與花園裡放鬆地坐著，四周豐盛又柔軟。這個畫面讓我感覺被滋養、被照顧。女皇象徵孕育與創造：妳正在讓某件事慢慢長大，也別忘了用同樣的溫柔照顧自己。",
   },
   {
     id: "major-04-a", version: 1, status: "published", unit: "major", cardId: "major-04",
@@ -64,7 +64,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "背景有山，代表要搬到外地。", correct: false, note: "陷阱：把背景物件字面化。" },
       { id: "c", text: "牠端坐在雕有公羊頭的石座上，手持權杖與金球：現在需要清楚的規則與界線，用穩定的結構處理事情。", correct: true, note: "有依據：堅固的石座、權杖、端正的坐姿。" },
     ],
-    sample: null,
+    sample: "我看到牠端坐在刻著公羊頭的石座上，手持權杖與金球，姿勢端正穩定。我感覺到秩序、責任，也有一點嚴肅。皇帝建立世界：現在需要清楚的規則與界線，讓事情穩穩地站起來。",
   },
   {
     id: "major-05-a", version: 1, status: "published", unit: "major", cardId: "major-05",
@@ -76,7 +76,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "兩隻貓跪著，代表妳在關係裡地位比較低。", correct: false, note: "陷阱：把「聆聽學習」的姿勢讀成「被壓迫」。" },
       { id: "c", text: "牠舉爪祝福，前方兩隻貓專心聆聽：這件事需要回到可信的方法、專業或約定，向有經驗的人請教。", correct: true, note: "有依據：傳授與聆聽的構圖、腳下的鑰匙。" },
     ],
-    sample: null,
+    sample: "我看到牠舉爪祝福，前方兩隻貓專心聆聽，腳下有鑰匙。我感覺到一種莊重、被引導的氛圍。教皇教妳如何在這世界生活：這件事可以回到可信的方法，或請教有經驗的人。",
   },
   {
     id: "major-06-a", version: 1, status: "published", unit: "major", cardId: "major-06",
@@ -88,7 +88,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "兩隻貓在花園裡額頭相靠、天使在上方祝福：重點是真心的連結，也在問妳願不願意選擇與自己價值一致的那一邊。", correct: true, note: "有依據：彼此靠近的姿勢，加上上方的祝福；戀人牌的核心是選擇。" },
       { id: "c", text: "畫面裡有兩隻貓加一位天使，代表有第三者。", correct: false, note: "陷阱：用數量硬套人物。" },
     ],
-    sample: null,
+    sample: "我看到萊恩和蝦蝦在花園中額頭相靠，天使在上方祝福。我感覺到真心與親近，也感覺到一個需要做決定的時刻。戀人做出選擇：問問自己，什麼是和妳的價值真正一致的選擇。",
   },
   {
     id: "major-07-a", version: 1, status: "published", unit: "major", cardId: "major-07",
@@ -100,7 +100,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "戰車代表要買車或出遠門。", correct: false, note: "陷阱：把物件字面化。" },
       { id: "c", text: "獅子一黑一白，代表一好一壞，壞的要淘汰。", correct: false, note: "陷阱：把顏色讀成好壞，忽略「兩股力量都要駕馭」。" },
     ],
-    sample: null,
+    sample: "我看到一黑一白兩隻小獅子拉著同一台車，萊恩站在車上、蝦蝦握著韁繩。我感覺到強烈的前進力量，但兩股力量需要協調。戰車用意志前進：先讓方向一致，速度才有意義。",
   },
   {
     id: "major-08-a", version: 1, status: "published", unit: "major", cardId: "major-08",
@@ -112,7 +112,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "力量牌代表妳要更強勢、贏過對方。", correct: false, note: "陷阱：只看牌名，忽略畫面裡的溫柔動作。" },
       { id: "c", text: "有獅子，代表會遇到危險的人。", correct: false, note: "陷阱：只看動物，沒看牠和萊恩的互動。" },
     ],
-    sample: null,
+    sample: "我看到萊恩溫柔地撫摸獅子，獅子溫馴得讓蝦蝦能躺在牠背上。我感覺到安定與溫柔。力量用內在穩定去掌控：真正的力量不是壓制，而是溫柔而堅定地陪伴自己的情緒。",
   },
   {
     id: "major-09-a", version: 2, status: "published", unit: "major", cardId: "major-09",
@@ -124,7 +124,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "牠站在雪山頂、提著燈照向前方，代表此刻需要先退一步，安靜地看清自己真正的答案。", correct: true, note: "有依據：高處、提燈、往前照，三個畫面線索都指向「拉開距離，靠自己的光看清楚」。" },
       { id: "c", text: "牠拄著手杖，代表身體需要休息，可能有健康問題。", correct: false, note: "陷阱：把符號直接當成健康判斷；塔羅不做醫療結論。" },
     ],
-    sample: null,
+    sample: "我看到牠站在雪山頂、提著燈照向前方，身邊有蝦蝦陪著。我感覺安靜、沉澱，像是在給自己一段獨處的時間。隱者尋找智慧：先退一步，用自己的光看清楚真正的答案。",
   },
   {
     id: "major-10-a", version: 1, status: "published", unit: "major", cardId: "major-10",
@@ -136,7 +136,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "萊恩在頂端，代表現在最好，接下來一定會變差。", correct: false, note: "陷阱：把位置當成必然的下坡預言。" },
       { id: "c", text: "巨大的輪子正在轉動，萊恩坐在頂端、蝦蝦抓著邊緣轉著玩：局勢正在變化，妳無法控制全部，但可以選擇怎麼回應。", correct: true, note: "有依據：轉動的輪子、角色各自的位置與動作。" },
     ],
-    sample: null,
+    sample: "我看到巨大的輪子正在轉動，萊恩坐在頂端，蝦蝦抓著邊緣轉著玩。我感覺到變化的節奏，有一點不由自主，也有一點好玩。命運之輪帶來轉變：局勢正在改變，妳可以選擇怎麼回應它。",
   },
   {
     id: "major-11-a", version: 1, status: "published", unit: "major", cardId: "major-11",
@@ -148,7 +148,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "正義牌代表官司一定會贏。", correct: false, note: "陷阱：替法律結果下保證。" },
       { id: "c", text: "拿著寶劍，代表會有人受傷。", correct: false, note: "陷阱：只看武器，忽略平衡與公正的構圖。" },
     ],
-    sample: null,
+    sample: "我看到牠一爪持天平、一爪立著寶劍，眼神清澈。我感覺到冷靜與公平。正義帶來結果：現在適合看清事實，衡量雙方實際做了什麼，再做出清楚的決定。",
   },
   {
     id: "major-12-a", version: 1, status: "published", unit: "major", cardId: "major-12",
@@ -160,7 +160,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "倒掛代表事情會整個顛倒過來。", correct: false, note: "陷阱：把姿勢字面化成結果。" },
       { id: "c", text: "牠倒掛在樹上、神情平靜，頭上有光環：暫停不是失敗，是換個角度看事情；原本的做法已經推不動了。", correct: true, note: "有依據：倒掛是換視角，平靜的表情與光環說明這是自願的停頓。" },
     ],
-    sample: null,
+    sample: "我看到牠倒掛在樹上，神情卻很平靜，頭上有光環。我感覺到一種安靜的停頓，而不是痛苦。吊人放下：原本的做法推不動時，換個角度看，答案可能就在那裡。",
   },
   {
     id: "major-13-a", version: 1, status: "published", unit: "major", cardId: "major-13",
@@ -172,7 +172,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "白馬緩步前行、遠方升起太陽、蝦蝦遞上白玫瑰：一個階段結束了，也替新的開始騰出空間。", correct: true, note: "有依據：前行的白馬、升起的太陽、白玫瑰。" },
       { id: "c", text: "死神是最壞的牌，抽到代表一切都完了。", correct: false, note: "陷阱：只看牌名，忽略畫面裡的晨光與新開始。" },
     ],
-    sample: null,
+    sample: "我看到白馬緩步前行，遠方兩座塔之間升起太陽，蝦蝦在路邊遞上白玫瑰。我感覺到告別，也感覺到新的開始正在醞釀。死神帶來結束：讓不再適合的部分結束，才有空間迎接新的階段。",
   },
   {
     id: "major-14-a", version: 1, status: "published", unit: "major", cardId: "major-14",
@@ -184,7 +184,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "牠一腳在水裡、一腳在岸上，在兩個杯子之間慢慢倒水：事情有修復空間，靠的是持續微調與平衡。", correct: true, note: "有依據：兩杯之間流動的水、兩腳各站一邊。" },
       { id: "c", text: "有天使翅膀，代表會有貴人出現解決一切。", correct: false, note: "陷阱：把翅膀放大成外力保證，忽略自己調整的動作。" },
     ],
-    sample: null,
+    sample: "我看到牠一腳在水裡、一腳在岸上，在兩個金杯之間慢慢倒水。我感覺到耐心與平衡。節制找到平衡：事情需要持續微調，不用一次到位，慢慢調整，比較容易找到剛好的比例。",
   },
   {
     id: "major-15-a", version: 1, status: "published", unit: "major", cardId: "major-15",
@@ -196,7 +196,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "惡魔代表對方是壞人。", correct: false, note: "陷阱：只看牌名替人貼標籤。" },
       { id: "c", text: "被綁住了，代表逃不掉。", correct: false, note: "陷阱：沒看到緞帶是鬆的。" },
     ],
-    sample: null,
+    sample: "我看到兩隻貓脖子上繫著金色緞帶，但緞帶其實鬆鬆的，可以輕易解開。我感覺到被吸引、也被困住的矛盾。惡魔讓妳看見束縛：困住妳的可能是習慣或執著，而妳其實有選擇。",
   },
   {
     id: "major-16-a", version: 1, status: "published", unit: "major", cardId: "major-16",
@@ -208,7 +208,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "塔被打壞，代表要搬家。", correct: false, note: "陷阱：把建築字面化。" },
       { id: "c", text: "閃電打開塔頂，萊恩和蝦蝦跳向下方柔軟的花叢：不穩的結構被打破了，雖然突然，但有落腳的地方。", correct: true, note: "有依據：閃電、跳下的動作、下方柔軟的花叢。" },
     ],
-    sample: null,
+    sample: "我看到閃電打開塔頂，萊恩和蝦蝦一起跳向下方柔軟的花叢。我感覺到突然、震撼，但也有一種被釋放的輕鬆。高塔打破一切：舊的結構瓦解了，正好為新的開始鋪路。",
   },
   {
     id: "major-17-a", version: 1, status: "published", unit: "major", cardId: "major-17",
@@ -220,7 +220,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "破曉的天空下，萊恩跪在池邊安靜倒水：正在從耗損中慢慢恢復，希望來自重新誠實地照顧自己。", correct: true, note: "有依據：破曉、倒水的修復動作、星光。" },
       { id: "c", text: "把水倒到地上，代表在浪費錢。", correct: false, note: "陷阱：只抓一個動作下負面結論，忽略安靜療癒的氛圍。" },
     ],
-    sample: null,
+    sample: "我看到破曉的天空下，萊恩跪在池邊安靜地倒水，天上有星光。我感覺到平靜，像是一段慢慢恢復的時間。星星帶來希望：先好好照顧自己，希望會在療癒裡慢慢回來。",
   },
   {
     id: "major-18-a", version: 1, status: "published", unit: "major", cardId: "major-18",
@@ -232,7 +232,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "月亮代表對方在騙妳。", correct: false, note: "陷阱：把「看不清楚」直接讀成「欺騙」。" },
       { id: "c", text: "有龍蝦爬出來，代表會有壞事發生。", correct: false, note: "陷阱：把符號讀成災難。" },
     ],
-    sample: null,
+    sample: "我看到黃昏的月光下，兩隻貓抬頭望著月亮，一隻小龍蝦爬上岸，小路通向看不清的遠方。我感覺到朦朧、有點不安。月亮帶來探索內心：看不清楚時，先分辨哪些是事實、哪些是擔心。",
   },
   {
     id: "major-19-a", version: 1, status: "published", unit: "major", cardId: "major-19",
@@ -244,7 +244,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "太陽牌代表一切都會成功，不用再努力。", correct: false, note: "陷阱：把正向牌當保證，跳過行動。" },
       { id: "c", text: "騎著小馬，代表會有小孩。", correct: false, note: "陷阱：把畫面元素字面化成人生事件。" },
     ],
-    sample: null,
+    sample: "我看到燦爛的太陽下，蝦蝦張開雙臂、騎著小馬歡笑。我感覺到明亮、坦率的喜悅。太陽看見自己：現在適合大方地表達自己，讓真實的妳被看見。",
   },
   {
     id: "major-20-a", version: 1, status: "published", unit: "major", cardId: "major-20",
@@ -256,7 +256,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "審判代表妳會被懲罰。", correct: false, note: "陷阱：把牌名字面化成懲罰。" },
       { id: "c", text: "過去的人回來了，代表一定要復合。", correct: false, note: "陷阱：替客人做決定，忽略「用現在的自己選擇」。" },
     ],
-    sample: null,
+    sample: "我看到號角響起，萊恩和蝦蝦從花草中抬頭，張開雙爪迎向光芒。我感覺到被喚醒、重新開始的力量。審判做出選擇：回頭看看過去的經驗，用現在的自己做出新的決定。",
   },
   {
     id: "major-21-a", version: 1, status: "published", unit: "major", cardId: "major-21",
@@ -268,7 +268,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "世界牌代表要出國。", correct: false, note: "陷阱：把牌名字面化。" },
       { id: "c", text: "結束了，代表這段關係沒救了。", correct: false, note: "陷阱：把「完成」讀成「失敗」。" },
     ],
-    sample: null,
+    sample: "我看到萊恩和蝦蝦在玫瑰花環中央輕盈起舞，四個角落有天使、老鷹、牛和獅子。我感覺到完整與圓滿。世界完成一個循環：好好收下這段旅程的收穫，帶著它走向下一段。",
   },
   {
     id: "minor-wands-01-a", version: 1, status: "published", unit: "minor", cardId: "wands-01",

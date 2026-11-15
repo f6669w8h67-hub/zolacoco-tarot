@@ -10,8 +10,10 @@
 //   old answer with the option it chose then, never with whatever now sits under the same letter.
 // - Every scene detail comes from the card's `scene` in tarot-data.ts (the site's 萊恩 and 蝦蝦 deck),
 //   so a question never mentions something that is not in the picture.
-// - `sample` is Zola's own demonstration reading. Until she writes it, it stays null and the page says
-//   「Zola 示範解讀準備中」; the site's card meaning is shown separately as 網站牌義參考.
+// - `sample` is Zola's own demonstration reading (she approved the 22 大阿爾克納 ones on 2026-11-15, written
+//   from her 「塔羅基礎課2」 lines). Where she has none yet it stays null and the page says
+//   「Zola 示範解讀準備中」; the site's card meaning is shown separately as 網站牌義參考. It is only sent with
+//   the judgement after an answer, never in the question list, so it cannot give the answer away.
 
 import { PRACTICE_HISTORY } from "@/lib/practice-history";
 import { publicAnswer, type AnswerContext, type ShownAnswer } from "@/lib/practice-input";
