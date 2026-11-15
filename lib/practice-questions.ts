@@ -280,7 +280,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "權杖一是開始的牌，所以這件事一定會成功。", correct: false, note: "陷阱：把起點當成結果保證。" },
       { id: "c", text: "一隻手從明亮的雲中遞出長著嫩葉的權杖，萊恩和蝦蝦抬頭仰望：想做的念頭剛冒出來，正是起步的時候。", correct: true, note: "有依據：火元素的數字 1 是「開始・啟動・種子」，權杖 1 是行動的開始：衝動、想做；畫面線索：遞出的權杖、嫩葉、仰望的姿勢。" },
     ],
-    sample: null,
+    sample: "我看到一隻手從明亮的雲裡遞出長著嫩葉的權杖，萊恩和蝦蝦抬頭望著它。我感覺到一股剛冒出來、想試試看的熱度。權杖一是火元素的「開始」，也就是行動的種子：想做的念頭剛發芽，先接過來、踏出第一步就好。",
   },
   {
     id: "minor-wands-02-a", version: 1, status: "published", unit: "minor", cardId: "wands-02",
@@ -292,7 +292,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "兩根權杖代表兩個人在競爭妳。", correct: false, note: "陷阱：用數量硬套人物，忽略「2」是選擇與平衡。" },
       { id: "c", text: "萊恩站在露台上，一爪捧著小地球儀、一爪握權杖眺望遠方的海：已經有基礎，正在看更大的可能、決定往哪裡走。", correct: true, note: "有依據：火元素的數字 2 是「拉扯・選擇・平衡」，權杖 2 是行動的選擇：想做但在觀望；畫面線索：地球儀、眺望、還站在露台上。" },
     ],
-    sample: null,
+    sample: "我看到萊恩站在露台上，一爪捧著小地球儀、一爪握著權杖，望向遠方的海。我感覺到期待，也有一點還在猶豫。權杖二是火元素的「選擇」：妳已經有了基礎，現在是決定往哪裡走的時候。",
   },
   {
     id: "minor-wands-03-a", version: 2, status: "published", unit: "minor", cardId: "wands-03",
@@ -304,7 +304,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "牠背對畫面、望向海上的帆船，代表努力已經送出去，現在是等待回響、看向更遠的階段。", correct: true, note: "有依據：火元素的數字 3 是「發展・擴展・成長」，權杖 3 是行動展開、規劃未來；畫面線索：牠站在山崖上，望向海上的帆船。" },
       { id: "c", text: "三根權杖代表三個人，有第三者。", correct: false, note: "陷阱：用數量硬套人物，忽略數字 3 是發展・擴展的階段。" },
     ],
-    sample: null,
+    sample: "我看到牠站在山崖上背對畫面，望著海上的帆船。我感覺到開闊，還有一點等待的心情。權杖三是火元素的「擴展」：努力已經送出去了，可以把眼光放遠，開始規劃下一步。",
   },
   {
     id: "minor-wands-04-a", version: 1, status: "published", unit: "minor", cardId: "wands-04",
@@ -316,7 +316,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "背後有城堡，代表會買房子。", correct: false, note: "陷阱：把背景物件字面化。" },
       { id: "c", text: "四根權杖撐起花環拱門，萊恩和蝦蝦舉著花束在拱門下慶祝：一個階段有了穩定的成果，值得和身邊的人一起慶祝。", correct: true, note: "有依據：火元素的數字 4 是「穩定・結構・停滯」，權杖 4 是穩定：慶祝、基礎；畫面線索：拱門的結構、花環、歡樂的人群。" },
     ],
-    sample: null,
+    sample: "我看到四根權杖撐起花環拱門，萊恩和蝦蝦舉著花束在拱門下慶祝。我感覺到安心和歡喜。權杖四是火元素的「穩定」：一個階段有了成果，值得停下來，和身邊的人一起慶祝。",
   },
   {
     id: "minor-wands-05-a", version: 1, status: "published", unit: "minor", cardId: "wands-05",
@@ -328,7 +328,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "權杖五代表會大吵一架、關係要破裂。", correct: false, note: "陷阱：只看「衝突」，忽略畫面是遊戲般的比劃。" },
       { id: "c", text: "五隻貓代表有五個競爭對手。", correct: false, note: "陷阱：用數量硬套人數。" },
     ],
-    sample: null,
+    sample: "我看到五隻貓各拿一根權杖在草地上比劃，陽光很亮，氣氛很熱鬧。我感覺到有點亂，但不是真的危險。權杖五是火元素的「衝突」：大家意見很多、來來回回，這是磨合，不一定是敵對。",
   },
   {
     id: "minor-wands-06-a", version: 1, status: "published", unit: "minor", cardId: "wands-06",
@@ -340,7 +340,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "萊恩戴著月桂花冠騎白馬，兩旁的貓舉著權杖歡呼：努力被看見、得到肯定，可以大方接受這份認可。", correct: true, note: "有依據：火元素的數字 6 是「調和・流動・過渡」，權杖 6 是成功：被看見；畫面線索：月桂花冠、遊行、歡呼。" },
       { id: "c", text: "被大家歡呼，代表從此不會再有挑戰。", correct: false, note: "陷阱：把一次肯定當成永久保證。" },
     ],
-    sample: null,
+    sample: "我看到萊恩戴著月桂花冠騎著白馬，兩旁的貓舉著權杖歡呼。我感覺到被肯定的驕傲。權杖六是火元素的「調和」，行動被大家接住，成了成功：妳的努力被看見了，可以大方收下這份認可。",
   },
   {
     id: "minor-wands-07-a", version: 1, status: "published", unit: "minor", cardId: "wands-07",
@@ -352,7 +352,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "權杖七代表要跟所有人斷絕往來。", correct: false, note: "陷阱：替客人做極端的決定。" },
       { id: "c", text: "萊恩站在小山丘上，雙爪握著權杖擋在前方，神情堅定：壓力不少，但妳站在比較有利的位置，可以守住自己的立場。", correct: true, note: "有依據：火元素的數字 7 是「內在・考驗・懷疑」，權杖 7 是捍衛；畫面線索：高處、防守的姿勢、身後打氣的蝦蝦。" },
     ],
-    sample: null,
+    sample: "我看到萊恩站在小山丘上，雙爪握著權杖擋在前面，神情很堅定，蝦蝦在後面替牠打氣。我感覺到壓力，也感覺到不退讓的力量。權杖七是火元素的「考驗」，也就是捍衛：妳站在有利的位置，可以守住自己的立場。",
   },
   {
     id: "minor-wands-08-a", version: 1, status: "published", unit: "minor", cardId: "wands-08",
@@ -364,7 +364,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "八根權杖整齊地從藍天飛過河流與田野：事情進入快速推進的階段，消息和進展會接連到來。", correct: true, note: "有依據：火元素的數字 8 是「行動・加速・專注」，權杖 8 是快速發展：訊息、速度；畫面線索：同一方向飛行的權杖、明亮的天空。" },
       { id: "c", text: "八根權杖，代表八天後會有結果。", correct: false, note: "陷阱：把數字硬套成時間。" },
     ],
-    sample: null,
+    sample: "我看到八根權杖整齊地飛過藍天，越過河流和田野。我感覺到速度，事情好像突然動了起來。權杖八是火元素的「加速」：進展和消息會接連到來，跟上這個節奏就好。",
   },
   {
     id: "minor-wands-09-a", version: 1, status: "published", unit: "minor", cardId: "wands-09",
@@ -376,7 +376,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "萊恩頭上綁著小繃帶、倚著權杖站崗，蝦蝦從柵欄後送來一朵小花：已經走了很長一段、有點累，但還守得住；也可以接受身邊的支持。", correct: true, note: "有依據：火元素的數字 9 是「累積・壓力・成果前夕」，權杖 9 是撐住：防禦；畫面線索：繃帶、倚靠的姿勢、送花的蝦蝦。" },
       { id: "c", text: "權杖排成柵欄，代表妳把自己封閉起來，所以沒人愛妳。", correct: false, note: "陷阱：從一個畫面跳到對人格的負面結論。" },
     ],
-    sample: null,
+    sample: "我看到萊恩頭上綁著小繃帶，倚著權杖站崗，蝦蝦從柵欄後面送來一朵小花。我感覺到疲累，但還撐得住。權杖九是火元素的「成果前夕」：妳已經走了很長一段，守住最後一段，也讓身邊的人支持妳。",
   },
   {
     id: "minor-wands-10-a", version: 1, status: "published", unit: "minor", cardId: "wands-10",
@@ -388,7 +388,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "抱著十根權杖，代表很有成就、很成功。", correct: false, note: "陷阱：只看數量，沒看身體吃力的姿態。" },
       { id: "c", text: "權杖十代表一定撐不下去。", correct: false, note: "陷阱：把沉重讀成失敗定論，忽略終點就在前方、有人幫忙。" },
     ],
-    sample: null,
+    sample: "我看到萊恩抱著一大捆權杖，吃力地走向村莊，蝦蝦在旁邊幫忙扛一根。我感覺到沉重。權杖十是火元素的「極端」，行動多到變成負擔：快到終點了，是時候把擔子分出去一些。",
   },
   {
     id: "minor-cups-01-a", version: 1, status: "published", unit: "minor", cardId: "cups-01",
@@ -400,7 +400,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "一隻手從雲中捧出金杯，清水流入開滿蓮花的池塘，白鴿銜著聖餅飛下：心裡有新的感動正在湧出，適合打開心去接收。", correct: true, note: "有依據：水元素的數字 1 是「開始・啟動・種子」，聖杯 1 是情感的開始：心動、喜歡；畫面線索：滿溢的水、蓮花、白鴿。" },
       { id: "c", text: "有五道水流，代表五個月後會有好消息。", correct: false, note: "陷阱：把畫面數量硬套成時間。" },
     ],
-    sample: null,
+    sample: "我看到一隻手從雲中捧出金杯，清水流進開滿蓮花的池塘，白鴿銜著聖餅飛下來。我感覺到柔軟、被觸動。聖杯一是水元素的「開始」，也就是情感的種子：心裡有新的感動正在湧出，打開心去接收它。",
   },
   {
     id: "minor-cups-02-a", version: 1, status: "published", unit: "minor", cardId: "cups-02",
@@ -412,7 +412,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "兩杯之間有蛇杖，代表關係裡有人心機很重。", correct: false, note: "陷阱：只挑一個符號套成負面人格，忽略對等敬酒的動作。" },
       { id: "c", text: "萊恩和蝦蝦面對面各捧一個金杯互相敬酒：雙方正在交流、彼此回應，關係建立在對等的心意上。", correct: true, note: "有依據：水元素的數字 2 是「拉扯・選擇・平衡」，聖杯 2 是關係的連結：互相吸引；畫面線索：面對面、互相舉杯。" },
     ],
-    sample: null,
+    sample: "我看到萊恩和蝦蝦面對面，各捧一個金杯互相敬酒。我感覺到親近，也感覺到被回應。聖杯二是水元素的「平衡」：兩邊的心意正在交流，這段關係建立在彼此對等的回應上。",
   },
   {
     id: "minor-cups-03-a", version: 1, status: "published", unit: "minor", cardId: "cups-03",
@@ -424,7 +424,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "三隻貓在豐收的花園裡高舉金杯圍成一圈：值得和朋友一起分享喜悅，支持妳的人就在身邊。", correct: true, note: "有依據：水元素的數字 3 是「發展・擴展・成長」，聖杯 3 是情感交流：開心、聚會；畫面線索：圍成一圈、舉杯、豐收的南瓜與葡萄。" },
       { id: "c", text: "一直在慶祝，代表妳太愛玩、不夠努力。", correct: false, note: "陷阱：把歡樂的畫面讀成批評。" },
     ],
-    sample: null,
+    sample: "我看到三隻貓在豐收的花園裡高舉金杯，圍成一圈。我感覺到熱鬧和溫暖。聖杯三是水元素的「擴展」，情感向外分享：和朋友一起分享喜悅吧，支持妳的人就在身邊。",
   },
   {
     id: "minor-cups-04-a", version: 1, status: "published", unit: "minor", cardId: "cups-04",
@@ -436,7 +436,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "有一隻手遞杯子，代表對方會主動回頭找妳。", correct: false, note: "陷阱：把畫面元素套成具體的人和事。" },
       { id: "c", text: "萊恩坐在樹下雙爪交叉若有所思，雲中遞出第四個杯子、蝦蝦輕推它：對現有的東西提不起勁時，可能錯過了正在出現的新機會。", correct: true, note: "有依據：水元素的數字 4 是「穩定・結構・停滯」，聖杯 4 是無感：無聊、不滿足；畫面線索：交叉的雙爪、沉思的神情、被遞出的第四個杯子。" },
     ],
-    sample: null,
+    sample: "我看到萊恩坐在樹下，雙爪交叉、若有所思，雲裡遞出第四個杯子，蝦蝦輕輕推著它。我感覺到提不起勁的悶。聖杯四是水元素的「停滯」，情感卡住了：對現在的一切無感時，也看看正被遞到眼前的新機會。",
   },
   {
     id: "minor-cups-05-a", version: 1, status: "published", unit: "minor", cardId: "cups-05",
@@ -448,7 +448,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "萊恩低頭看著倒下的三個杯子，身後還有兩個直立的杯子，蝦蝦從後面靠著牠：失落是真的，但還有留下來的東西，轉身就看得見。", correct: true, note: "有依據：水元素的數字 5 是「衝突・變動・壓力」，聖杯 5 是失落：難過、後悔；畫面線索：倒下與直立的杯子、低頭的姿勢、通往城堡的小橋。" },
       { id: "c", text: "披著灰斗篷，代表會得憂鬱症。", correct: false, note: "陷阱：把顏色當成醫療判斷。" },
     ],
-    sample: null,
+    sample: "我看到萊恩低頭看著倒下的三個杯子，身後還有兩個站著的杯子，蝦蝦從後面靠著牠。我感覺到失落和難過。聖杯五是水元素的「衝突」，也就是情感的失落：難過是真的，但還有留下來的東西，轉身就看得見。",
   },
   {
     id: "minor-cups-06-a", version: 1, status: "published", unit: "minor", cardId: "cups-06",
@@ -460,7 +460,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "聖杯六代表前任一定會回來。", correct: false, note: "陷阱：把「回憶」直接讀成復合保證。" },
       { id: "c", text: "一隻貓遞東西給另一隻，代表對方把妳當小孩、不尊重妳。", correct: false, note: "陷阱：把溫暖的給予讀成負面關係。" },
     ],
-    sample: null,
+    sample: "我看到萊恩在舊莊園的庭院裡，遞給蝦蝦一個插滿白花的金杯。我感覺到懷念和單純的溫暖。聖杯六是水元素的「流動」，情感從過去流回來：這件事和回憶有關，可以找回當初那份善意。",
   },
   {
     id: "minor-cups-07-a", version: 1, status: "published", unit: "minor", cardId: "cups-07",
@@ -472,7 +472,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "萊恩抬頭看著雲中七個裝著不同東西的金杯，蝦蝦伸爪想碰其中一個：選項和想像都很多，先分清楚哪些是真的可以實現的。", correct: true, note: "有依據：水元素的數字 7 是「內在・考驗・懷疑」，聖杯 7 是幻想：選擇太多；畫面線索：雲中的杯子、各式各樣的內容物、伸爪的動作。" },
       { id: "c", text: "有一杯是珠寶，代表會發財。", correct: false, note: "陷阱：把一個杯子當成預言，忽略它們都還在雲裡。" },
     ],
-    sample: null,
+    sample: "我看到萊恩抬頭看著雲裡七個裝著不同東西的金杯，蝦蝦伸爪想碰其中一個。我感覺到心動，也有點眼花。聖杯七是水元素的「懷疑」，選擇多到變成幻想：先分清楚，哪些是真的可以實現的。",
   },
   {
     id: "minor-cups-08-a", version: 1, status: "published", unit: "minor", cardId: "cups-08",
@@ -484,7 +484,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "杯子疊得很整齊，代表一切都很好，不需要改變。", correct: false, note: "陷阱：只看杯子，忽略離開的動作。" },
       { id: "c", text: "萊恩拄著手杖背對畫面走向遠方山路，身後留下疊好的杯子：已經擁有的不再滿足內心，選擇離開去找更重要的。", correct: true, note: "有依據：水元素的數字 8 是「行動・加速・專注」，聖杯 8 是離開：情感抽離；畫面線索：背對、走向遠方、整齊留下的杯子。" },
     ],
-    sample: null,
+    sample: "我看到萊恩拄著手杖背對畫面，走向遠方的山路，身後留下疊好的杯子。我感覺到不捨，也感覺到決心。聖杯八是水元素的「行動」，在情感上抽身：已經擁有的不再滿足妳時，可以離開，去找對妳更重要的東西。",
   },
   {
     id: "minor-cups-09-a", version: 1, status: "published", unit: "minor", cardId: "cups-09",
@@ -496,7 +496,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "萊恩滿足地坐在長椅上，身後整齊排著九個金杯，蝦蝦開心地瞇著眼：心願有機會實現，也值得好好享受現在的滿足。", correct: true, note: "有依據：水元素的數字 9 是「累積・壓力・成果前夕」，聖杯 9 是滿足：願望；畫面線索：滿足的神情、排列整齊的杯子。" },
       { id: "c", text: "雙爪交叉，代表很驕傲、不讓人靠近。", correct: false, note: "陷阱：手勢要和表情一起讀，這裡是滿足。" },
     ],
-    sample: null,
+    sample: "我看到萊恩滿足地坐在長椅上，身後整齊排著九個金杯，蝦蝦開心地瞇著眼。我感覺到滿足和放鬆。聖杯九是水元素的「累積」，情感累積成了心願：願望有機會實現，也好好享受現在的滿足。",
   },
   {
     id: "minor-cups-10-a", version: 1, status: "published", unit: "minor", cardId: "cups-10",
@@ -508,7 +508,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "十個金杯組成彩虹掛在天上，萊恩和蝦蝦張開雙爪，小貓在旁跳舞：情感上的圓滿與歸屬感，重點是彼此在一起的安心。", correct: true, note: "有依據：水元素的數字 10 是「完成・極端・結束」，聖杯 10 是幸福：圓滿；畫面線索：彩虹、張開的雙爪、一起跳舞。" },
       { id: "c", text: "有兩隻小貓，代表會生兩個孩子。", correct: false, note: "陷阱：用畫面數量預測生育；塔羅不做這類斷定。" },
     ],
-    sample: null,
+    sample: "我看到十個金杯在天上排成彩虹，萊恩和蝦蝦張開雙爪，小貓在旁邊跳舞。我感覺到圓滿和歸屬感。聖杯十是水元素的「完成」：情感走到圓滿，重點是彼此在一起的安心。",
   },
   {
     id: "minor-swords-01-a", version: 1, status: "published", unit: "minor", cardId: "swords-01",
@@ -520,7 +520,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "寶劍代表會受傷或要開刀。", correct: false, note: "陷阱：把武器字面化成醫療事件。" },
       { id: "c", text: "有王冠，代表一定會升官。", correct: false, note: "陷阱：把符號字面化成具體結果。" },
     ],
-    sample: null,
+    sample: "我看到一隻手從雲中握著直立的寶劍，劍尖戴著金冠。我感覺到清醒、俐落。寶劍一是風元素的「開始」，也就是想法的種子：一個清楚的想法或真相出現了，可以用它做出明確的判斷。",
   },
   {
     id: "minor-swords-02-a", version: 1, status: "published", unit: "minor", cardId: "swords-02",
@@ -532,7 +532,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "兩把劍代表兩個追求者，要選一個。", correct: false, note: "陷阱：用數量硬套人物。" },
       { id: "c", text: "萊恩蒙著絲巾、雙爪交叉各持一把寶劍保持平衡：現在是用「暫時不看」維持平衡，但決定只是延後，沒有消失。", correct: true, note: "有依據：風元素的數字 2 是「拉扯・選擇・平衡」，寶劍 2 是逃避選擇：不想面對；畫面線索：蒙眼、交叉持劍。" },
     ],
-    sample: null,
+    sample: "我看到萊恩蒙著絲巾，雙爪交叉，各拿一把寶劍保持平衡。我感覺到緊繃，像是在憋著一口氣。寶劍二是風元素的「選擇」，卻選擇先不看：用暫時不面對換來平衡，但決定只是延後，沒有消失。",
   },
   {
     id: "minor-swords-03-a", version: 1, status: "published", unit: "minor", cardId: "swords-03",
@@ -544,7 +544,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "細雨中被三把劍穿過的粉紅心浮在空中，下方萊恩抱著蝦蝦互相安慰：心痛是真的，也需要被安慰；陽光正穿過雲層。", correct: true, note: "有依據：風元素的數字 3 是「發展・擴展・成長」，寶劍 3 是關係裂開：受傷；畫面線索：被刺穿的心、互相安慰的動作、穿透雲層的陽光。" },
       { id: "c", text: "心被刺穿，代表心臟有問題。", correct: false, note: "陷阱：把符號當成健康判斷。" },
     ],
-    sample: null,
+    sample: "我看到細雨中，一顆被三把劍穿過的粉紅心浮在空中，下面萊恩抱著蝦蝦互相安慰。我感覺到心痛，也感覺到被接住。寶劍三是風元素的「發展」，話語和想法讓傷口擴大了：心痛是真的，需要被安慰；陽光也正穿過雲層。",
   },
   {
     id: "minor-swords-04-a", version: 1, status: "published", unit: "minor", cardId: "swords-04",
@@ -556,7 +556,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "躺著雙爪合十，代表有人會過世。", correct: false, note: "陷阱：把姿勢字面化成死亡；塔羅不做生死斷定。" },
       { id: "c", text: "寶劍四代表很懶惰、沒有進度。", correct: false, note: "陷阱：把休息讀成負面評價。" },
     ],
-    sample: null,
+    sample: "我看到萊恩安詳地躺在明亮的長椅上，雙爪合十，蝦蝦蜷在腳邊睡著。我感覺到安靜，像終於可以喘口氣。寶劍四是風元素的「停滯」，想法先停下來：現在需要休息、讓思緒沉澱，暫停不是放棄。",
   },
   {
     id: "minor-swords-05-a", version: 1, status: "published", unit: "minor", cardId: "swords-05",
@@ -568,7 +568,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "萊恩拿最多劍，所以牠是對的。", correct: false, note: "陷阱：用拿到多少判對錯。" },
       { id: "c", text: "地上還有兩把劍，代表還會再吵兩次。", correct: false, note: "陷阱：把數量硬套成次數。" },
     ],
-    sample: null,
+    sample: "我看到萊恩抱著三把劍回頭看，蝦蝦和小貓背對牠走開。我感覺到贏了，心裡卻有點空。寶劍五是風元素的「衝突」，爭的是輸贏：吵贏了，可能也失去了關係，值得想想贏的代價。",
   },
   {
     id: "minor-swords-06-a", version: 1, status: "published", unit: "minor", cardId: "swords-06",
@@ -580,7 +580,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "萊恩撐著小船載蝦蝦渡河，前方是明亮的對岸，河水由微波變平靜：正在離開混亂、慢慢往平靜移動，過渡期也算前進。", correct: true, note: "有依據：風元素的數字 6 是「調和・流動・過渡」，寶劍 6 是過渡：離開、轉換；畫面線索：渡河、明亮的對岸、變平靜的水面。" },
       { id: "c", text: "船上插著劍，代表傷痛會跟著妳一輩子。", correct: false, note: "陷阱：把「帶著」讀成「永遠」，忽略前方的平靜。" },
     ],
-    sample: null,
+    sample: "我看到萊恩撐著小船載蝦蝦渡河，前方是明亮的對岸，河水從有波紋慢慢變得平靜。我感覺到安靜的離開。寶劍六是風元素的「過渡」：妳正在離開混亂，慢慢往平靜移動，過渡期也算前進。",
   },
   {
     id: "minor-swords-07-a", version: 1, status: "published", unit: "minor", cardId: "swords-07",
@@ -592,7 +592,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "寶劍七代表對方一定在偷吃。", correct: false, note: "陷阱：把「偷偷」直接套成外遇。" },
       { id: "c", text: "氣氛很俏皮，所以完全不用在意。", correct: false, note: "陷阱：只看氣氛，忽略踮腳溜走這個動作。" },
     ],
-    sample: null,
+    sample: "我看到萊恩抱著五把劍，從營帳旁邊踮腳溜走，回頭露出狡黠的表情，地上還留著兩把劍。我感覺到小心翼翼，也有點不安。寶劍七是風元素的「考驗」，想法變成了策略：有人在繞路處理事情，看清楚這是聰明，還是逃避。",
   },
   {
     id: "minor-swords-08-a", version: 1, status: "published", unit: "minor", cardId: "swords-08",
@@ -604,7 +604,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "寶劍八代表會被困在家裡生病。", correct: false, note: "陷阱：把「困住」字面化成健康預測。" },
       { id: "c", text: "萊恩被絲帶鬆鬆地蒙眼綁著，周圍插著八把劍，蝦蝦正咬著絲帶的結準備幫牠解開：困住妳的多半是想法，綁得並不緊，也有人可以幫忙。", correct: true, note: "有依據：風元素的數字 8 是「行動・加速・專注」，寶劍 8 是限制：卡住；畫面線索：鬆鬆的絲帶、解結的蝦蝦、遠方陽光下的城堡。" },
     ],
-    sample: null,
+    sample: "我看到萊恩被絲帶鬆鬆地蒙眼綁著，周圍插著八把劍，蝦蝦正咬著絲帶的結要幫牠解開。我感覺到被困住，但沒有那麼絕望。寶劍八是風元素的「專注」，想法專注到把自己框住：困住妳的多半是想法，綁得並不緊，也有人可以幫忙。",
   },
   {
     id: "minor-swords-09-a", version: 1, status: "published", unit: "minor", cardId: "swords-09",
@@ -616,7 +616,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "清晨萊恩從床上坐起、雙爪捂臉，蝦蝦爬上床抱住牠，窗外天正要亮：夜裡的擔心被放大了，天快亮了，說出來會比一個人想好。", correct: true, note: "有依據：風元素的數字 9 是「累積・壓力・成果前夕」，寶劍 9 是焦慮；畫面線索：捂臉、安慰的擁抱、快亮的天。" },
       { id: "c", text: "牆上有九把劍，代表有九件壞事會發生。", correct: false, note: "陷阱：把數量讀成災難清單。" },
     ],
-    sample: null,
+    sample: "我看到清晨萊恩從床上坐起，雙爪捂著臉，蝦蝦爬上床抱住牠，窗外天正要亮。我感覺到焦慮，也感覺到被陪伴的安慰。寶劍九是風元素的「累積」，擔心在夜裡越積越多：天快亮了，把擔心說出來，會比一個人想好。",
   },
   {
     id: "minor-swords-10-a", version: 1, status: "published", unit: "minor", cardId: "swords-10",
@@ -628,7 +628,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "寶劍十是最慘的牌，代表一切都毀了。", correct: false, note: "陷阱：只看劍的數量，忽略升起的太陽。" },
       { id: "c", text: "十把劍插在地上，代表會被十個人背叛。", correct: false, note: "陷阱：把數量套成人數。" },
     ],
-    sample: null,
+    sample: "我看到破曉時萊恩安靜地趴在草地上，身旁插著十把劍，遠方太陽正在升起。我感覺到疲憊，也有一種終於結束的平靜。寶劍十是風元素的「結束」：一段消耗走到了盡頭，最壞的已經過去，可以休息、重新開始。",
   },
   {
     id: "minor-pentacles-01-a", version: 1, status: "published", unit: "minor", cardId: "pentacles-01",
@@ -640,7 +640,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "有五芒星，代表要去改運。", correct: false, note: "陷阱：把符號字面化成行動指令。" },
       { id: "c", text: "一隻手從雲中捧出刻有五芒星的金幣，下方是通往花拱門的小徑：一個實際可行的機會出現了，可以踏上小徑讓它落地。", correct: true, note: "有依據：土元素的數字 1 是「開始・啟動・種子」，錢幣 1 是現實的開始：機會、資源；畫面線索：捧出的金幣、通往拱門的小徑。" },
     ],
-    sample: null,
+    sample: "我看到一隻手從雲中捧出刻著五芒星的金幣，下面是一條通往花拱門的小徑。我感覺到踏實和希望。錢幣一是土元素的「開始」，也就是現實的種子：一個實際可行的機會出現了，踏上小徑，讓它落地。",
   },
   {
     id: "minor-pentacles-02-a", version: 1, status: "published", unit: "minor", cardId: "pentacles-02",
@@ -652,7 +652,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "萊恩在海邊開心地拋接兩枚金幣，金幣之間繞著無限符號綢帶：同時處理兩件事，靠的是靈活調配和節奏，不是全部抓死。", correct: true, note: "有依據：土元素的數字 2 是「拉扯・選擇・平衡」，錢幣 2 是現實平衡：忙著兩頭調配；畫面線索：拋接、無限綢帶、起伏的海浪。" },
       { id: "c", text: "一直在拋，代表錢會不見。", correct: false, note: "陷阱：把流動讀成損失。" },
     ],
-    sample: null,
+    sample: "我看到萊恩在海邊開心地拋接兩枚金幣，金幣之間繞著無限符號的綢帶，後面的海浪起起伏伏。我感覺到忙，但很有節奏。錢幣二是土元素的「平衡」：同時顧兩件事，靠的是靈活調配，不是全部抓死。",
   },
   {
     id: "minor-pentacles-03-a", version: 1, status: "published", unit: "minor", cardId: "pentacles-03",
@@ -664,7 +664,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "在教堂裡，代表要去教堂結婚。", correct: false, note: "陷阱：把場景字面化成婚禮。" },
       { id: "c", text: "三隻貓代表會被兩個人聯手排擠。", correct: false, note: "陷阱：用數量硬套人際衝突，忽略合作的畫面。" },
     ],
-    sample: null,
+    sample: "我看到萊恩在拱廊裡雕刻金幣圖案，蝦蝦和小白貓拿著設計圖在下面討論。我感覺到專業和合作的默契。錢幣三是土元素的「成長」：靠專業和團隊一起做出成果，每個角色都重要。",
   },
   {
     id: "minor-pentacles-04-a", version: 1, status: "published", unit: "minor", cardId: "pentacles-04",
@@ -676,7 +676,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "坐在城市外面，代表會被公司排擠。", correct: false, note: "陷阱：把背景字面化。" },
       { id: "c", text: "萊恩緊抱一枚金幣、頭頂一枚、腳踩兩枚：為了安全感把資源守得很緊，值得問問這是保護還是限制。", correct: true, note: "有依據：土元素的數字 4 是「穩定・結構・停滯」，錢幣 4 是抓住：不想失去；畫面線索：抱、頂、踩的守護姿勢。" },
     ],
-    sample: null,
+    sample: "我看到萊恩緊抱一枚金幣，頭上頂一枚，腳下踩兩枚。我感覺到安全感，也感覺到緊。錢幣四是土元素的「穩定」，穩到抓住不放：資源守得很緊時，問問自己這是保護，還是限制。",
   },
   {
     id: "minor-pentacles-05-a", version: 1, status: "published", unit: "minor", cardId: "pentacles-05",
@@ -688,7 +688,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "錢幣五代表會破產。", correct: false, note: "陷阱：把困難讀成財務定論。" },
       { id: "c", text: "走在雪地裡，代表身體會生病。", correct: false, note: "陷阱：把天氣當成健康判斷。" },
     ],
-    sample: null,
+    sample: "我看到細雪中萊恩和蝦蝦披著斗篷，互相依偎著前進，旁邊有一扇亮著暖光的彩色玻璃窗。我感覺到冷和辛苦，也感覺到彼此的溫度。錢幣五是土元素的「壓力」，現實裡的匱乏：處境辛苦時，支持其實就在身邊，抬頭看看那扇亮著的窗。",
   },
   {
     id: "minor-pentacles-06-a", version: 1, status: "published", unit: "minor", cardId: "pentacles-06",
@@ -700,7 +700,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "錢幣六代表會有人給妳一大筆錢。", correct: false, note: "陷阱：把畫面字面化成金錢保證。" },
       { id: "c", text: "萊恩一爪拿著天平、一爪把金幣分給蝦蝦和小貓：給予與接受需要平衡，看看這份付出是不是雙方都舒服。", correct: true, note: "有依據：土元素的數字 6 是「調和・流動・過渡」，錢幣 6 是給予：資源流動；畫面線索：天平、分送金幣。" },
     ],
-    sample: null,
+    sample: "我看到萊恩一爪拿著天平，一爪把金幣分給蝦蝦和小貓。我感覺到大方，也感覺到分寸。錢幣六是土元素的「流動」，資源在彼此之間流動：給予和接受要平衡，看看這份付出是不是雙方都舒服。",
   },
   {
     id: "minor-pentacles-07-a", version: 1, status: "published", unit: "minor", cardId: "pentacles-07",
@@ -712,7 +712,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "結了七枚金幣，代表七個月後會加薪。", correct: false, note: "陷阱：把數量硬套成時間。" },
       { id: "c", text: "萊恩倚著鋤頭滿意地看著藤上結出的金幣，蝦蝦在下面數著：努力已經有收穫，適合停下來評估，再決定下一步怎麼投入。", correct: true, note: "有依據：土元素的數字 7 是「內在・考驗・懷疑」，錢幣 7 是等待：評估；畫面線索：倚著鋤頭的停頓、結果的藤、數金幣。" },
     ],
-    sample: null,
+    sample: "我看到萊恩倚著鋤頭，滿意地看著藤上結出的金幣，蝦蝦在下面數著。我感覺到踏實，也有一點想停下來想想。錢幣七是土元素的「內在」，回頭評估：努力已經有收穫，停下來看一看，再決定下一步怎麼投入。",
   },
   {
     id: "minor-pentacles-08-a", version: 1, status: "published", unit: "minor", cardId: "pentacles-08",
@@ -724,7 +724,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "錢幣八代表一輩子只能做苦工。", correct: false, note: "陷阱：把專注練習讀成負面宿命。" },
       { id: "c", text: "牆上掛了六枚，代表再兩天就完成。", correct: false, note: "陷阱：把數量硬套成時間。" },
     ],
-    sample: null,
+    sample: "我看到萊恩在工作台前專心雕刻金幣，牆上已經掛著完成的作品，蝦蝦在旁邊遞工具。我感覺到安靜的專注。錢幣八是土元素的「專注」：一步一步累積技術，重複的練習正在變成實力。",
   },
   {
     id: "minor-pentacles-09-a", version: 1, status: "published", unit: "minor", cardId: "pentacles-09",
@@ -736,7 +736,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "萊恩穿著華麗長袍站在結滿金幣的葡萄園，爪上停著戴頭罩的小鳥：靠自己經營出富足與安穩，也可以好好享受它。", correct: true, note: "有依據：土元素的數字 9 是「累積・壓力・成果前夕」，錢幣 9 是獨立：穩定享受；畫面線索：豐收的葡萄園、華麗的長袍、安靜停著的小鳥。" },
       { id: "c", text: "錢幣九代表會嫁入豪門。", correct: false, note: "陷阱：把富足讀成靠別人得到。" },
     ],
-    sample: null,
+    sample: "我看到萊恩穿著華麗的長袍，站在結滿金幣的葡萄園裡，爪上停著一隻戴頭罩的小鳥。我感覺到從容和富足。錢幣九是土元素的「累積」，累積出獨立與安穩：這是妳自己經營出來的，可以好好享受它。",
   },
   {
     id: "minor-pentacles-10-a", version: 1, status: "published", unit: "minor", cardId: "pentacles-10",
@@ -748,7 +748,7 @@ export const PRACTICE_QUESTIONS: PracticeQuestion[] = [
       { id: "b", text: "有老貓在，代表長輩會生病。", correct: false, note: "陷阱：把人物當成健康預言。" },
       { id: "c", text: "萊恩和蝦蝦在城堡拱門下和小貓、老貓、小狗團聚，十枚金幣排成生命之樹：重點是長久的穩定與家人之間的傳承。", correct: true, note: "有依據：土元素的數字 10 是「完成・極端・結束」，錢幣 10 是穩定：長期安全；畫面線索：三代團聚、城堡、生命之樹。" },
     ],
-    sample: null,
+    sample: "我看到萊恩和蝦蝦在城堡拱門下，和小貓、老貓、小狗團聚，十枚金幣排成生命之樹。我感覺到安穩，像回到家。錢幣十是土元素的「完成」：重點是長久的穩定，和家人之間的傳承。",
   },
   {
     id: "court-wands-11-a", version: 1, status: "published", unit: "court", cardId: "wands-11",

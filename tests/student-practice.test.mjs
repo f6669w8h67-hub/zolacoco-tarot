@@ -391,6 +391,23 @@ test("pages: a saved answer's choice is read from choiceText, not looked up in t
   assert.match(await read("app/zola-admin/practice/page.tsx"), /answer\.scenarioAsked/, "Zola sees the question the student was asked");
 });
 
+test("Zola 示範解讀: the 40 小阿爾克納 name the element and the number from her 基礎3 handout", () => {
+  const minors = bank.PRACTICE_QUESTIONS.filter((question) => question.unit === "minor");
+  assert.equal(minors.length, 40);
+  const suits = { wands: ["權杖", "火元素"], cups: ["聖杯", "水元素"], swords: ["寶劍", "風元素"], pentacles: ["錢幣", "土元素"] };
+  const numbers = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"];
+  for (const question of minors) {
+    const [suit, number] = question.cardId.split("-");
+    const [name, element] = suits[suit];
+    assert.equal(typeof question.sample, "string", question.id);
+    assert.ok(question.sample.length >= 60 && question.sample.length <= 140, `${question.id}: ${question.sample.length}`);
+    assert.match(question.sample, /^我看到/, `${question.id}: starts from the picture`);
+    assert.match(question.sample, /我感覺/, `${question.id}: then the feeling`);
+    assert.ok(question.sample.includes(`${name}${numbers[Number(number) - 1]}是${element}的「`), `${question.id}: element and number`);
+    assert.doesNotMatch(question.sample, /你|(?<!不)一定|注定|永遠|這輩子/, question.id);
+  }
+});
+
 test("Zola 示範解讀: the 22 大阿爾克納 have her approved readings (2026-11-15), shown only after answering", async () => {
   const majors = bank.PRACTICE_QUESTIONS.filter((question) => question.unit === "major");
   assert.equal(majors.length, 22);
@@ -404,7 +421,7 @@ test("Zola 示範解讀: the 22 大阿爾克納 have her approved readings (2026
   }
   assert.match(majors.find((question) => question.id === "major-00-a").sample, /愚者是踏上旅程的人/, "her handout's own words");
   assert.match(majors.find((question) => question.id === "major-09-a").sample, /隱者尋找智慧/);
-  assert.ok(bank.PRACTICE_QUESTIONS.filter((question) => question.unit !== "major").every((question) => question.sample === null), "other units wait for her");
+  assert.ok(bank.PRACTICE_QUESTIONS.filter((question) => !["major", "minor"].includes(question.unit)).every((question) => question.sample === null), "other units wait for her");
   const listed = JSON.stringify(bank.practiceCatalog(false));
   assert.doesNotMatch(listed, /"sample"|愚者是踏上旅程的人/, "never in the question list");
   const judged = bank.judgeChoice(majors[0], majors[0].options[0].id);
