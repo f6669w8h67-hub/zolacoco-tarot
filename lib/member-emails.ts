@@ -19,6 +19,19 @@ export type MemberEmailOutcome = MailResult | "disabled" | "skipped";
 export const REMINDER_DAYS = 7;
 /** At most this many reminders per daily run (each takes a few seconds). */
 export const REMINDER_BATCH = 20;
+/**
+ * A run starts no new email after this long. One Gmail send gives up within about 18 seconds
+ * (lib/mailer.ts timeouts), so the run ends well inside the route's 60-second limit.
+ */
+export const REMINDER_TIME_BUDGET_MS = 35_000;
+
+/** A safe label for the logs: an error code or name, never the message (it can hold an address). */
+export function errorCode(error: unknown) {
+  const code = (error as { code?: unknown })?.code;
+  if (typeof code === "string" && /^[A-Za-z0-9_]{1,40}$/.test(code)) return code;
+  const name = (error as { name?: unknown })?.name;
+  return typeof name === "string" && /^[A-Za-z]{1,40}$/.test(name) ? name : "unknown";
+}
 
 /** The site's https origin, or null when it is missing or not a bare https origin. */
 export function siteOrigin(env: Env = process.env) {
@@ -89,34 +102,47 @@ export async function notifyMemberAccess(sql: Sql, memberId: string, kind: "acti
     await finish(sql, memberId, kind, String(member.period_key), result);
     return result;
   } catch (error) {
-    console.error("member_email_failed", { kind, reason: error instanceof Error ? error.message.slice(0, 80) : "unknown" });
+    console.error("member_email_failed", { kind, code: errorCode(error) });
     return "failed";
   }
 }
 
-/** The daily run: members whose membership ends within REMINDER_DAYS get one reminder per period. */
-export async function sendExpiryReminders(sql: Sql, env: Env = process.env, send: Send = gmailSend) {
+/**
+ * The daily run: members whose membership ends within REMINDER_DAYS get one reminder per period.
+ * One member at a time (claim, send, record), so a run stopped part-way leaves at most the one email it
+ * was sending as 'sending'; that row is never re-sent automatically (it may have gone out) and the admin
+ * shows it as 狀態不明. Members already claimed for this period are skipped before the LIMIT, so the next
+ * run always moves on to the members still waiting.
+ */
+export async function sendExpiryReminders(sql: Sql, env: Env = process.env, send: Send = gmailSend, now: () => number = Date.now) {
   const settings = memberEmailSettings(env);
   if (!settings) return { status: "disabled" as const, sent: 0, failed: 0 };
-  const due = await sql`
-    WITH due AS (
-      SELECT id, email, full_name, access_expires_at, extract(epoch FROM access_expires_at)::bigint::text AS period_key
-      FROM members
-      WHERE role = 'member' AND status = 'active'
-        AND access_expires_at > now() AND access_expires_at <= now() + make_interval(days => ${REMINDER_DAYS})
-      ORDER BY access_expires_at
-      LIMIT ${REMINDER_BATCH}
-    ), claimed AS (
-      INSERT INTO member_email_log (member_id, kind, period_key, status)
-      SELECT id, 'expiry_reminder', period_key, 'sending' FROM due
-      ON CONFLICT (member_id, kind, period_key) DO NOTHING
-      RETURNING member_id
-    )
-    SELECT due.* FROM due JOIN claimed ON claimed.member_id = due.id
-  `;
+  const started = now();
   let sent = 0;
   let failed = 0;
-  for (const member of due) {
+  while (sent + failed < REMINDER_BATCH && now() - started < REMINDER_TIME_BUDGET_MS) {
+    const [member] = await sql`
+      WITH due AS (
+        SELECT m.id, m.email, m.full_name, m.access_expires_at, extract(epoch FROM m.access_expires_at)::bigint::text AS period_key
+        FROM members m
+        WHERE m.role = 'member' AND m.status = 'active'
+          AND m.access_expires_at > now() AND m.access_expires_at <= now() + make_interval(days => ${REMINDER_DAYS})
+          AND NOT EXISTS (
+            SELECT 1 FROM member_email_log l
+            WHERE l.member_id = m.id AND l.kind = 'expiry_reminder'
+              AND l.period_key = extract(epoch FROM m.access_expires_at)::bigint::text
+          )
+        ORDER BY m.access_expires_at, m.id
+        LIMIT 1
+      ), claimed AS (
+        INSERT INTO member_email_log (member_id, kind, period_key, status)
+        SELECT id, 'expiry_reminder', period_key, 'sending' FROM due
+        ON CONFLICT (member_id, kind, period_key) DO NOTHING
+        RETURNING member_id
+      )
+      SELECT due.* FROM due JOIN claimed ON claimed.member_id = due.id
+    `;
+    if (!member) break;
     const result = await send(settings.gmail, { to: String(member.email), ...memberEmail("expiry_reminder", member, settings.origin) });
     await finish(sql, String(member.id), "expiry_reminder", String(member.period_key), result);
     if (result === "sent") sent += 1; else failed += 1;

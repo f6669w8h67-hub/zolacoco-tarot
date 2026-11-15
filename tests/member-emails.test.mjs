@@ -82,22 +82,76 @@ test("activation email: claimed once per period, the result is recorded, nothing
   assert.equal(await emails.notifyMemberAccess(broken.sql, "m1", "activated", ENV, send), "failed", "a database error does not throw into the admin action");
 });
 
-test("expiry reminders: members ending within 7 days, at most 20 a run, each period once", async () => {
+// A small stand-in for Neon: the due members and member_email_log, answering the one-at-a-time claim.
+function reminderStore(count, { stuck = [] } = {}) {
+  const members = Array.from({ length: count }, (_, index) => ({
+    id: `m${String(index).padStart(2, "0")}`, email: `m${index}@example.com`, full_name: `會員${index}`,
+    access_expires_at: new Date(Date.UTC(2026, 10, 18, 0, index)).toISOString(), period_key: String(1000 + index),
+  }));
+  const log = new Map(stuck.map((id) => [id, "sending"]));
+  const calls = [];
+  const sql = async (strings, ...values) => {
+    const query = strings.join("?");
+    calls.push({ query, values });
+    if (query.includes("INSERT INTO member_email_log")) {
+      const next = members.find((member) => !log.has(member.id));
+      if (!next) return [];
+      log.set(next.id, "sending");
+      return [next];
+    }
+    if (query.includes("UPDATE member_email_log")) log.set(values[1], values[0]);
+    return [];
+  };
+  return { sql, calls, log, members };
+}
+
+test("expiry reminders: one member at a time, at most 20 a run, the next run reaches the rest", async () => {
   assert.deepEqual(plain(await emails.sendExpiryReminders(async () => [], {}, async () => "sent")), { status: "disabled", sent: 0, failed: 0 });
-  const due = [
-    { id: "a", email: "a@example.com", full_name: "A", access_expires_at: "2026-11-20T00:00:00Z", period_key: "1" },
-    { id: "b", email: "b@example.com", full_name: "B", access_expires_at: "2026-11-21T00:00:00Z", period_key: "2" },
-  ];
-  const run = fakeSql([{ match: /INSERT INTO member_email_log/, rows: due }]);
+  const store = reminderStore(30);
   const to = [];
-  const result = await emails.sendExpiryReminders(run.sql, ENV, async (config, message) => { to.push(message.to); return message.to.startsWith("b") ? "failed" : "sent"; });
-  assert.deepEqual(plain(result), { status: "done", sent: 1, failed: 1 });
-  assert.deepEqual(to, ["a@example.com", "b@example.com"]);
-  assert.match(run.calls[0].query, /access_expires_at > now\(\) AND access_expires_at <= now\(\) \+ make_interval\(days => \?\)/);
-  assert.match(run.calls[0].query, /LIMIT \?/);
-  assert.deepEqual(run.calls[0].values, [7, 20]);
-  assert.match(run.calls[0].query, /SELECT id, 'expiry_reminder', period_key, 'sending' FROM due\s+ON CONFLICT \(member_id, kind, period_key\) DO NOTHING/);
-  assert.deepEqual(run.calls.slice(1).map((call) => call.values[0]), ["sent", "failed"]);
+  const send = async (config, message) => { to.push(message.to); return message.to === "m3@example.com" ? "failed" : "sent"; };
+
+  const first = await emails.sendExpiryReminders(store.sql, ENV, send);
+  assert.deepEqual(plain(first), { status: "done", sent: 19, failed: 1 });
+  const claim = store.calls.find((call) => call.query.includes("INSERT INTO member_email_log")).query;
+  assert.match(claim, /m\.access_expires_at > now\(\) AND m\.access_expires_at <= now\(\) \+ make_interval\(days => \?\)/);
+  assert.match(claim, /AND NOT EXISTS \(\s+SELECT 1 FROM member_email_log l\s+WHERE l\.member_id = m\.id AND l\.kind = 'expiry_reminder'/, "already-claimed members are skipped before the LIMIT");
+  assert.match(claim, /LIMIT 1\s+\)/, "claims one member per query");
+  assert.match(claim, /ON CONFLICT \(member_id, kind, period_key\) DO NOTHING/, "the unique key still guards a concurrent run");
+  assert.ok(![...store.log.values()].includes("sending"), "every claimed email was recorded before the next was claimed");
+
+  const second = await emails.sendExpiryReminders(store.sql, ENV, send);
+  assert.deepEqual(plain(second), { status: "done", sent: 10, failed: 0 }, "the 10 still waiting get theirs the next day");
+  assert.equal(new Set(to).size, 30, "30 members, 30 reminders");
+  assert.equal(to.length, 30, "nobody twice");
+  assert.deepEqual(plain(await emails.sendExpiryReminders(store.sql, ENV, send)), { status: "done", sent: 0, failed: 0 });
+});
+
+test("expiry reminders: a run stops starting new emails after its time budget; a cut-off send is never repeated", async () => {
+  const store = reminderStore(8);
+  let clock = 0;
+  const slow = async () => { clock += 15_000; return "sent"; };
+  const result = await emails.sendExpiryReminders(store.sql, ENV, slow, () => clock);
+  assert.equal(emails.REMINDER_TIME_BUDGET_MS, 35_000);
+  assert.deepEqual(plain(result), { status: "done", sent: 3, failed: 0 }, "0s, 15s, 30s start; 45s does not");
+  assert.equal([...store.log.values()].filter((status) => status === "sending").length, 0, "nothing claimed that was not sent");
+
+  // An earlier run was stopped while sending to m00: that email may have arrived, so it is not sent
+  // again (the admin shows 狀態不明); everyone after it still gets a reminder.
+  const resumed = reminderStore(3, { stuck: ["m00"] });
+  const to = [];
+  await emails.sendExpiryReminders(resumed.sql, ENV, async (config, message) => { to.push(message.to); return "sent"; });
+  assert.deepEqual(to, ["m1@example.com", "m2@example.com"]);
+  assert.equal(resumed.log.get("m00"), "sending");
+});
+
+test("logs carry an error code, never the message (it can hold an address)", async () => {
+  assert.equal(emails.errorCode(Object.assign(new Error("connect to member@example.com failed"), { code: "ECONNREFUSED" })), "ECONNREFUSED");
+  assert.equal(emails.errorCode(new TypeError("bad member@example.com")), "TypeError");
+  assert.equal(emails.errorCode({ code: "has space @" }), "unknown");
+  for (const file of ["lib/member-emails.ts", "app/api/cron/membership-reminders/route.ts"]) {
+    assert.doesNotMatch(await read(file), /error\.message/, file);
+  }
 });
 
 test("daily route: refuses without the exact CRON_SECRET, then sends the reminders", async () => {
@@ -107,7 +161,8 @@ test("daily route: refuses without the exact CRON_SECRET, then sends the reminde
     env,
     mocks: {
       "@/lib/membership": { ensureMembershipSchema: async () => {}, getSql: () => async () => [] },
-      "@/lib/member-emails": { sendExpiryReminders: async () => { runs += 1; return { status: "done", sent: 2, failed: 0 }; } },
+      "node:crypto": await import("node:crypto"),
+      "@/lib/member-emails": { errorCode: () => "x", sendExpiryReminders: async () => { runs += 1; return { status: "done", sent: 2, failed: 0 }; } },
     },
   });
   const call = (authorization) => route.GET(new Request("https://example.test/api/cron/membership-reminders", { headers: authorization ? { authorization } : {} }));
@@ -195,6 +250,7 @@ test("admin page: search over name, Email, LINE ID and note; sort by status, exp
   assert.match(page, /備註（只有妳看得到）/);
   assert.match(page, /maxLength=\{ADMIN_NOTE_LIMIT\}/);
   assert.match(page, /if \(outcome === "sent"\) return "已寄 Email 通知對方。";/);
+  assert.match(page, /return "狀態不明，請用 LINE 確認";/, "a send cut off part-way is shown as unknown, not as still sending");
   assert.match(page, /if \(outcome === "failed"\) return "Email 通知沒有寄出，請用 LINE 告訴對方。";/);
   const load = page.slice(page.indexOf("const load = useCallback"), page.indexOf("useEffect(() => {"));
   assert.doesNotMatch(load, /setNotice\(""\)/, "reloading after an action keeps its message");

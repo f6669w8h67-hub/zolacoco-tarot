@@ -31,6 +31,13 @@ type Member = {
 const ADMIN_NOTE_LIMIT = 500;
 const emailKinds = { activated: "開通信", extended: "延長信", expiry_reminder: "到期提醒" } as const;
 const emailStatuses = { sending: "寄送中", sent: "已寄出", failed: "沒有寄出" } as const;
+/** A send still marked 'sending' after this long was cut off part-way: it may or may not have arrived. */
+const EMAIL_UNKNOWN_AFTER_MS = 10 * 60 * 1000;
+
+function emailStatusLabel(status: keyof typeof emailStatuses, at: string | null | undefined) {
+  if (status === "sending" && at && Date.now() - new Date(at).getTime() > EMAIL_UNKNOWN_AFTER_MS) return "狀態不明，請用 LINE 確認";
+  return emailStatuses[status];
+}
 type SortKey = "status" | "expiry" | "created";
 
 /** Search over name, Email, LINE ID and Zola's note; case and spaces do not matter. */
@@ -154,7 +161,7 @@ export default function AdminClient() {
               </div>
             : <div className="member-admin-note"><p>{member.admin_note ? member.admin_note : <span>尚未加備註</span>}</p><button type="button" className="secondary" onClick={() => setNoteDrafts((drafts) => ({ ...drafts, [member.id]: member.admin_note ?? "" }))}>{member.admin_note ? "編輯備註" : "加備註"}</button></div>}
         </div>
-        <div className="member-admin-expiry"><small>目前期限</small><strong>{member.access_expires_at ? new Date(member.access_expires_at).toLocaleDateString("zh-TW") : "尚未開通"}</strong><span>{new Date(member.created_at).toLocaleDateString("zh-TW")} 申請</span>{member.last_email_kind && member.last_email_status ? <span className="member-admin-email">{emailKinds[member.last_email_kind]}{emailStatuses[member.last_email_status]}{member.last_email_at ? `（${new Date(member.last_email_at).toLocaleDateString("zh-TW")}）` : ""}</span> : null}</div>
+        <div className="member-admin-expiry"><small>目前期限</small><strong>{member.access_expires_at ? new Date(member.access_expires_at).toLocaleDateString("zh-TW") : "尚未開通"}</strong><span>{new Date(member.created_at).toLocaleDateString("zh-TW")} 申請</span>{member.last_email_kind && member.last_email_status ? <span className="member-admin-email">{emailKinds[member.last_email_kind]}{emailStatusLabel(member.last_email_status, member.last_email_at)}{member.last_email_at ? `（${new Date(member.last_email_at).toLocaleDateString("zh-TW")}）` : ""}</span> : null}</div>
         <div className="member-admin-actions">
           <label>增加月份<select value={months[member.id] ?? 1} onChange={(event) => setMonths((value) => ({ ...value, [member.id]: Number(event.target.value) }))}>{Array.from({ length: 12 }, (_, index) => index + 1).map((value) => <option value={value} key={value}>{value} 個月</option>)}</select></label>
           <button disabled={Boolean(busy)} onClick={() => operate(member, "activate")}>{member.effective_status === "active" ? "增加月份" : "立即開通"}</button>
