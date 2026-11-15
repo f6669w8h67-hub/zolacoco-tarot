@@ -410,3 +410,27 @@ test("Zola 示範解讀: the 22 大阿爾克納 have her approved readings (2026
   const judged = bank.judgeChoice(majors[0], majors[0].options[0].id);
   assert.equal(judged.sample, majors[0].sample, "sent with the judgement after an answer");
 });
+
+test("display order: in every unit the right reading shows in A, B and C about equally often; ids never change", () => {
+  const catalog = bank.practiceCatalog(true);
+  for (const unit of catalog) {
+    if (!unit.questions.length) continue;
+    const slots = [0, 0, 0];
+    for (const shown of unit.questions) {
+      const question = bank.PRACTICE_QUESTIONS.find((item) => item.id === shown.id);
+      assert.deepEqual(shown.options.map((option) => option.id).sort(), question.options.map((option) => option.id).sort(), `${shown.id}: same option ids`);
+      for (const option of shown.options) assert.equal(option.text, question.options.find((item) => item.id === option.id).text, `${shown.id}: each id keeps its text`);
+      const rightId = question.options.find((option) => option.correct).id;
+      slots[shown.options.findIndex((option) => option.id === rightId)] += 1;
+    }
+    assert.ok(Math.max(...slots) - Math.min(...slots) <= 1, `${unit.id}: ${slots.join("/")}`);
+  }
+  const practice = catalog.find((unit) => unit.id === "practice");
+  const practiceSlots = [0, 0, 0];
+  for (const shown of practice.questions) {
+    const rightId = bank.PRACTICE_QUESTIONS.find((item) => item.id === shown.id).options.find((option) => option.correct).id;
+    practiceSlots[shown.options.findIndex((option) => option.id === rightId)] += 1;
+  }
+  assert.deepEqual(practiceSlots, [4, 4, 4], "實戰: was 1/6/5 in A/B/C");
+  assert.doesNotMatch(JSON.stringify(catalog), /"correct"|"note"/, "order only: nothing about which one is right");
+});
