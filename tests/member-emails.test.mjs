@@ -127,6 +127,8 @@ test("daily route: refuses without the exact CRON_SECRET, then sends the reminde
 test("Vercel runs it daily and the proxy lets only that route through without a login", async () => {
   const vercel = JSON.parse(await read("vercel.json"));
   assert.deepEqual(vercel.crons, [{ path: "/api/cron/membership-reminders", schedule: "0 1 * * *" }], "09:00 in Taipei");
+  assert.equal(vercel.buildCommand, "npm run build:vercel", "keeps the Vercel build command");
+  assert.equal(vercel.git?.deploymentEnabled?.["pr-assets"], false, "pr-assets still never deploys");
   const access = await loadTypescript("lib/membership-access.ts");
   assert.equal(access.isMembershipServiceRoute("/api/cron/membership-reminders"), true);
   assert.equal(access.isMembershipServiceRoute("/api/cron/other"), false);
@@ -201,7 +203,7 @@ test("admin page: search over name, Email, LINE ID and note; sort by status, exp
 test("new-member notices to Zola go through Gmail when it is set up", async (t) => {
   const env = { MEMBERSHIP_EMAIL_ENABLED: "true", GMAIL_USER: "zola@gmail.example", GMAIL_APP_PASSWORD: "abcd", MEMBERSHIP_EMAIL_TO: "zola@gmail.example", MEMBERSHIP_ADMIN_ORIGIN: "https://zolacoco-tarot.vercel.app" };
   const gmailSent = [];
-  const module = await loadTypescript("lib/member-activation-email.ts", { env });
+  const activation = await loadTypescript("lib/member-activation-email.ts", { env });
   const fakeMailer = async () => ({ gmailConfig: () => ({ user: "zola@gmail.example", pass: "abcd" }), sendGmail: async (config, message) => { gmailSent.push(plain(message)); return "sent"; } });
   let fetched = 0;
   t.mock.method(globalThis, "fetch", async () => { fetched += 1; return new Response(null, { status: 200 }); });
@@ -212,7 +214,7 @@ test("new-member notices to Zola go through Gmail when it is set up", async (t) 
     if (query.includes("UPDATE member_activation_notifications")) updates.push(values[0]);
     return [];
   };
-  await module.notifyPendingMember(sql, "m9", fakeMailer);
+  await activation.notifyPendingMember(sql, "m9", fakeMailer);
   assert.equal(fetched, 0, "no Resend call");
   assert.equal(gmailSent.length, 1);
   assert.equal(gmailSent[0].to, "zola@gmail.example");
