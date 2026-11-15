@@ -97,10 +97,12 @@ export async function saveMemberProfile(
   }
 }
 
+export type MemberEmailOutcome = "sent" | "failed" | "disabled" | "skipped";
+
 export async function runMemberAction(
-  body: { memberId: string; action: "activate" | "suspend" | "restore"; months: number } | { memberId: string; action: "student"; student: boolean } | { memberId: string; action: "coaching"; coaching: boolean },
+  body: { memberId: string; action: "activate" | "suspend" | "restore"; months: number } | { memberId: string; action: "student"; student: boolean } | { memberId: string; action: "coaching"; coaching: boolean } | { memberId: string; action: "note"; note: string },
   fetchImpl: Fetch = fetch,
-): Promise<{ ok: true } | { ok: false; message: string }> {
+): Promise<{ ok: true; email?: MemberEmailOutcome; note?: string } | { ok: false; message: string }> {
   const fallback = "操作失敗，請稍後再試。";
   try {
     const response = await fetchImpl("/api/membership/admin", {
@@ -112,7 +114,10 @@ export async function runMemberAction(
     if (!response.ok) {
       return { ok: false, message: response.status >= 500 ? fallback : humanMessage(data?.error, fallback) };
     }
-    return { ok: true };
+    // After 開通／增加月份: whether the member's email went out (lib/member-emails.ts); after a note: the saved text.
+    const email = typeof data?.email === "string" && ["sent", "failed", "disabled", "skipped"].includes(data.email) ? data.email as MemberEmailOutcome : undefined;
+    const note = typeof data?.note === "string" ? data.note : undefined;
+    return { ok: true, ...(email ? { email } : {}), ...(note !== undefined ? { note } : {}) };
   } catch {
     // The request may have reached the server before the connection failed.
     return { ok: false, message: "網路連線不穩，操作尚未確認完成。請重新整理後確認會員狀態。" };

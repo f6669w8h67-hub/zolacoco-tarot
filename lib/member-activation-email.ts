@@ -2,10 +2,16 @@ type Sql = (strings: TemplateStringsArray, ...values: string[]) => Promise<Recor
 
 let schemaReady: Promise<unknown> | undefined;
 
-export async function notifyPendingMember(sql: Sql, memberId: string) {
+type LoadMailer = () => Promise<Pick<typeof import("./mailer"), "gmailConfig" | "sendGmail">>;
+
+export async function notifyPendingMember(sql: Sql, memberId: string, loadMailer: LoadMailer = () => import("./mailer")) {
   if (process.env.MEMBERSHIP_EMAIL_ENABLED !== "true") return;
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.MEMBERSHIP_EMAIL_FROM?.trim();
+  // Zola's own Gmail (lib/mailer.ts, 2026-11-15) when it is set up; otherwise Resend as before.
+  // Loaded only then, so this file stays importable on its own.
+  const mailer = process.env.GMAIL_USER?.trim() && process.env.GMAIL_APP_PASSWORD?.trim() ? await loadMailer() : null;
+  const gmail = mailer?.gmailConfig() ?? null;
+  const apiKey = gmail ? "gmail" : process.env.RESEND_API_KEY?.trim();
+  const from = gmail ? gmail.user : process.env.MEMBERSHIP_EMAIL_FROM?.trim();
   const to = process.env.MEMBERSHIP_EMAIL_TO?.trim();
   const origin = process.env.MEMBERSHIP_ADMIN_ORIGIN?.trim();
   // Enabled but incomplete: say which names are missing (never their values), so it is not silent.
@@ -60,7 +66,13 @@ export async function notifyPendingMember(sql: Sql, memberId: string) {
 
     let status = "unknown";
     let providerStatus = "";
-    try {
+    if (mailer && gmail) {
+      status = await mailer.sendGmail(gmail, {
+        to,
+        subject: "Zolacoco Tarot｜有新會員待開通",
+        text: `姓名：${member.full_name}\nEmail：${member.email}\n\n請至會員管理後台確認並開通權限：\n${adminUrl}`,
+      });
+    } else try {
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {

@@ -10,7 +10,8 @@ export function isPublicMembershipPage(pathname: string) {
 // These endpoints perform their own identity/admin checks, without requiring an
 // active subscription (pending/expired members must still reach their account).
 export function isMembershipServiceRoute(pathname: string) {
-  return ["/api/membership/me", "/api/membership/admin"].some(
+  // The daily reminder run is called by Vercel Cron and checks CRON_SECRET itself.
+  return ["/api/membership/me", "/api/membership/admin", "/api/cron/membership-reminders"].some(
     (path) => pathname === path || pathname === `${path}/`,
   );
 }

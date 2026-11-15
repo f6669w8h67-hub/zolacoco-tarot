@@ -100,6 +100,28 @@ export async function ensureMembershipSchema() {
       CREATE INDEX IF NOT EXISTS member_access_audit_member_created_idx
       ON member_access_audit (member_id, created_at DESC)
     `;
+    // Zola's private note about a member (2026-11-15). Its own table, so the member's own endpoints,
+    // which return the members row, can never include it.
+    await sql`
+      CREATE TABLE IF NOT EXISTS member_admin_notes (
+        member_id uuid PRIMARY KEY REFERENCES members(id) ON DELETE CASCADE,
+        note text NOT NULL DEFAULT '',
+        updated_by text NOT NULL,
+        updated_at timestamptz NOT NULL DEFAULT now()
+      )
+    `;
+    // Emails to members (lib/member-emails.ts): one row per member, kind and membership period.
+    await sql`
+      CREATE TABLE IF NOT EXISTS member_email_log (
+        member_id uuid NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+        kind text NOT NULL CHECK (kind IN ('activated', 'extended', 'expiry_reminder')),
+        period_key text NOT NULL,
+        status text NOT NULL CHECK (status IN ('sending', 'sent', 'failed')),
+        attempted_at timestamptz NOT NULL DEFAULT now(),
+        finished_at timestamptz,
+        PRIMARY KEY (member_id, kind, period_key)
+      )
+    `;
   })().catch((error) => {
     membershipSchemaPromise = null;
     throw error;
