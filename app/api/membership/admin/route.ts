@@ -1,4 +1,8 @@
 import { getSql, membershipErrorResponse, requireAdmin } from "@/lib/membership";
+import { notifyMemberAccess } from "@/lib/member-emails";
+
+/** Zola's private note: up to this many characters, line breaks kept, other control characters removed. */
+export const ADMIN_NOTE_LIMIT = 500;
 
 export const dynamic = "force-dynamic";
 
@@ -11,16 +15,24 @@ export async function GET() {
       SET status = 'expired'
       WHERE role = 'member' AND status = 'active' AND access_expires_at <= now()
     `;
+    // Zola's note and the latest email to the member come along for the admin list only.
     const members = await sql`
-      SELECT *,
+      SELECT m.*,
         CASE
-          WHEN role = 'admin' THEN 'active'
-          WHEN status = 'active' AND access_expires_at <= now() THEN 'expired'
-          ELSE status
-        END AS effective_status
-      FROM members
-      ORDER BY CASE status WHEN 'pending' THEN 0 WHEN 'active' THEN 1 WHEN 'suspended' THEN 2 ELSE 3 END,
-        created_at DESC
+          WHEN m.role = 'admin' THEN 'active'
+          WHEN m.status = 'active' AND m.access_expires_at <= now() THEN 'expired'
+          ELSE m.status
+        END AS effective_status,
+        n.note AS admin_note,
+        e.kind AS last_email_kind, e.status AS last_email_status, COALESCE(e.finished_at, e.attempted_at) AS last_email_at
+      FROM members m
+      LEFT JOIN member_admin_notes n ON n.member_id = m.id
+      LEFT JOIN LATERAL (
+        SELECT kind, status, finished_at, attempted_at FROM member_email_log
+        WHERE member_id = m.id ORDER BY attempted_at DESC LIMIT 1
+      ) e ON true
+      ORDER BY CASE m.status WHEN 'pending' THEN 0 WHEN 'active' THEN 1 WHEN 'suspended' THEN 2 ELSE 3 END,
+        m.created_at DESC
     `;
     return Response.json({ members });
   } catch (error) {
@@ -33,8 +45,9 @@ export async function POST(request: Request) {
     const admin = await requireAdmin();
     const body = (await request.json()) as {
       memberId?: string;
-      action?: "activate" | "suspend" | "restore" | "student" | "coaching";
+      action?: "activate" | "suspend" | "restore" | "student" | "coaching" | "note";
       months?: number;
+      note?: unknown;
       student?: boolean;
       coaching?: boolean;
     };
@@ -47,6 +60,18 @@ export async function POST(request: Request) {
     const currentRows = await sql`SELECT * FROM members WHERE id = ${memberId} AND role = 'member'`;
     const current = currentRows[0] as Record<string, unknown> | undefined;
     if (!current) return Response.json({ error: "找不到這位會員。" }, { status: 404 });
+
+    if (action === "note") {
+      if (typeof body.note !== "string") return Response.json({ error: "備註格式不正確。" }, { status: 400 });
+      const note = body.note.replace(/\r\n?/g, "\n").replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, "").trim();
+      if (note.length > ADMIN_NOTE_LIMIT) return Response.json({ error: `備註最多 ${ADMIN_NOTE_LIMIT} 字。` }, { status: 400 });
+      const saved = await sql`
+        INSERT INTO member_admin_notes (member_id, note, updated_by) VALUES (${memberId}, ${note}, ${admin.email})
+        ON CONFLICT (member_id) DO UPDATE SET note = EXCLUDED.note, updated_by = EXCLUDED.updated_by, updated_at = now()
+        RETURNING note
+      `;
+      return Response.json({ note: saved[0]?.note ?? note });
+    }
 
     // 學員練習室: Zola marks or unmarks her student. Separate from VIP months; logged with the value
     // before and after, in the same statement as the change; sending the current value changes nothing.
@@ -125,7 +150,9 @@ export async function POST(request: Request) {
          SELECT ${memberId}, ${admin.email}, ${auditAction}, ${months}, ${String(current.status)}, 'active', ${current.access_expires_at as string | null}, access_expires_at
          FROM members WHERE id = ${memberId}`,
     ]);
-    return Response.json({ member: updated[0][0] });
+    // The membership is already changed; the email is a courtesy and never fails the action.
+    const email = await notifyMemberAccess(sql, memberId, auditAction === "extended" ? "extended" : "activated");
+    return Response.json({ member: updated[0][0], email });
   } catch (error) {
     return membershipErrorResponse(error);
   }

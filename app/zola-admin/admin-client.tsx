@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { runMemberAction } from "@/lib/member-client";
+import { runMemberAction, type MemberEmailOutcome } from "@/lib/member-client";
 import "../styles/pearl-page.css";
 import "./zola-admin-pearl.css";
 
@@ -20,7 +20,47 @@ type Member = {
   is_student?: boolean;
   /** 陪跑中 (七日塔羅筆記 × 陪跑), separate from VIP months. */
   is_coaching?: boolean;
+  /** Zola's private note (member_admin_notes); only this admin list carries it. */
+  admin_note?: string | null;
+  /** The latest email to the member (member_email_log). */
+  last_email_kind?: "activated" | "extended" | "expiry_reminder" | null;
+  last_email_status?: "sending" | "sent" | "failed" | null;
+  last_email_at?: string | null;
 };
+
+const ADMIN_NOTE_LIMIT = 500;
+const emailKinds = { activated: "開通信", extended: "延長信", expiry_reminder: "到期提醒" } as const;
+const emailStatuses = { sending: "寄送中", sent: "已寄出", failed: "沒有寄出" } as const;
+/** A send still marked 'sending' after this long was cut off part-way: it may or may not have arrived. */
+const EMAIL_UNKNOWN_AFTER_MS = 10 * 60 * 1000;
+
+function emailStatusLabel(status: keyof typeof emailStatuses, at: string | null | undefined) {
+  if (status === "sending" && at && Date.now() - new Date(at).getTime() > EMAIL_UNKNOWN_AFTER_MS) return "狀態不明，請用 LINE 確認";
+  return emailStatuses[status];
+}
+type SortKey = "status" | "expiry" | "created";
+
+/** Search over name, Email, LINE ID and Zola's note; case and spaces do not matter. */
+function matches(member: Member, query: string) {
+  const needle = query.trim().toLowerCase().replace(/\s+/g, "");
+  if (!needle) return true;
+  return [member.full_name, member.email, member.line_id, member.admin_note].some((value) => (value ?? "").toLowerCase().replace(/\s+/g, "").includes(needle));
+}
+
+function sortMembers(list: Member[], key: SortKey) {
+  if (key === "status") return list;
+  const time = (value: string | null | undefined, missing: number) => (value ? new Date(value).getTime() : missing);
+  return [...list].sort((a, b) => key === "expiry"
+    ? time(a.access_expires_at, Number.POSITIVE_INFINITY) - time(b.access_expires_at, Number.POSITIVE_INFINITY)
+    : time(b.created_at, 0) - time(a.created_at, 0));
+}
+
+function emailLine(outcome: MemberEmailOutcome | undefined) {
+  if (outcome === "sent") return "已寄 Email 通知對方。";
+  if (outcome === "failed") return "Email 通知沒有寄出，請用 LINE 告訴對方。";
+  if (outcome === "disabled") return "（Email 通知還沒設定，這次沒有寄信。）";
+  return "";
+}
 
 const statusLabels = { pending: "等待開通", active: "使用中", suspended: "已暫停", expired: "已到期" };
 
@@ -30,14 +70,17 @@ export default function AdminClient() {
   const [filter, setFilter] = useState("all");
   const [notice, setNotice] = useState("正在讀取會員…");
   const [busy, setBusy] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("status");
+  const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     try {
       const response = await fetch("/api/membership/admin", { cache: "no-store" });
       if (!response.ok) { setNotice(response.status === 403 ? "此帳號沒有管理員權限。" : "無法讀取會員資料。"); return; }
       const data = await response.json();
+      // Reloaded after an action: keep the action's message (it used to be cleared here at once).
       setMembers(data.members);
-      setNotice("");
     } catch {
       setNotice("無法讀取會員資料，請稍後重新整理。");
     }
@@ -52,7 +95,7 @@ export default function AdminClient() {
       .catch((error) => setNotice(error instanceof Error && error.message === "forbidden" ? "此帳號沒有管理員權限。" : "無法讀取會員資料。"));
   }, []);
 
-  const visible = useMemo(() => members.filter((member) => member.role === "member" && (filter === "all" || member.effective_status === filter)), [filter, members]);
+  const visible = useMemo(() => sortMembers(members.filter((member) => member.role === "member" && (filter === "all" || member.effective_status === filter) && matches(member, query)), sortKey), [filter, members, query, sortKey]);
   const counts = useMemo(() => members.filter((member) => member.role === "member").reduce((result, member) => ({ ...result, [member.effective_status]: (result[member.effective_status] ?? 0) + 1 }), {} as Record<string, number>), [members]);
 
   async function toggleStudent(member: Member) {
@@ -81,8 +124,19 @@ export default function AdminClient() {
     const result = await runMemberAction({ memberId: member.id, action, months: months[member.id] ?? 1 });
     setBusy(null);
     if (!result.ok) { setNotice(result.message); return; }
-    setNotice(action === "activate" ? `已為 ${member.full_name ?? member.email} 增加 ${months[member.id] ?? 1} 個月。` : action === "suspend" ? "已手動停權。" : "已恢復原有期限。");
+    setNotice(action === "activate" ? `已為 ${member.full_name ?? member.email} 增加 ${months[member.id] ?? 1} 個月。${emailLine(result.email)}` : action === "suspend" ? "已手動停權。" : "已恢復原有期限。");
     await load();
+  }
+
+  async function saveNote(member: Member) {
+    const note = noteDrafts[member.id] ?? "";
+    setBusy(`${member.id}-note`); setNotice("");
+    const result = await runMemberAction({ memberId: member.id, action: "note", note });
+    setBusy(null);
+    if (!result.ok) { setNotice(result.message); return; }
+    setMembers((list) => list.map((item) => item.id === member.id ? { ...item, admin_note: result.note ?? note.trim() } : item));
+    setNoteDrafts((drafts) => { const next = { ...drafts }; delete next[member.id]; return next; });
+    setNotice(`已儲存 ${member.full_name ?? member.email} 的備註。`);
   }
 
   return <main className="zola-admin-page pearl-page">
@@ -91,11 +145,23 @@ export default function AdminClient() {
       <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}><small>全部會員</small><strong>{members.filter((item) => item.role === "member").length}</strong></button>
       {(["pending", "active", "suspended", "expired"] as const).map((status) => <button key={status} className={filter === status ? "active" : ""} onClick={() => setFilter(status)}><small>{statusLabels[status]}</small><strong>{counts[status] ?? 0}</strong></button>)}
     </section>
+    <section className="admin-tools" aria-label="搜尋與排序">
+      <label>搜尋會員<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="姓名、Email、LINE ID 或備註" /></label>
+      <label>排序<select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}><option value="status">依狀態（等待開通在前）</option><option value="expiry">依到期日（最近的在前）</option><option value="created">依申請時間（最新的在前）</option></select></label>
+    </section>
     <p className="admin-notice" aria-live="polite">{notice}</p>
     <section className="member-admin-list">
       {visible.map((member) => <article key={member.id}>
-        <div className="member-admin-identity"><span className={`member-status status-${member.effective_status}`}>{statusLabels[member.effective_status]}</span>{member.is_student ? <span className="member-status member-student">學員</span> : null}{member.is_coaching ? <span className="member-status member-coaching">陪跑中</span> : null}<h2>{member.full_name || "尚未填寫姓名"}</h2><p>{member.email}</p><small>LINE：{member.line_id || "尚未填寫"}　生日：{member.birthday?.slice(0, 10) || "尚未填寫"}</small></div>
-        <div className="member-admin-expiry"><small>目前期限</small><strong>{member.access_expires_at ? new Date(member.access_expires_at).toLocaleDateString("zh-TW") : "尚未開通"}</strong><span>{new Date(member.created_at).toLocaleDateString("zh-TW")} 申請</span></div>
+        <div className="member-admin-identity"><span className={`member-status status-${member.effective_status}`}>{statusLabels[member.effective_status]}</span>{member.is_student ? <span className="member-status member-student">學員</span> : null}{member.is_coaching ? <span className="member-status member-coaching">陪跑中</span> : null}<h2>{member.full_name || "尚未填寫姓名"}</h2><p>{member.email}</p><small>LINE：{member.line_id || "尚未填寫"}　生日：{member.birthday?.slice(0, 10) || "尚未填寫"}</small>
+          {noteDrafts[member.id] !== undefined
+            ? <div className="member-admin-note is-editing">
+                <label>備註（只有妳看得到）<textarea value={noteDrafts[member.id]} maxLength={ADMIN_NOTE_LIMIT} rows={3} onChange={(event) => setNoteDrafts((drafts) => ({ ...drafts, [member.id]: event.target.value }))} /></label>
+                <small>{noteDrafts[member.id].length}／{ADMIN_NOTE_LIMIT}</small>
+                <div><button type="button" disabled={Boolean(busy)} onClick={() => void saveNote(member)}>{busy === `${member.id}-note` ? "儲存中…" : "儲存備註"}</button><button type="button" className="secondary" disabled={Boolean(busy)} onClick={() => setNoteDrafts((drafts) => { const next = { ...drafts }; delete next[member.id]; return next; })}>取消</button></div>
+              </div>
+            : <div className="member-admin-note"><p>{member.admin_note ? member.admin_note : <span>尚未加備註</span>}</p><button type="button" className="secondary" onClick={() => setNoteDrafts((drafts) => ({ ...drafts, [member.id]: member.admin_note ?? "" }))}>{member.admin_note ? "編輯備註" : "加備註"}</button></div>}
+        </div>
+        <div className="member-admin-expiry"><small>目前期限</small><strong>{member.access_expires_at ? new Date(member.access_expires_at).toLocaleDateString("zh-TW") : "尚未開通"}</strong><span>{new Date(member.created_at).toLocaleDateString("zh-TW")} 申請</span>{member.last_email_kind && member.last_email_status ? <span className="member-admin-email">{emailKinds[member.last_email_kind]}{emailStatusLabel(member.last_email_status, member.last_email_at)}{member.last_email_at ? `（${new Date(member.last_email_at).toLocaleDateString("zh-TW")}）` : ""}</span> : null}</div>
         <div className="member-admin-actions">
           <label>增加月份<select value={months[member.id] ?? 1} onChange={(event) => setMonths((value) => ({ ...value, [member.id]: Number(event.target.value) }))}>{Array.from({ length: 12 }, (_, index) => index + 1).map((value) => <option value={value} key={value}>{value} 個月</option>)}</select></label>
           <button disabled={Boolean(busy)} onClick={() => operate(member, "activate")}>{member.effective_status === "active" ? "增加月份" : "立即開通"}</button>
