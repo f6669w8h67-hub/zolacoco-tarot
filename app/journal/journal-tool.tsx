@@ -17,6 +17,7 @@ import { PracticeCard } from "@/app/practice-card";
 import { tarotCards } from "@/app/tarot-data";
 import type { PublicCycle, PublicEntry } from "@/lib/coaching-input";
 import { JOURNAL_DAYS, JOURNAL_PROMPT_VERSION, journalCardIds, journalPromptFor } from "@/lib/journal-prompts";
+import { journalResponse } from "@/lib/journal-responses";
 import { JOURNAL_REVIEW_KEY, REVIEW_TEXT_LIMIT, defaultHighlights, isSevenDaysWritten, reviewMessage, type ReviewNotes } from "@/lib/journal-review";
 import "./journal-sync.css";
 
@@ -78,6 +79,8 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
   const [busy, setBusy] = useState<"" | "start" | "save" | "stop">("");
   const [notice, setNotice] = useState<Notice>(null);
   const [confirmStop, setConfirmStop] = useState(false);
+  // 寫完當天馬上有回應: the day whose response card is open (it opens by itself right after a save).
+  const [responseFor, setResponseFor] = useState<number | null>(null);
 
   useEffect(() => {
     if (waiting) return;
@@ -139,6 +142,7 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
 
   function pickDay(index: number) {
     setDay(index);
+    setResponseFor(null);
     setNotice(null);
     setLocalSave("idle");
     setConfirmStop(false);
@@ -154,6 +158,7 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
       setLocalNotes(next);
       setSavedLocal(next);
       setLocalSave("saved");
+      setResponseFor(day);
     } catch { setLocalSave("error"); }
   }
 
@@ -205,6 +210,7 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
       setDrafts((current) => { const next = { ...current }; delete next[draftKey]; return next; });
       setConflicts((current) => { const next = { ...current }; delete next[draftKey]; return next; });
       setNotice({ tone: "ok", text: "已儲存並同步給 Zola。" });
+      setResponseFor(day);
     } catch {
       setNotice({ tone: "error", text: "網路不穩，筆記還沒有確認存好。內容還在框裡，請稍後再按一次儲存。" });
     } finally {
@@ -256,6 +262,13 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
     };
   });
   const complete = (!synced || Boolean(round)) && isSevenDaysWritten(reviewDays.map((item) => item.answer));
+  const savedNote = synced ? entry?.content ?? "" : savedLocal[day] ?? "";
+  const unsaved = synced ? drafts[key] !== undefined && drafts[key].trim() !== savedNote : (localNotes[day] ?? "").trim() !== savedNote;
+  const dayResponse = savedNote.trim() && !unsaved ? journalResponse(day + 1, savedNote, reviewDays.map((item) => Boolean(item.answer.trim()))) : null;
+  const responseBlock = dayResponse ? responseFor === day
+    ? <DayResponseCard day={day + 1} response={dayResponse} onNext={(next) => pickDay(next - 1)} />
+    : <button type="button" className="js-link js-response-open" onClick={() => setResponseFor(day)}>看這一天的回應</button>
+    : null;
   const reviewing = view === "review" && complete;
 
   return <div className="journal-tool">
@@ -291,13 +304,14 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
     </> : null}
 
     {reviewing ? null : !synced ? <>
-      <textarea value={localNotes[day] ?? ""} onChange={(event) => { setLocalNotes((notes) => ({ ...notes, [day]: event.target.value })); setLocalSave("idle"); }} aria-label="寫下今天的內在筆記" placeholder="不用急著寫得完整，先記下第一個浮現的念頭……" />
+      <textarea value={localNotes[day] ?? ""} onChange={(event) => { setLocalNotes((notes) => ({ ...notes, [day]: event.target.value })); setLocalSave("idle"); setResponseFor(null); }} aria-label="寫下今天的內在筆記" placeholder="不用急著寫得完整，先記下第一個浮現的念頭……" />
       <div className="day-picker">{Array.from({ length: JOURNAL_DAYS }, (_, index) => <button aria-label={`第 ${index + 1} 天`} className={day === index ? "active" : ""} onClick={() => pickDay(index)} key={index}>{index + 1}</button>)}</div>
       <button className="tool-primary journal-save" disabled={localSave === "saving" || !(localNotes[day] ?? "").trim()} onClick={saveLocal}>{localSave === "saving" ? "儲存中…" : localSave === "saved" ? "已儲存 ✓" : localSave === "error" ? "存檔失敗，請再試一次" : "儲存今天的筆記"}</button>
+      {responseBlock}
       {complete ? <CompleteBanner onOpen={() => setView("review")} /> : null}
       <p className="privacy-note">筆記會保存在目前使用的手機或電腦瀏覽器中，重新開啟網站仍可繼續查看，不會公開顯示。</p>
     </> : round ? <>
-      <textarea value={syncedText} readOnly={!editable} onChange={(event) => { const value = event.target.value; setDrafts((current) => ({ ...current, [key]: value })); setNotice(null); }} aria-label={editable ? "寫下今天的陪跑筆記" : "這一天的陪跑筆記（唯讀）"} placeholder={editable ? "不用急著寫得完整，先記下第一個浮現的念頭……" : "這一天沒有寫下筆記。"} />
+      <textarea value={syncedText} readOnly={!editable} onChange={(event) => { const value = event.target.value; setDrafts((current) => ({ ...current, [key]: value })); setNotice(null); setResponseFor(null); }} aria-label={editable ? "寫下今天的陪跑筆記" : "這一天的陪跑筆記（唯讀）"} placeholder={editable ? "不用急著寫得完整，先記下第一個浮現的念頭……" : "這一天沒有寫下筆記。"} />
       {entry?.feedback ? <div className="js-reply">
         <b>Zola 的回覆{freshReplies.has(entry.id) ? <i className="js-new">新回覆</i> : null}</b>
         <p>{entry.feedback}</p>
@@ -321,6 +335,7 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
         return <button aria-label={`第 ${index + 1} 天${item ? "，已寫" : ""}${unread ? "，有新回覆" : ""}`} className={[day === index ? "active" : "", item ? "js-written" : "", unread ? "js-unread" : ""].filter(Boolean).join(" ")} onClick={() => pickDay(index)} key={index}>{index + 1}</button>;
       })}</div>
       {editable ? <button className="tool-primary journal-save" disabled={Boolean(busy) || !syncedText.trim() || syncedText.trim() === (entry?.content ?? "")} onClick={() => void saveSynced()}>{busy === "save" ? "同步中…" : "儲存並同步給 Zola"}</button> : null}
+      {responseBlock}
       {complete ? <CompleteBanner onOpen={() => setView("review")} /> : null}
     </> : null}
 
@@ -420,5 +435,24 @@ function SevenDayReview({ days, storeKey, coaching, onClose }: {
       <a className="tool-primary js-line" href={lineMessageUrl(message)} target="_blank" rel="noreferrer">{coaching ? "傳 LINE 約下一次陪跑" : "傳 LINE 預約 Zola 陪跑"} <b aria-hidden="true">→</b></a>
     </div>
     <button type="button" className="js-link" onClick={onClose}>回到筆記</button>
+  </section>;
+}
+
+/**
+ * 寫完當天馬上有回應: what she wrote, a gentle reminder for that day's question, one small practice, and
+ * where to go next. A daily reminder from the site (picked by the note's characters), not an analysis of
+ * what she wrote (review #45), so the card never says it understood her feelings.
+ */
+function DayResponseCard({ day, response, onNext }: { day: number; response: NonNullable<ReturnType<typeof journalResponse>>; onNext: (day: number) => void }) {
+  return <section className="js-response" aria-label={`第 ${day} 天寫完的回應`} role="status">
+    <small className="js-response-kicker">DAY {day} · 今天的小提醒</small>
+    <h4>謝謝妳，今天也好好看了自己</h4>
+    {response.echo ? <p className="js-response-echo"><span>妳寫下</span>「{response.echo}」</p> : null}
+    <p className="js-response-reply">{response.reply}</p>
+    <div className="js-response-practice"><b>今天的小練習</b><p>{response.practice}</p></div>
+    {response.next
+      ? <div className="js-response-next"><span>接下來可以寫第 {response.next.day} 天</span><b>{response.next.prompt}</b><button type="button" className="js-link" onClick={() => onNext(response.next!.day)}>去寫第 {response.next.day} 天 →</button></div>
+      : null}
+    <Link className="js-response-card" href="/awareness">抽一張覺察卡，當今天的結尾 →</Link>
   </section>;
 }
