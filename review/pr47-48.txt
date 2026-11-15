@@ -1,0 +1,666 @@
+請審查兩個 PR（Zola 11/15 第 3、5、6 項）。請分別給 APPROVE 或列出 Blocking／Non-blocking。
+
+━━ PR #47 練習室：正確答案平均分在 A／B／C（fix/practice-answer-order, head 65a2665）
+https://github.com/f6669w8h67-hub/zolacoco-tarot/pull/47
+問題：實戰題正解位置 A/B/C = 1/6/5。做法：只改顯示順序（publicQuestion），題庫與選項 id 不變；每單元依 FNV-1a(id) 排序後輪流放 A→B→C，固定不隨機。答案仍以 option id 存與判斷，舊作答紀錄不受影響。測試：每單元 A/B/C 差 ≤1、實戰 4/4/4、id 與文字集合不變。test:membership 83 pass。
+
+```diff
+diff --git a/lib/practice-bank.ts b/lib/practice-bank.ts
+index 2b61591..2a25620 100644
+--- a/lib/practice-bank.ts
++++ b/lib/practice-bank.ts
+@@ -72,6 +72,32 @@ export function visibleQuestion(id: string, admin: boolean): PracticeQuestion |
+ }
+ 
+ /** What the page receives: the question without which option is right or why. */
++// Display order (Zola 2026-11-15: 實戰 showed the right reading in A only 1 time in 12): in every
++// unit the right reading appears in A, B and C about equally often, balanced in a fixed hash order so the
++// pattern cannot be guessed from the list. Only the order on screen changes; option ids stay the same, so
++// every saved answer, judgement and version snapshot keeps meaning exactly what it meant.
++function orderHash(text: string) {
++  let hash = 0x811c9dc5;
++  for (const char of text) { hash ^= char.codePointAt(0)!; hash = Math.imul(hash, 0x01000193) >>> 0; }
++  return hash;
++}
++const displaySlot = new Map<string, number>();
++for (const unit of new Set(PRACTICE_QUESTIONS.map((question) => question.unit))) {
++  PRACTICE_QUESTIONS.filter((question) => question.unit === unit)
++    .map((question) => question.id)
++    .sort((a, b) => orderHash(a) - orderHash(b) || a.localeCompare(b))
++    .forEach((id, index) => displaySlot.set(id, index % 3));
++}
++
++/** The options in the order the page shows them (A, B, C), with the right reading in its balanced slot. */
++export function displayOptions(question: PracticeQuestion) {
++  const right = question.options.filter((option) => option.correct);
++  if (right.length !== 1) return question.options;
++  const others = question.options.filter((option) => !option.correct);
++  const slot = Math.min(displaySlot.get(question.id) ?? 0, others.length);
++  return [...others.slice(0, slot), right[0], ...others.slice(slot)];
++}
++
+ export function publicQuestion(question: PracticeQuestion) {
+   return {
+     id: question.id,
+@@ -83,7 +109,7 @@ export function publicQuestion(question: PracticeQuestion) {
+     observe: question.observe,
+     read: question.read,
+     choose: question.choose,
+-    options: question.options.map(({ id, text }) => ({ id, text })),
++    options: displayOptions(question).map(({ id, text }) => ({ id, text })),
+     draft: question.status !== "published",
+   };
+ }
+```
+
+━━ PR #48 會員後台搜尋／排序／私人備註＋會員 Email（feat/admin-search-notes-emails, head 30e2bab）
+https://github.com/f6669w8h67-hub/zolacoco-tarot/pull/48
+重點：
+- 備註存在獨立的 member_admin_notes（會員自己的 API 會回傳 members 整列，所以不能放進 members）；只有 admin GET LEFT JOIN 讀；500 字、CRLF→LF、去控制字元。
+- Email 用 Zola 的 Gmail（nodemailer 10.5，smtp.gmail.com:465）；開通／延長後寄給會員；Vercel Cron 每天 01:00 UTC 呼叫 /api/cron/membership-reminders（Bearer CRON_SECRET，常數時間比對，沒設定或不符 401），到期前 7 天內寄一次提醒，每次最多 20 封。
+- 只寄一次：先 INSERT … ON CONFLICT (member_id, kind, period_key) DO NOTHING 佔位，period_key = 該期 access_expires_at 的 epoch。寄信失敗不影響開通，後台顯示「已寄／沒有寄出，請用 LINE 告訴對方／Email 還沒設定」。
+- 全部要 MEMBERSHIP_EMAIL_ENABLED=true + GMAIL_USER + GMAIL_APP_PASSWORD + MEMBERSHIP_ADMIN_ORIGIN 才寄；沒設定前網站行為不變。給 Zola 的新會員通知：有 Gmail 設定就走 Gmail，否則照舊 Resend。
+- vercel.json 只新增 crons，原本 framework/buildCommand/pr-assets 不部署保留（測試檢查）。
+- 測試 tests/member-emails.test.mjs 12 項；npm test 全過含 build。CSS（只用既有變數）、package-lock、測試檔不貼。
+
+```diff
+diff --git a/app/api/cron/membership-reminders/route.ts b/app/api/cron/membership-reminders/route.ts
+new file mode 100644
+index 0000000..8860375
+--- /dev/null
++++ b/app/api/cron/membership-reminders/route.ts
+@@ -0,0 +1,33 @@
++import { ensureMembershipSchema, getSql } from "@/lib/membership";
++import { sendExpiryReminders } from "@/lib/member-emails";
++
++// Daily (vercel.json crons): members whose membership ends within 7 days get one reminder.
++// Vercel Cron sends "Authorization: Bearer <CRON_SECRET>"; without that secret this route refuses.
++export const dynamic = "force-dynamic";
++export const maxDuration = 60;
++
++/** Compares in time that does not depend on where the strings differ. */
++function sameText(a: string, b: string) {
++  if (a.length !== b.length) return false;
++  let difference = 0;
++  for (let index = 0; index < a.length; index++) difference |= a.charCodeAt(index) ^ b.charCodeAt(index);
++  return difference === 0;
++}
++
++function authorized(request: Request) {
++  const secret = process.env.CRON_SECRET?.trim();
++  return Boolean(secret) && sameText(request.headers.get("authorization") ?? "", `Bearer ${secret}`);
++}
++
++export async function GET(request: Request) {
++  const headers = { "Cache-Control": "no-store" };
++  if (!authorized(request)) return Response.json({ error: "unauthorized" }, { status: 401, headers });
++  try {
++    await ensureMembershipSchema();
++    const result = await sendExpiryReminders(getSql() as never);
++    return Response.json(result, { headers });
++  } catch (error) {
++    console.error("membership_reminders_failed", { reason: error instanceof Error ? error.message.slice(0, 80) : "unknown" });
++    return Response.json({ error: "failed" }, { status: 500, headers });
++  }
++}
+diff --git a/app/api/membership/admin/route.ts b/app/api/membership/admin/route.ts
+index 4a512cf..0307696 100644
+--- a/app/api/membership/admin/route.ts
++++ b/app/api/membership/admin/route.ts
+@@ -1,4 +1,8 @@
+ import { getSql, membershipErrorResponse, requireAdmin } from "@/lib/membership";
++import { notifyMemberAccess } from "@/lib/member-emails";
++
++/** Zola's private note: up to this many characters, line breaks kept, other control characters removed. */
++export const ADMIN_NOTE_LIMIT = 500;
+ 
+ export const dynamic = "force-dynamic";
+ 
+@@ -11,16 +15,24 @@ export async function GET() {
+       SET status = 'expired'
+       WHERE role = 'member' AND status = 'active' AND access_expires_at <= now()
+     `;
++    // Zola's note and the latest email to the member come along for the admin list only.
+     const members = await sql`
+-      SELECT *,
++      SELECT m.*,
+         CASE
+-          WHEN role = 'admin' THEN 'active'
+-          WHEN status = 'active' AND access_expires_at <= now() THEN 'expired'
+-          ELSE status
+-        END AS effective_status
+-      FROM members
+-      ORDER BY CASE status WHEN 'pending' THEN 0 WHEN 'active' THEN 1 WHEN 'suspended' THEN 2 ELSE 3 END,
+-        created_at DESC
++          WHEN m.role = 'admin' THEN 'active'
++          WHEN m.status = 'active' AND m.access_expires_at <= now() THEN 'expired'
++          ELSE m.status
++        END AS effective_status,
++        n.note AS admin_note,
++        e.kind AS last_email_kind, e.status AS last_email_status, COALESCE(e.finished_at, e.attempted_at) AS last_email_at
++      FROM members m
++      LEFT JOIN member_admin_notes n ON n.member_id = m.id
++      LEFT JOIN LATERAL (
++        SELECT kind, status, finished_at, attempted_at FROM member_email_log
++        WHERE member_id = m.id ORDER BY attempted_at DESC LIMIT 1
++      ) e ON true
++      ORDER BY CASE m.status WHEN 'pending' THEN 0 WHEN 'active' THEN 1 WHEN 'suspended' THEN 2 ELSE 3 END,
++        m.created_at DESC
+     `;
+     return Response.json({ members });
+   } catch (error) {
+@@ -33,8 +45,9 @@ export async function POST(request: Request) {
+     const admin = await requireAdmin();
+     const body = (await request.json()) as {
+       memberId?: string;
+-      action?: "activate" | "suspend" | "restore" | "student" | "coaching";
++      action?: "activate" | "suspend" | "restore" | "student" | "coaching" | "note";
+       months?: number;
++      note?: unknown;
+       student?: boolean;
+       coaching?: boolean;
+     };
+@@ -48,6 +61,18 @@ export async function POST(request: Request) {
+     const current = currentRows[0] as Record<string, unknown> | undefined;
+     if (!current) return Response.json({ error: "找不到這位會員。" }, { status: 404 });
+ 
++    if (action === "note") {
++      if (typeof body.note !== "string") return Response.json({ error: "備註格式不正確。" }, { status: 400 });
++      const note = body.note.replace(/\r\n?/g, "\n").replace(/[\u0000-\u0009\u000b-\u001f\u007f]/g, "").trim();
++      if (note.length > ADMIN_NOTE_LIMIT) return Response.json({ error: `備註最多 ${ADMIN_NOTE_LIMIT} 字。` }, { status: 400 });
++      const saved = await sql`
++        INSERT INTO member_admin_notes (member_id, note, updated_by) VALUES (${memberId}, ${note}, ${admin.email})
++        ON CONFLICT (member_id) DO UPDATE SET note = EXCLUDED.note, updated_by = EXCLUDED.updated_by, updated_at = now()
++        RETURNING note
++      `;
++      return Response.json({ note: saved[0]?.note ?? note });
++    }
++
+     // 學員練習室: Zola marks or unmarks her student. Separate from VIP months; logged with the value
+     // before and after, in the same statement as the change; sending the current value changes nothing.
+     if (action === "student") {
+@@ -125,7 +150,9 @@ export async function POST(request: Request) {
+          SELECT ${memberId}, ${admin.email}, ${auditAction}, ${months}, ${String(current.status)}, 'active', ${current.access_expires_at as string | null}, access_expires_at
+          FROM members WHERE id = ${memberId}`,
+     ]);
+-    return Response.json({ member: updated[0][0] });
++    // The membership is already changed; the email is a courtesy and never fails the action.
++    const email = await notifyMemberAccess(sql, memberId, auditAction === "extended" ? "extended" : "activated");
++    return Response.json({ member: updated[0][0], email });
+   } catch (error) {
+     return membershipErrorResponse(error);
+   }
+diff --git a/app/zola-admin/admin-client.tsx b/app/zola-admin/admin-client.tsx
+index 2f20640..943dc1e 100644
+--- a/app/zola-admin/admin-client.tsx
++++ b/app/zola-admin/admin-client.tsx
+@@ -2,7 +2,7 @@
+ 
+ import Link from "next/link";
+ import { useCallback, useEffect, useMemo, useState } from "react";
+-import { runMemberAction } from "@/lib/member-client";
++import { runMemberAction, type MemberEmailOutcome } from "@/lib/member-client";
+ import "../styles/pearl-page.css";
+ import "./zola-admin-pearl.css";
+ 
+@@ -20,8 +20,41 @@ type Member = {
+   is_student?: boolean;
+   /** 陪跑中 (七日塔羅筆記 × 陪跑), separate from VIP months. */
+   is_coaching?: boolean;
++  /** Zola's private note (member_admin_notes); only this admin list carries it. */
++  admin_note?: string | null;
++  /** The latest email to the member (member_email_log). */
++  last_email_kind?: "activated" | "extended" | "expiry_reminder" | null;
++  last_email_status?: "sending" | "sent" | "failed" | null;
++  last_email_at?: string | null;
+ };
+ 
++const ADMIN_NOTE_LIMIT = 500;
++const emailKinds = { activated: "開通信", extended: "延長信", expiry_reminder: "到期提醒" } as const;
++const emailStatuses = { sending: "寄送中", sent: "已寄出", failed: "沒有寄出" } as const;
++type SortKey = "status" | "expiry" | "created";
++
++/** Search over name, Email, LINE ID and Zola's note; case and spaces do not matter. */
++function matches(member: Member, query: string) {
++  const needle = query.trim().toLowerCase().replace(/\s+/g, "");
++  if (!needle) return true;
++  return [member.full_name, member.email, member.line_id, member.admin_note].some((value) => (value ?? "").toLowerCase().replace(/\s+/g, "").includes(needle));
++}
++
++function sortMembers(list: Member[], key: SortKey) {
++  if (key === "status") return list;
++  const time = (value: string | null | undefined, missing: number) => (value ? new Date(value).getTime() : missing);
++  return [...list].sort((a, b) => key === "expiry"
++    ? time(a.access_expires_at, Number.POSITIVE_INFINITY) - time(b.access_expires_at, Number.POSITIVE_INFINITY)
++    : time(b.created_at, 0) - time(a.created_at, 0));
++}
++
++function emailLine(outcome: MemberEmailOutcome | undefined) {
++  if (outcome === "sent") return "已寄 Email 通知對方。";
++  if (outcome === "failed") return "Email 通知沒有寄出，請用 LINE 告訴對方。";
++  if (outcome === "disabled") return "（Email 通知還沒設定，這次沒有寄信。）";
++  return "";
++}
++
+ const statusLabels = { pending: "等待開通", active: "使用中", suspended: "已暫停", expired: "已到期" };
+ 
+ export default function AdminClient() {
+@@ -30,14 +63,17 @@ export default function AdminClient() {
+   const [filter, setFilter] = useState("all");
+   const [notice, setNotice] = useState("正在讀取會員…");
+   const [busy, setBusy] = useState<string | null>(null);
++  const [query, setQuery] = useState("");
++  const [sortKey, setSortKey] = useState<SortKey>("status");
++  const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
+ 
+   const load = useCallback(async () => {
+     try {
+       const response = await fetch("/api/membership/admin", { cache: "no-store" });
+       if (!response.ok) { setNotice(response.status === 403 ? "此帳號沒有管理員權限。" : "無法讀取會員資料。"); return; }
+       const data = await response.json();
++      // Reloaded after an action: keep the action's message (it used to be cleared here at once).
+       setMembers(data.members);
+-      setNotice("");
+     } catch {
+       setNotice("無法讀取會員資料，請稍後重新整理。");
+     }
+@@ -52,7 +88,7 @@ export default function AdminClient() {
+       .catch((error) => setNotice(error instanceof Error && error.message === "forbidden" ? "此帳號沒有管理員權限。" : "無法讀取會員資料。"));
+   }, []);
+ 
+-  const visible = useMemo(() => members.filter((member) => member.role === "member" && (filter === "all" || member.effective_status === filter)), [filter, members]);
++  const visible = useMemo(() => sortMembers(members.filter((member) => member.role === "member" && (filter === "all" || member.effective_status === filter) && matches(member, query)), sortKey), [filter, members, query, sortKey]);
+   const counts = useMemo(() => members.filter((member) => member.role === "member").reduce((result, member) => ({ ...result, [member.effective_status]: (result[member.effective_status] ?? 0) + 1 }), {} as Record<string, number>), [members]);
+ 
+   async function toggleStudent(member: Member) {
+@@ -81,21 +117,44 @@ export default function AdminClient() {
+     const result = await runMemberAction({ memberId: member.id, action, months: months[member.id] ?? 1 });
+     setBusy(null);
+     if (!result.ok) { setNotice(result.message); return; }
+-    setNotice(action === "activate" ? `已為 ${member.full_name ?? member.email} 增加 ${months[member.id] ?? 1} 個月。` : action === "suspend" ? "已手動停權。" : "已恢復原有期限。");
++    setNotice(action === "activate" ? `已為 ${member.full_name ?? member.email} 增加 ${months[member.id] ?? 1} 個月。${emailLine(result.email)}` : action === "suspend" ? "已手動停權。" : "已恢復原有期限。");
+     await load();
+   }
+ 
++  async function saveNote(member: Member) {
++    const note = noteDrafts[member.id] ?? "";
++    setBusy(`${member.id}-note`); setNotice("");
++    const result = await runMemberAction({ memberId: member.id, action: "note", note });
++    setBusy(null);
++    if (!result.ok) { setNotice(result.message); return; }
++    setMembers((list) => list.map((item) => item.id === member.id ? { ...item, admin_note: result.note ?? note.trim() } : item));
++    setNoteDrafts((drafts) => { const next = { ...drafts }; delete next[member.id]; return next; });
++    setNotice(`已儲存 ${member.full_name ?? member.email} 的備註。`);
++  }
++
+   return <main className="zola-admin-page pearl-page">
+     <header><div><p className="eyebrow">Zolacoco Private Admin</p><h1>VIP 會員權限後台</h1><p>選擇月份後開通；到期會自動停權，也可以隨時手動暫停或恢復。</p></div><nav className="zola-admin-links"><Link href="/zola-admin/practice">學員練習 →</Link><Link href="/zola-admin/coaching">陪跑筆記 →</Link><Link href="/account">返回會員中心</Link></nav></header>
+     <section className="admin-stat-grid">
+       <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}><small>全部會員</small><strong>{members.filter((item) => item.role === "member").length}</strong></button>
+       {(["pending", "active", "suspended", "expired"] as const).map((status) => <button key={status} className={filter === status ? "active" : ""} onClick={() => setFilter(status)}><small>{statusLabels[status]}</small><strong>{counts[status] ?? 0}</strong></button>)}
+     </section>
++    <section className="admin-tools" aria-label="搜尋與排序">
++      <label>搜尋會員<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="姓名、Email、LINE ID 或備註" /></label>
++      <label>排序<select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}><option value="status">依狀態（等待開通在前）</option><option value="expiry">依到期日（最近的在前）</option><option value="created">依申請時間（最新的在前）</option></select></label>
++    </section>
+     <p className="admin-notice" aria-live="polite">{notice}</p>
+     <section className="member-admin-list">
+       {visible.map((member) => <article key={member.id}>
+-        <div className="member-admin-identity"><span className={`member-status status-${member.effective_status}`}>{statusLabels[member.effective_status]}</span>{member.is_student ? <span className="member-status member-student">學員</span> : null}{member.is_coaching ? <span className="member-status member-coaching">陪跑中</span> : null}<h2>{member.full_name || "尚未填寫姓名"}</h2><p>{member.email}</p><small>LINE：{member.line_id || "尚未填寫"}　生日：{member.birthday?.slice(0, 10) || "尚未填寫"}</small></div>
+-        <div className="member-admin-expiry"><small>目前期限</small><strong>{member.access_expires_at ? new Date(member.access_expires_at).toLocaleDateString("zh-TW") : "尚未開通"}</strong><span>{new Date(member.created_at).toLocaleDateString("zh-TW")} 申請</span></div>
++        <div className="member-admin-identity"><span className={`member-status status-${member.effective_status}`}>{statusLabels[member.effective_status]}</span>{member.is_student ? <span className="member-status member-student">學員</span> : null}{member.is_coaching ? <span className="member-status member-coaching">陪跑中</span> : null}<h2>{member.full_name || "尚未填寫姓名"}</h2><p>{member.email}</p><small>LINE：{member.line_id || "尚未填寫"}　生日：{member.birthday?.slice(0, 10) || "尚未填寫"}</small>
++          {noteDrafts[member.id] !== undefined
++            ? <div className="member-admin-note is-editing">
++                <label>備註（只有妳看得到）<textarea value={noteDrafts[member.id]} maxLength={ADMIN_NOTE_LIMIT} rows={3} onChange={(event) => setNoteDrafts((drafts) => ({ ...drafts, [member.id]: event.target.value }))} /></label>
++                <small>{noteDrafts[member.id].length}／{ADMIN_NOTE_LIMIT}</small>
++                <div><button type="button" disabled={Boolean(busy)} onClick={() => void saveNote(member)}>{busy === `${member.id}-note` ? "儲存中…" : "儲存備註"}</button><button type="button" className="secondary" disabled={Boolean(busy)} onClick={() => setNoteDrafts((drafts) => { const next = { ...drafts }; delete next[member.id]; return next; })}>取消</button></div>
++              </div>
++            : <div className="member-admin-note"><p>{member.admin_note ? member.admin_note : <span>尚未加備註</span>}</p><button type="button" className="secondary" onClick={() => setNoteDrafts((drafts) => ({ ...drafts, [member.id]: member.admin_note ?? "" }))}>{member.admin_note ? "編輯備註" : "加備註"}</button></div>}
++        </div>
++        <div className="member-admin-expiry"><small>目前期限</small><strong>{member.access_expires_at ? new Date(member.access_expires_at).toLocaleDateString("zh-TW") : "尚未開通"}</strong><span>{new Date(member.created_at).toLocaleDateString("zh-TW")} 申請</span>{member.last_email_kind && member.last_email_status ? <span className="member-admin-email">{emailKinds[member.last_email_kind]}{emailStatuses[member.last_email_status]}{member.last_email_at ? `（${new Date(member.last_email_at).toLocaleDateString("zh-TW")}）` : ""}</span> : null}</div>
+         <div className="member-admin-actions">
+           <label>增加月份<select value={months[member.id] ?? 1} onChange={(event) => setMonths((value) => ({ ...value, [member.id]: Number(event.target.value) }))}>{Array.from({ length: 12 }, (_, index) => index + 1).map((value) => <option value={value} key={value}>{value} 個月</option>)}</select></label>
+           <button disabled={Boolean(busy)} onClick={() => operate(member, "activate")}>{member.effective_status === "active" ? "增加月份" : "立即開通"}</button>
+diff --git a/lib/mail-config.ts b/lib/mail-config.ts
+new file mode 100644
+index 0000000..0c417d2
+--- /dev/null
++++ b/lib/mail-config.ts
+@@ -0,0 +1,9 @@
++// Zola's Gmail settings for the membership emails (see lib/mailer.ts). No dependencies, so pages and
++// tests can check whether email is set up without loading the mail library.
++export type GmailConfig = { user: string; pass: string };
++
++export function gmailConfig(env: Record<string, string | undefined> = process.env): GmailConfig | null {
++  const user = env.GMAIL_USER?.trim();
++  const pass = env.GMAIL_APP_PASSWORD?.replace(/\s+/g, "");
++  return user && pass ? { user, pass } : null;
++}
+diff --git a/lib/mailer.ts b/lib/mailer.ts
+new file mode 100644
+index 0000000..f4b8160
+--- /dev/null
++++ b/lib/mailer.ts
+@@ -0,0 +1,30 @@
++// Email delivery for the membership notices. Zola chose (2026-11-15) to send from her own Gmail with an
++// app password she creates in her Google account and pastes into Vercel herself; it lives only there.
++//   GMAIL_USER           her Gmail address (the sender)
++//   GMAIL_APP_PASSWORD   the 16-character app password (spaces allowed, they are removed)
++import nodemailer from "nodemailer";
++import type { GmailConfig } from "./mail-config";
++
++export { gmailConfig, type GmailConfig } from "./mail-config";
++
++export type MailMessage = { to: string; subject: string; text: string };
++export type MailResult = "sent" | "failed";
++type CreateTransport = (options: Record<string, unknown>) => { sendMail(message: Record<string, unknown>): Promise<unknown> };
++
++export const SENDER_NAME = "Zola｜Zolacoco Tarot";
++
++/** Sends one plain-text email through Gmail. Never throws; failures are logged by code only (no addresses). */
++export async function sendGmail(config: GmailConfig, message: MailMessage, createTransport: CreateTransport = nodemailer.createTransport as unknown as CreateTransport): Promise<MailResult> {
++  try {
++    const transport = createTransport({
++      host: "smtp.gmail.com", port: 465, secure: true,
++      auth: { user: config.user, pass: config.pass },
++      connectionTimeout: 5000, greetingTimeout: 5000, socketTimeout: 8000,
++    });
++    await transport.sendMail({ from: { name: SENDER_NAME, address: config.user }, to: message.to, subject: message.subject, text: message.text });
++    return "sent";
++  } catch (error) {
++    console.error("gmail_send_failed", { code: (error as { code?: string; responseCode?: number })?.code ?? "unknown", responseCode: (error as { responseCode?: number })?.responseCode ?? null });
++    return "failed";
++  }
++}
+diff --git a/lib/member-activation-email.ts b/lib/member-activation-email.ts
+index 2fbe9e7..4e212e9 100644
+--- a/lib/member-activation-email.ts
++++ b/lib/member-activation-email.ts
+@@ -2,10 +2,16 @@ type Sql = (strings: TemplateStringsArray, ...values: string[]) => Promise<Recor
+ 
+ let schemaReady: Promise<unknown> | undefined;
+ 
+-export async function notifyPendingMember(sql: Sql, memberId: string) {
++type LoadMailer = () => Promise<Pick<typeof import("./mailer"), "gmailConfig" | "sendGmail">>;
++
++export async function notifyPendingMember(sql: Sql, memberId: string, loadMailer: LoadMailer = () => import("./mailer")) {
+   if (process.env.MEMBERSHIP_EMAIL_ENABLED !== "true") return;
+-  const apiKey = process.env.RESEND_API_KEY?.trim();
+-  const from = process.env.MEMBERSHIP_EMAIL_FROM?.trim();
++  // Zola's own Gmail (lib/mailer.ts, 2026-11-15) when it is set up; otherwise Resend as before.
++  // Loaded only then, so this file stays importable on its own.
++  const mailer = process.env.GMAIL_USER?.trim() && process.env.GMAIL_APP_PASSWORD?.trim() ? await loadMailer() : null;
++  const gmail = mailer?.gmailConfig() ?? null;
++  const apiKey = gmail ? "gmail" : process.env.RESEND_API_KEY?.trim();
++  const from = gmail ? gmail.user : process.env.MEMBERSHIP_EMAIL_FROM?.trim();
+   const to = process.env.MEMBERSHIP_EMAIL_TO?.trim();
+   const origin = process.env.MEMBERSHIP_ADMIN_ORIGIN?.trim();
+   // Enabled but incomplete: say which names are missing (never their values), so it is not silent.
+@@ -60,7 +66,13 @@ export async function notifyPendingMember(sql: Sql, memberId: string) {
+ 
+     let status = "unknown";
+     let providerStatus = "";
+-    try {
++    if (mailer && gmail) {
++      status = await mailer.sendGmail(gmail, {
++        to,
++        subject: "Zolacoco Tarot｜有新會員待開通",
++        text: `姓名：${member.full_name}\nEmail：${member.email}\n\n請至會員管理後台確認並開通權限：\n${adminUrl}`,
++      });
++    } else try {
+       const response = await fetch("https://api.resend.com/emails", {
+         method: "POST",
+         headers: {
+diff --git a/lib/member-client.ts b/lib/member-client.ts
+index 36e2f10..177f6d0 100644
+--- a/lib/member-client.ts
++++ b/lib/member-client.ts
+@@ -97,10 +97,12 @@ export async function saveMemberProfile(
+   }
+ }
+ 
++export type MemberEmailOutcome = "sent" | "failed" | "disabled" | "skipped";
++
+ export async function runMemberAction(
+-  body: { memberId: string; action: "activate" | "suspend" | "restore"; months: number } | { memberId: string; action: "student"; student: boolean } | { memberId: string; action: "coaching"; coaching: boolean },
++  body: { memberId: string; action: "activate" | "suspend" | "restore"; months: number } | { memberId: string; action: "student"; student: boolean } | { memberId: string; action: "coaching"; coaching: boolean } | { memberId: string; action: "note"; note: string },
+   fetchImpl: Fetch = fetch,
+-): Promise<{ ok: true } | { ok: false; message: string }> {
++): Promise<{ ok: true; email?: MemberEmailOutcome; note?: string } | { ok: false; message: string }> {
+   const fallback = "操作失敗，請稍後再試。";
+   try {
+     const response = await fetchImpl("/api/membership/admin", {
+@@ -112,7 +114,10 @@ export async function runMemberAction(
+     if (!response.ok) {
+       return { ok: false, message: response.status >= 500 ? fallback : humanMessage(data?.error, fallback) };
+     }
+-    return { ok: true };
++    // After 開通／增加月份: whether the member's email went out (lib/member-emails.ts); after a note: the saved text.
++    const email = typeof data?.email === "string" && ["sent", "failed", "disabled", "skipped"].includes(data.email) ? data.email as MemberEmailOutcome : undefined;
++    const note = typeof data?.note === "string" ? data.note : undefined;
++    return { ok: true, ...(email ? { email } : {}), ...(note !== undefined ? { note } : {}) };
+   } catch {
+     // The request may have reached the server before the connection failed.
+     return { ok: false, message: "網路連線不穩，操作尚未確認完成。請重新整理後確認會員狀態。" };
+diff --git a/lib/member-emails.ts b/lib/member-emails.ts
+new file mode 100644
+index 0000000..14a8034
+--- /dev/null
++++ b/lib/member-emails.ts
+@@ -0,0 +1,125 @@
++// Emails to the member herself (Zola 2026-11-15): when Zola activates or extends her membership, and
++// REMINDER_DAYS before it ends. Sent from Zola's Gmail (lib/mailer.ts), and only when
++// MEMBERSHIP_EMAIL_ENABLED=true, the Gmail settings and MEMBERSHIP_ADMIN_ORIGIN (the site's https origin)
++// are all set. Each email is claimed in member_email_log first (one row per member, kind and membership
++// period), so a retry, a double click or a second daily run never sends the same notice twice.
++import { ZOLA_LINE_URL } from "./contact";
++import { gmailConfig, type GmailConfig } from "./mail-config";
++import type { MailMessage, MailResult } from "./mailer";
++
++type Sql = (strings: TemplateStringsArray, ...values: unknown[]) => Promise<Record<string, unknown>[]>;
++type Env = Record<string, string | undefined>;
++type Send = (config: GmailConfig, message: MailMessage) => Promise<MailResult>;
++
++/** The mail library is loaded only when an email is actually sent. */
++const gmailSend: Send = async (config, message) => (await import("./mailer")).sendGmail(config, message);
++
++export type MemberEmailKind = "activated" | "extended" | "expiry_reminder";
++export type MemberEmailOutcome = MailResult | "disabled" | "skipped";
++export const REMINDER_DAYS = 7;
++/** At most this many reminders per daily run (each takes a few seconds). */
++export const REMINDER_BATCH = 20;
++
++/** The site's https origin, or null when it is missing or not a bare https origin. */
++export function siteOrigin(env: Env = process.env) {
++  const raw = env.MEMBERSHIP_ADMIN_ORIGIN?.trim();
++  if (!raw) return null;
++  try {
++    const url = new URL(raw);
++    return url.protocol === "https:" && !url.username && !url.password && url.href === `${url.origin}/` ? url.origin : null;
++  } catch {
++    return null;
++  }
++}
++
++export function memberEmailSettings(env: Env = process.env) {
++  if (env.MEMBERSHIP_EMAIL_ENABLED !== "true") return null;
++  const gmail = gmailConfig(env);
++  const origin = siteOrigin(env);
++  return gmail && origin ? { gmail, origin } : null;
++}
++
++/** 2026年12月15日 (Taiwan time). */
++export function taipeiDate(value: string | Date) {
++  return new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", year: "numeric", month: "long", day: "numeric" }).format(new Date(value));
++}
++
++export function memberEmail(kind: MemberEmailKind, member: Record<string, unknown>, origin: string) {
++  const name = typeof member.full_name === "string" && member.full_name.trim() ? `${member.full_name.trim()} ` : "";
++  const date = taipeiDate(String(member.access_expires_at));
++  const links = `回到網站：${origin}/\n會員中心（查看期限）：${origin}/account`;
++  const sign = `有任何問題，歡迎到 LINE 官方帳號找我：${ZOLA_LINE_URL}\n\nZola`;
++  if (kind === "expiry_reminder") {
++    return {
++      subject: `Zolacoco Tarot｜會員將在 ${date} 到期`,
++      text: `${name}妳好：\n\n妳的 Zolacoco Tarot 會員將在 ${date} 到期。到期後，會員功能會先暫停；妳存下的紀錄不會因為到期而刪除。\n\n想繼續使用，可以到 LINE 官方帳號跟我說，我幫妳延長：${ZOLA_LINE_URL}\n\n${links}\n\nZola`,
++    };
++  }
++  const extended = kind === "extended";
++  return {
++    subject: extended ? "Zolacoco Tarot｜妳的會員已延長" : "Zolacoco Tarot｜妳的會員已開通",
++    text: `${name}妳好：\n\n妳的 Zolacoco Tarot 會員已經${extended ? "延長" : "開通"}，${extended ? "現在" : ""}可以使用到 ${date}。\n\n${links}\n\n${sign}`,
++  };
++}
++
++async function finish(sql: Sql, memberId: string, kind: MemberEmailKind, periodKey: string, result: MailResult) {
++  await sql`UPDATE member_email_log SET status = ${result}, finished_at = now() WHERE member_id = ${memberId} AND kind = ${kind} AND period_key = ${periodKey}`;
++}
++
++/** Right after Zola activates or extends a member. Never throws: the admin action has already succeeded. */
++export async function notifyMemberAccess(sql: Sql, memberId: string, kind: "activated" | "extended", env: Env = process.env, send: Send = gmailSend): Promise<MemberEmailOutcome> {
++  const settings = memberEmailSettings(env);
++  if (!settings) return "disabled";
++  try {
++    const [member] = await sql`
++      WITH current_member AS (
++        SELECT id, email, full_name, access_expires_at, extract(epoch FROM access_expires_at)::bigint::text AS period_key
++        FROM members
++        WHERE id = ${memberId} AND role = 'member' AND status = 'active' AND access_expires_at > now()
++      ), claimed AS (
++        INSERT INTO member_email_log (member_id, kind, period_key, status)
++        SELECT id, ${kind}, period_key, 'sending' FROM current_member
++        ON CONFLICT (member_id, kind, period_key) DO NOTHING
++        RETURNING member_id
++      )
++      SELECT current_member.* FROM current_member JOIN claimed ON claimed.member_id = current_member.id
++    `;
++    if (!member) return "skipped";
++    const result = await send(settings.gmail, { to: String(member.email), ...memberEmail(kind, member, settings.origin) });
++    await finish(sql, memberId, kind, String(member.period_key), result);
++    return result;
++  } catch (error) {
++    console.error("member_email_failed", { kind, reason: error instanceof Error ? error.message.slice(0, 80) : "unknown" });
++    return "failed";
++  }
++}
++
++/** The daily run: members whose membership ends within REMINDER_DAYS get one reminder per period. */
++export async function sendExpiryReminders(sql: Sql, env: Env = process.env, send: Send = gmailSend) {
++  const settings = memberEmailSettings(env);
++  if (!settings) return { status: "disabled" as const, sent: 0, failed: 0 };
++  const due = await sql`
++    WITH due AS (
++      SELECT id, email, full_name, access_expires_at, extract(epoch FROM access_expires_at)::bigint::text AS period_key
++      FROM members
++      WHERE role = 'member' AND status = 'active'
++        AND access_expires_at > now() AND access_expires_at <= now() + make_interval(days => ${REMINDER_DAYS})
++      ORDER BY access_expires_at
++      LIMIT ${REMINDER_BATCH}
++    ), claimed AS (
++      INSERT INTO member_email_log (member_id, kind, period_key, status)
++      SELECT id, 'expiry_reminder', period_key, 'sending' FROM due
++      ON CONFLICT (member_id, kind, period_key) DO NOTHING
++      RETURNING member_id
++    )
++    SELECT due.* FROM due JOIN claimed ON claimed.member_id = due.id
++  `;
++  let sent = 0;
++  let failed = 0;
++  for (const member of due) {
++    const result = await send(settings.gmail, { to: String(member.email), ...memberEmail("expiry_reminder", member, settings.origin) });
++    await finish(sql, String(member.id), "expiry_reminder", String(member.period_key), result);
++    if (result === "sent") sent += 1; else failed += 1;
++  }
++  return { status: "done" as const, sent, failed };
++}
+diff --git a/lib/membership-access.ts b/lib/membership-access.ts
+index 9c4f61c..e3d149b 100644
+--- a/lib/membership-access.ts
++++ b/lib/membership-access.ts
+@@ -10,7 +10,8 @@ export function isPublicMembershipPage(pathname: string) {
+ // These endpoints perform their own identity/admin checks, without requiring an
+ // active subscription (pending/expired members must still reach their account).
+ export function isMembershipServiceRoute(pathname: string) {
+-  return ["/api/membership/me", "/api/membership/admin"].some(
++  // The daily reminder run is called by Vercel Cron and checks CRON_SECRET itself.
++  return ["/api/membership/me", "/api/membership/admin", "/api/cron/membership-reminders"].some(
+     (path) => pathname === path || pathname === `${path}/`,
+   );
+ }
+diff --git a/lib/membership.ts b/lib/membership.ts
+index a070b40..3f6aa16 100644
+--- a/lib/membership.ts
++++ b/lib/membership.ts
+@@ -100,6 +100,28 @@ export async function ensureMembershipSchema() {
+       CREATE INDEX IF NOT EXISTS member_access_audit_member_created_idx
+       ON member_access_audit (member_id, created_at DESC)
+     `;
++    // Zola's private note about a member (2026-11-15). Its own table, so the member's own endpoints,
++    // which return the members row, can never include it.
++    await sql`
++      CREATE TABLE IF NOT EXISTS member_admin_notes (
++        member_id uuid PRIMARY KEY REFERENCES members(id) ON DELETE CASCADE,
++        note text NOT NULL DEFAULT '',
++        updated_by text NOT NULL,
++        updated_at timestamptz NOT NULL DEFAULT now()
++      )
++    `;
++    // Emails to members (lib/member-emails.ts): one row per member, kind and membership period.
++    await sql`
++      CREATE TABLE IF NOT EXISTS member_email_log (
++        member_id uuid NOT NULL REFERENCES members(id) ON DELETE CASCADE,
++        kind text NOT NULL CHECK (kind IN ('activated', 'extended', 'expiry_reminder')),
++        period_key text NOT NULL,
++        status text NOT NULL CHECK (status IN ('sending', 'sent', 'failed')),
++        attempted_at timestamptz NOT NULL DEFAULT now(),
++        finished_at timestamptz,
++        PRIMARY KEY (member_id, kind, period_key)
++      )
++    `;
+   })().catch((error) => {
+     membershipSchemaPromise = null;
+     throw error;
+diff --git a/package.json b/package.json
+index 248e7b7..05411ac 100644
+--- a/package.json
++++ b/package.json
+@@ -15,7 +15,7 @@
+     "validate:artifact": "bash scripts/validate-artifact.sh",
+     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
+     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate",
+-    "test:membership": "node --experimental-vm-modules --experimental-strip-types --test tests/membership-access.test.mjs tests/member-identity.test.mjs tests/member-data-auth.test.mjs tests/student-practice.test.mjs tests/coaching-journal.test.mjs tests/coaching-journal-sync.test.mjs tests/coaching-journal-review.test.mjs",
++    "test:membership": "node --experimental-vm-modules --experimental-strip-types --test tests/membership-access.test.mjs tests/member-identity.test.mjs tests/member-data-auth.test.mjs tests/student-practice.test.mjs tests/coaching-journal.test.mjs tests/coaching-journal-sync.test.mjs tests/coaching-journal-review.test.mjs tests/member-emails.test.mjs",
+     "test:account": "node --experimental-vm-modules --experimental-strip-types --test tests/account-state.test.mjs tests/account-view.test.mjs tests/member-profile-api.test.mjs tests/membership-pearl.test.mjs",
+     "test:tarot": "node --experimental-strip-types --test tests/tarot-reading.test.mjs tests/tarot-page-state.test.mjs tests/tarot-deck.test.mjs tests/tarot-card-design.test.mjs tests/draw-fan.test.mjs tests/tarot-readings.test.mjs tests/home-pearl.test.mjs tests/healing-room-pearl.test.mjs tests/astrology-pearl.test.mjs tests/astro-music.test.mjs tests/delayed-advance.test.mjs tests/site-check.test.mjs tests/awareness.test.mjs tests/natal-chart.test.mjs tests/archive-pearl.test.mjs"
+   },
+@@ -26,6 +26,7 @@
+     "astronomy-engine": "^2.1.19",
+     "drizzle-orm": "0.45.2",
+     "next": "16.2.6",
++    "nodemailer": "^10.5.0",
+     "react": "19.2.6",
+     "react-dom": "19.2.6"
+   },
+@@ -33,6 +34,7 @@
+     "@cloudflare/vite-plugin": "1.37.1",
+     "@tailwindcss/postcss": "4.2.1",
+     "@types/node": "22.19.19",
++    "@types/nodemailer": "^8.0.2",
+     "@types/react": "19.2.14",
+     "@types/react-dom": "19.2.3",
+     "@vitejs/plugin-react": "6.0.2",
+diff --git a/vercel.json b/vercel.json
+index 01214ef..efda62f 100644
+--- a/vercel.json
++++ b/vercel.json
+@@ -6,5 +6,8 @@
+     "deploymentEnabled": {
+       "pr-assets": false
+     }
+-  }
++  },
++  "crons": [
++    { "path": "/api/cron/membership-reminders", "schedule": "0 1 * * *" }
++  ]
+ }
+```
