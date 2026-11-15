@@ -72,6 +72,32 @@ export function visibleQuestion(id: string, admin: boolean): PracticeQuestion | 
 }
 
 /** What the page receives: the question without which option is right or why. */
+// Display order (Zola 2026-11-15: 實戰 showed the right reading in A only 1 time in 12): in every
+// unit the right reading appears in A, B and C about equally often, balanced in a fixed hash order so the
+// pattern cannot be guessed from the list. Only the order on screen changes; option ids stay the same, so
+// every saved answer, judgement and version snapshot keeps meaning exactly what it meant.
+function orderHash(text: string) {
+  let hash = 0x811c9dc5;
+  for (const char of text) { hash ^= char.codePointAt(0)!; hash = Math.imul(hash, 0x01000193) >>> 0; }
+  return hash;
+}
+const displaySlot = new Map<string, number>();
+for (const unit of new Set(PRACTICE_QUESTIONS.map((question) => question.unit))) {
+  PRACTICE_QUESTIONS.filter((question) => question.unit === unit)
+    .map((question) => question.id)
+    .sort((a, b) => orderHash(a) - orderHash(b) || a.localeCompare(b))
+    .forEach((id, index) => displaySlot.set(id, index % 3));
+}
+
+/** The options in the order the page shows them (A, B, C), with the right reading in its balanced slot. */
+export function displayOptions(question: PracticeQuestion) {
+  const right = question.options.filter((option) => option.correct);
+  if (right.length !== 1) return question.options;
+  const others = question.options.filter((option) => !option.correct);
+  const slot = Math.min(displaySlot.get(question.id) ?? 0, others.length);
+  return [...others.slice(0, slot), right[0], ...others.slice(slot)];
+}
+
 export function publicQuestion(question: PracticeQuestion) {
   return {
     id: question.id,
@@ -83,7 +109,7 @@ export function publicQuestion(question: PracticeQuestion) {
     observe: question.observe,
     read: question.read,
     choose: question.choose,
-    options: question.options.map(({ id, text }) => ({ id, text })),
+    options: displayOptions(question).map(({ id, text }) => ({ id, text })),
     draft: question.status !== "published",
   };
 }
