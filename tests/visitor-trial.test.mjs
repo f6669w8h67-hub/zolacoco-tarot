@@ -240,6 +240,18 @@ test("signed out is asked to register; the account page and Zola's admin show th
   assert.match(admin, /member\.effective_status === "pending" \? <small className="member-admin-trial">免費體驗：已用 \{Math\.min\(3, member\.trial_used \?\? 0\)\}／3 次<\/small>/);
 });
 
+test("我想玩玩看 cards show the pendulum and the die in their rooms, not empty rooms (Zola 2026-11-19)", async () => {
+  const home = await read("app/page.tsx");
+  assert.match(home, /pendulum: \{ room: "\/pendulum\/hero-desktop\.webp", charm: \["\/pendulum\/metal\.webp", "\/pendulum\/crystal\.webp"\] \}/);
+  assert.match(home, /"astro-dice": \{ room: "\/astro-dice\/hero-desktop\.webp", charm: \["\/astro-dice\/die\.webp"\] \}/);
+  assert.match(home, /<span className="visitor-trial-charm">\{trialArt\[feature\.id\]\.charm\.map/);
+  const css = await read("app/styles/visitor-trial.css");
+  assert.match(css, /\[data-feature="pendulum"\] \.visitor-trial-charm \{ top: -18px;/);
+  assert.match(css, /\[data-feature="astro-dice"\] \.visitor-trial-charm \{ top: 50%;/);
+  const { existsSync } = await import("node:fs");
+  for (const file of ["pendulum/metal.webp", "pendulum/crystal.webp", "astro-dice/die.webp", "tarot-scenes/major-17.webp"]) assert.ok(existsSync(new URL(`../public/${file}`, import.meta.url)), file);
+});
+
 test("development preview can show the trial screens; production never takes that branch", async () => {
   const layout = await read("app/layout.tsx");
   assert.match(layout, /process\.env\.MEMBERSHIP_PREVIEW_AS === "signed-out" \|\| process\.env\.MEMBERSHIP_PREVIEW_AS === "account"\n\s+\? <TrialProvider mode=\{process\.env\.MEMBERSHIP_PREVIEW_AS\}>/);
