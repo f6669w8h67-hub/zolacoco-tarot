@@ -14,6 +14,8 @@ export type ClientMember = {
   is_student?: boolean;
   /** 陪跑中 (七日塔羅筆記 × 陪跑); older responses may not have it yet. */
   is_coaching?: boolean;
+  /** 免費體驗 uses spent before activation (lib/visitor-trial.ts); older responses may not have it yet. */
+  trial_used?: number;
   access_expires_at: string | null;
   created_at?: string;
 };

@@ -1,15 +1,14 @@
-// 免費體驗 for visitors who are not signed in (Zola 2026-11-19): the homepage's 塔羅抽牌, 靈擺 and 星骰
-// open without an account, three completed uses in all, counted on the visitor's own device. After the
-// third, the page asks them to apply for membership through Zola's LINE with the keyword below, which
-// her Official Account answers automatically. Everything else stays member-only, and no API opens.
+// 免費體驗 (Zola 2026-11-19). The homepage's 塔羅抽牌, 靈擺 and 星骰 give an account that is registered but
+// not yet activated (status pending) three completed uses in all, counted on that account in Neon
+// (members.trial_used), so clearing the browser or changing phones does not start over. Signed-out
+// visitors can look at these pages and are asked to register first. After the third use, the page asks
+// them to apply for membership through Zola's LINE with the keyword below, which her Official Account
+// answers automatically. Everything else stays member-only.
 
-/** Completed uses a visitor gets across all three features together. */
+/** Completed uses an unactivated account gets across all three features together. */
 export const TRIAL_LIMIT = 3;
 
-/** Where the count lives in the visitor's browser. Clearing site data starts over; that is accepted. */
-export const TRIAL_STORAGE_KEY = "zolacoco-visitor-trial-v1";
-
-/** The message a visitor sends to Zola's LINE to apply; her auto-reply is set on this exact keyword. */
+/** The message sent to Zola's LINE to apply; her auto-reply is set on this exact keyword. */
 export const MEMBERSHIP_KEYWORD = "申請會員";
 
 export type TrialFeature = "tarot" | "pendulum" | "astro-dice";
@@ -20,31 +19,22 @@ export const TRIAL_FEATURES: readonly { id: TrialFeature; href: string; title: s
   { id: "astro-dice", href: "/astro-dice", title: "星骰指引", desc: "擲出行星、星座與宮位，看此刻的能量。" },
 ];
 
-/** Pages a signed-out visitor may open to use the trial. Exact paths only; every API stays closed. */
+export function isTrialFeature(value: unknown): value is TrialFeature {
+  return TRIAL_FEATURES.some((feature) => feature.id === value);
+}
+
+/** Pages that open for the trial (and, signed out, show the invitation to register). Exact paths only. */
 export function isVisitorTrialPage(pathname: string) {
   return ["/", "/pendulum", "/astro-dice"].some((path) => pathname === path || (path !== "/" && pathname === `${path}/`));
 }
 
-type TrialStore = { used: number; last: string | null };
-
-/** Reads the stored count; anything unreadable counts as a fresh start, never as more than the limit. */
-export function parseTrial(raw: string | null | undefined): TrialStore {
-  try {
-    const value = JSON.parse(raw ?? "null") as { used?: unknown; last?: unknown } | null;
-    const used = typeof value?.used === "number" && Number.isFinite(value.used) ? Math.floor(value.used) : 0;
-    return { used: Math.min(TRIAL_LIMIT, Math.max(0, used)), last: typeof value?.last === "string" ? value.last : null };
-  } catch {
-    return { used: 0, last: null };
-  }
+/** Who gets the three uses: a registered member Zola has not activated yet. Never expired or suspended. */
+export function hasTrialAccess(member: { role?: string; status?: string } | undefined | null) {
+  return member?.role === "member" && member.status === "pending";
 }
 
-export function trialRemaining(used: number) {
-  return Math.max(0, TRIAL_LIMIT - used);
-}
-
-/** The stored value after one more completed use (never past the limit). */
-export function spendTrial(raw: string | null | undefined, feature: TrialFeature, now = new Date()) {
-  const current = parseTrial(raw);
-  const used = Math.min(TRIAL_LIMIT, current.used + 1);
-  return { used, value: JSON.stringify({ used, last: `${feature}@${now.toISOString()}` }) };
+/** Uses left, from the stored count (anything odd counts as used up rather than as more). */
+export function trialRemaining(used: unknown) {
+  const count = typeof used === "number" && Number.isFinite(used) ? Math.floor(used) : TRIAL_LIMIT;
+  return Math.max(0, TRIAL_LIMIT - Math.max(0, count));
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { tarotCards, topicLens, type TarotCard } from "./tarot-data";
 import { TarotCardBack, TarotCardFace } from "./tarot-card";
@@ -118,7 +119,8 @@ function synthesis(cards: TarotCard[], spreadId: string, topic: string, position
 }
 
 export default function Home() {
-  // 免費體驗: a signed-out visitor gets three completed uses in all (app/visitor-trial.tsx); members are unaffected.
+  // 免費體驗 (app/visitor-trial.tsx): a registered, unactivated account gets three completed uses in all;
+  // signed out, the page asks to register first. Members are unaffected.
   const trial = useTrial();
   const [topic, setTopic] = useState("今日指引");
   const [selected, setSelected] = useState<TarotCard[]>([]);
@@ -362,8 +364,13 @@ export default function Home() {
           {trial.visitor ? <div className="visitor-status trial-status" role="status">
             <span aria-hidden="true" />
             <p>
-              <b>不用註冊，免費體驗 {TRIAL_LIMIT} 次</b>
-              <small>塔羅抽牌、靈擺、星骰任選，{trial.canPlay ? `還剩 ${trial.remaining} 次。` : "三次已經用完。"}</small>
+              {trial.mode === "signed-out" ? <>
+                <b>免費註冊，就能體驗 {TRIAL_LIMIT} 次</b>
+                <small>塔羅抽牌、靈擺、星骰任選，用 Email 建立帳號就能開始。</small>
+              </> : <>
+                <b>開通前，免費體驗 {TRIAL_LIMIT} 次</b>
+                <small>塔羅抽牌、靈擺、星骰任選，{!trial.ready ? "正在確認次數…" : trial.canPlay ? `還剩 ${trial.remaining} 次。` : "三次已經用完。"}</small>
+              </>}
             </p>
           </div> : <div className="visitor-status member-status" role="status">
             <span aria-hidden="true" />
@@ -395,14 +402,15 @@ export default function Home() {
 
       {trial.visitor ? <section className="visitor-trial" id="trial" aria-labelledby="trial-title">
         <div className="visitor-trial-heading"><p>FREE TRIAL</p><h2 id="trial-title">我想玩玩看</h2></div>
-        <p className="visitor-trial-lead">不用註冊，下面三種體驗合計可以玩 {TRIAL_LIMIT} 次：每完成一次抽牌、一次靈擺或一次星骰，就算一次。</p>
+        <p className="visitor-trial-lead">{trial.mode === "signed-out" ? "用 Email 免費註冊後，" : ""}下面三種體驗合計可以玩 {TRIAL_LIMIT} 次：每完成一次抽牌、一次靈擺或一次星骰，就算一次。</p>
         <TrialMeter />
-        {trial.canPlay ? <div className="visitor-trial-grid">
+        {trial.canPlay ? null : <TrialLimitCard />}
+        {trial.canPlay || trial.mode === "signed-out" ? <div className="visitor-trial-grid">
           {TRIAL_FEATURES.map((feature) => <a key={feature.id} className="visitor-trial-card" href={feature.href}>
             <span className="visitor-trial-art" aria-hidden="true"><img src={trialArt[feature.id]} alt="" loading="lazy" /></span>
-            <span className="visitor-trial-copy"><b>{feature.title}</b><em>{feature.desc}</em><strong>開始體驗 <span aria-hidden="true">→</span></strong></span>
+            <span className="visitor-trial-copy"><b>{feature.title}</b><em>{feature.desc}</em><strong>{trial.canPlay ? "開始體驗" : "先看看"} <span aria-hidden="true">→</span></strong></span>
           </a>)}
-        </div> : <TrialLimitCard />}
+        </div> : null}
       </section> : null}
 
       <section className="draw-section" id="draw">
@@ -616,7 +624,9 @@ export default function Home() {
             <div className="visitor-locked-card">
               <b>牌面直覺練習室・七日塔羅內在筆記</b>
               <p>成為會員後，這裡可以練習自己讀牌、每天寫一則內在筆記；抽牌、靈擺、星骰也不再限制次數，並能保存紀錄。</p>
-              <a href={membershipApplyUrl} target="_blank" rel="noreferrer">申請成為會員</a>
+              {trial.mode === "signed-out"
+                ? <Link href="/sign-up">先免費註冊</Link>
+                : <a href={membershipApplyUrl} target="_blank" rel="noreferrer">申請成為會員</a>}
             </div>
           </div> : <>
           <p className="ex-group-label">在這裡就能練習</p>
@@ -664,7 +674,7 @@ export default function Home() {
             <div className="ex-more-grid">
               {pageTools.map((tool) => <a key={tool.href} className="ex-more-card" href={tool.href}>
                 <span className="ex-more-art" aria-hidden="true"><img src={tool.room} alt="" loading="lazy" /><span className="ex-more-charm">{tool.charm.map((src) => <img key={src} src={src} alt="" loading="lazy" />)}</span></span>
-                <span className="ex-more-copy"><i>{tool.number}</i><b>{tool.title}</b>{trial.visitor ? <small className="ex-more-tag">{tool.href === "/awareness" ? "免費" : "免費體驗"}</small> : null}<em>{tool.desc}</em><strong>前往 <span aria-hidden="true">→</span></strong></span>
+                <span className="ex-more-copy"><i>{tool.number}</i><b>{tool.title}</b>{trial.visitor ? <small className="ex-more-tag">{tool.href === "/awareness" ? "免費" : trial.mode === "signed-out" ? "註冊後免費體驗" : "免費體驗"}</small> : null}<em>{tool.desc}</em><strong>前往 <span aria-hidden="true">→</span></strong></span>
               </a>)}
             </div>
           </div>

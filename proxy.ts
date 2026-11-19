@@ -13,7 +13,7 @@ import {
   isStudentPage,
   isStudentRoute,
 } from "./lib/membership-access";
-import { isVisitorTrialPage } from "./lib/visitor-trial";
+import { hasTrialAccess, isVisitorTrialPage } from "./lib/visitor-trial";
 
 const configured = isClerkConfigured(process.env);
 
@@ -33,7 +33,8 @@ const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
 
   const session = await clerkAuth();
   if (!session.userId) {
-    // 免費體驗: signed-out visitors may open the homepage, 靈擺 and 星骰 pages (never an API).
+    // 免費體驗: signed-out visitors may look at the homepage, 靈擺 and 星骰 (never an API); the pages ask
+    // them to register before playing.
     if (isVisitorTrialPage(request.nextUrl.pathname)) return NextResponse.next();
     if (/^\/(api|trpc)(\/|$)/.test(request.nextUrl.pathname)) {
       return Response.json({ error: "UNAUTHENTICATED" }, { status: 401 });
@@ -65,6 +66,8 @@ const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
   const member = rows[0] as { role?: string; status?: string; access_expires_at?: string | null } | undefined;
   const allowed = hasMemberAccess(member);
   if (allowed) return NextResponse.next();
+  // 免費體驗: a registered account Zola has not activated yet may play on these three pages.
+  if (hasTrialAccess(member) && isVisitorTrialPage(request.nextUrl.pathname)) return NextResponse.next();
 
   if (/^\/(api|trpc)(\/|$)/.test(request.nextUrl.pathname)) {
     return Response.json({ error: member?.status === "active" ? "MEMBERSHIP_EXPIRED" : member?.status?.toUpperCase() ?? "MEMBERSHIP_REQUIRED" }, { status: 403 });

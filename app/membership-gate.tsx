@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { isCoachingRoute, isPublicMembershipPage, isStudentRoute } from "@/lib/membership-access";
 import { ZOLA_LINE_URL } from "@/lib/contact";
 import { isVisitorTrialPage } from "@/lib/visitor-trial";
-import { VisitorTrialProvider } from "./visitor-trial";
+import { TrialProvider } from "./visitor-trial";
 import "./styles/pearl-page.css";
 
 type AccessState = {
@@ -53,9 +53,9 @@ export default function MembershipGate({ children }: { children: React.ReactNode
   if (!isLoaded || (isSignedIn && access.status === "loading")) {
     return <AccessScreen tone="loading" eyebrow="member access" title="正在確認使用權限…" message="請稍候，正在讀取妳的會員狀態。" />;
   }
-  // 免費體驗 (Zola 2026-11-19): signed out on the homepage, 靈擺 or 星骰, the page opens in trial mode
-  // (three uses, then 申請成為會員). Signed-in members who are not active keep the screens below.
-  if (!isSignedIn && isVisitorTrialPage(pathname)) return <VisitorTrialProvider>{children}</VisitorTrialProvider>;
+  // 免費體驗 (Zola 2026-11-19): signed out on the homepage, 靈擺 or 星骰, the page shows itself and asks
+  // them to register (free) before playing.
+  if (!isSignedIn && isVisitorTrialPage(pathname)) return <TrialProvider mode="signed-out">{children}</TrialProvider>;
   if (!isSignedIn) {
     return <AccessScreen tone="signed-out" eyebrow="zolacoco member" title="登入後，走進妳的占卜空間" message="使用 Email 登入或建立帳號；第一次申請後，請通知 Zola 為妳開通使用期限。">
       <SignInButton mode="modal"><button className="gate-primary" type="button">Email 登入</button></SignInButton>
@@ -63,6 +63,8 @@ export default function MembershipGate({ children }: { children: React.ReactNode
     </AccessScreen>;
   }
   if (access.status === "allowed") return children;
+  // Registered, not activated yet: three uses on these pages, counted on the account (/api/trial).
+  if (access.status === "pending" && isVisitorTrialPage(pathname)) return <TrialProvider mode="account">{children}</TrialProvider>;
 
   const copyByStatus = {
     pending: ["申請已收到，等待 Zola 開通", "請先到會員中心補齊姓名、LINE 與生日，再通知 Zola。權限開通後，全部功能會一次開放。"],
@@ -77,6 +79,7 @@ export default function MembershipGate({ children }: { children: React.ReactNode
   return <AccessScreen tone={access.status} eyebrow="member access" title={copy[0]} message={copy[1]}>
     <Link className="gate-primary" href="/account">查看會員資料</Link>
     <a className="gate-secondary" href={ZOLA_LINE_URL} target="_blank" rel="noreferrer">通知 Zola</a>
+    {access.status === "pending" ? <Link className="gate-secondary" href="/#trial">開通前，先免費體驗 3 次</Link> : null}
   </AccessScreen>;
 }
 

@@ -129,7 +129,7 @@ const uiMocks = (pathname) => ({
   "next/navigation": { usePathname: () => pathname },
   "next/link": { default: ({ children, ...props }) => React.createElement("a", props, children) },
   "./styles/pearl-page.css": {},
-  "./visitor-trial": { VisitorTrialProvider: ({ children }) => children },
+  "./visitor-trial": { TrialProvider: ({ children }) => children },
 });
 
 test("unconfigured layout fallback hides VIP children but renders public pages without Clerk hooks", async () => {
@@ -205,7 +205,7 @@ test("root layout selects a closed fallback in production and retains developmen
       "./pearl-fonts": { default: () => null },
       "./membership-gate": { default: wrapper("authenticated"), UnconfiguredMembershipGate: wrapper("closed") },
       "./auth-identity": { ClerkIdentityProvider: ({ children }) => children },
-      "./visitor-trial": { VisitorTrialProvider: ({ children }) => children },
+      "./visitor-trial": { TrialProvider: ({ children }) => children },
     } });
     const html = renderToStaticMarkup(React.createElement(mod.default, null, "VIP_SENTINEL"));
     if (expected === "preview") assert.doesNotMatch(html, /data-gate/);

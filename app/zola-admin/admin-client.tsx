@@ -20,6 +20,8 @@ type Member = {
   is_student?: boolean;
   /** 陪跑中 (七日塔羅筆記 × 陪跑), separate from VIP months. */
   is_coaching?: boolean;
+  /** 免費體驗 uses spent before activation (lib/visitor-trial.ts). */
+  trial_used?: number;
   /** Zola's private note (member_admin_notes); only this admin list carries it. */
   admin_note?: string | null;
   /** The latest email to the member (member_email_log). */
@@ -153,6 +155,7 @@ export default function AdminClient() {
     <section className="member-admin-list">
       {visible.map((member) => <article key={member.id}>
         <div className="member-admin-identity"><span className={`member-status status-${member.effective_status}`}>{statusLabels[member.effective_status]}</span>{member.is_student ? <span className="member-status member-student">學員</span> : null}{member.is_coaching ? <span className="member-status member-coaching">陪跑中</span> : null}<h2>{member.full_name || "尚未填寫姓名"}</h2><p>{member.email}</p><small>LINE：{member.line_id || "尚未填寫"}　生日：{member.birthday?.slice(0, 10) || "尚未填寫"}</small>
+          {member.effective_status === "pending" ? <small className="member-admin-trial">免費體驗：已用 {Math.min(3, member.trial_used ?? 0)}／3 次</small> : null}
           {noteDrafts[member.id] !== undefined
             ? <div className="member-admin-note is-editing">
                 <label>備註（只有妳看得到）<textarea value={noteDrafts[member.id]} maxLength={ADMIN_NOTE_LIMIT} rows={3} onChange={(event) => setNoteDrafts((drafts) => ({ ...drafts, [member.id]: event.target.value }))} /></label>

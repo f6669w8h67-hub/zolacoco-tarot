@@ -73,6 +73,8 @@ export async function ensureMembershipSchema() {
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS is_student boolean NOT NULL DEFAULT false`;
     // 七日塔羅筆記 × 陪跑: Zola marks who is 陪跑中. Existing members are not.
     await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS is_coaching boolean NOT NULL DEFAULT false`;
+    // 免費體驗 (2026-11-19): uses of the three-use trial an unactivated account has spent (lib/visitor-trial.ts).
+    await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS trial_used integer NOT NULL DEFAULT 0`;
     await sql`CREATE UNIQUE INDEX IF NOT EXISTS members_email_lower_idx ON members (lower(email))`;
     await sql`CREATE INDEX IF NOT EXISTS members_status_expiry_idx ON members (status, access_expires_at)`;
     await sql`
