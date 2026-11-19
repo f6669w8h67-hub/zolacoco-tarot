@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { isCoachingRoute, isPublicMembershipPage, isStudentRoute } from "@/lib/membership-access";
-import { ZOLA_LINE_URL } from "@/lib/contact";
-import { isVisitorTrialPage } from "@/lib/visitor-trial";
+import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
+import { MEMBERSHIP_KEYWORD, TRIAL_LIMIT, isVisitorTrialPage } from "@/lib/visitor-trial";
 import { TrialProvider } from "./visitor-trial";
 import "./styles/pearl-page.css";
 
@@ -67,7 +67,8 @@ export default function MembershipGate({ children }: { children: React.ReactNode
   if (access.status === "pending" && isVisitorTrialPage(pathname)) return <TrialProvider mode="account">{children}</TrialProvider>;
 
   const copyByStatus = {
-    pending: ["申請已收到，等待 Zola 開通", "請先到會員中心補齊姓名、LINE 與生日，再通知 Zola。權限開通後，全部功能會一次開放。"],
+    // Zola 2026-11-19: registering is not applying. Before applying, an account can play the trial.
+    pending: ["這裡是會員專屬空間", `開通前，可以先免費體驗 ${TRIAL_LIMIT} 次抽牌、靈擺或星骰；想成為會員，按「申請成為會員」就會打開 Zola 的官方 LINE。`],
     suspended: ["目前使用權限已暫停", "妳的會員資料仍會保留。若需要恢復使用，請直接聯絡 Zola。"],
     expired: ["這次的使用期限已結束", "續約方案完成後，Zola 可以從後台替妳增加月份並立即恢復。"],
     error: ["暫時無法確認會員狀態", "請重新整理頁面；若持續出現，請聯絡 Zola 協助。"],
@@ -76,10 +77,16 @@ export default function MembershipGate({ children }: { children: React.ReactNode
     ? copyByStatus[access.status as keyof typeof copyByStatus]
     : ["會員權限尚未開放", "請聯絡 Zola 協助確認。"];
 
+  if (access.status === "pending") {
+    return <AccessScreen tone="pending" eyebrow="member access" title={copy[0]} message={copy[1]}>
+      <Link className="gate-primary" href="/#trial">先免費體驗 {TRIAL_LIMIT} 次</Link>
+      <a className="gate-secondary" href={lineMessageUrl(MEMBERSHIP_KEYWORD)} target="_blank" rel="noreferrer">申請成為會員</a>
+      <Link className="gate-secondary" href="/account">查看會員資料</Link>
+    </AccessScreen>;
+  }
   return <AccessScreen tone={access.status} eyebrow="member access" title={copy[0]} message={copy[1]}>
     <Link className="gate-primary" href="/account">查看會員資料</Link>
     <a className="gate-secondary" href={ZOLA_LINE_URL} target="_blank" rel="noreferrer">通知 Zola</a>
-    {access.status === "pending" ? <Link className="gate-secondary" href="/#trial">開通前，先免費體驗 3 次</Link> : null}
   </AccessScreen>;
 }
 

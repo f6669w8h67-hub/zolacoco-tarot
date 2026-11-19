@@ -66,8 +66,9 @@ const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
   const member = rows[0] as { role?: string; status?: string; access_expires_at?: string | null } | undefined;
   const allowed = hasMemberAccess(member);
   if (allowed) return NextResponse.next();
-  // 免費體驗: a registered account Zola has not activated yet may play on these three pages.
-  if (hasTrialAccess(member) && isVisitorTrialPage(request.nextUrl.pathname)) return NextResponse.next();
+  // 免費體驗: a registered account Zola has not activated yet may play on these three pages, including
+  // one that has just signed up and has no member row yet (the page's first check creates it as pending).
+  if ((!member || hasTrialAccess(member)) && isVisitorTrialPage(request.nextUrl.pathname)) return NextResponse.next();
 
   if (/^\/(api|trpc)(\/|$)/.test(request.nextUrl.pathname)) {
     return Response.json({ error: member?.status === "active" ? "MEMBERSHIP_EXPIRED" : member?.status?.toUpperCase() ?? "MEMBERSHIP_REQUIRED" }, { status: 403 });

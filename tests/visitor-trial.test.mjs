@@ -39,7 +39,7 @@ async function proxy(userId, member = { role: "member", status: "pending", acces
     "@clerk/nextjs/server": { clerkMiddleware: (callback) => (request) => callback(async () => ({
       userId, redirectToSignIn: ({ returnBackUrl }) => Response.redirect(`https://site.test/sign-in?redirect_url=${encodeURIComponent(returnBackUrl)}`, 307),
     }), request) },
-    "@neondatabase/serverless": { neon: () => async () => { lookups++; return [member]; } },
+    "@neondatabase/serverless": { neon: () => async () => { lookups++; return member ? [member] : []; } },
     "next/server": { NextResponse: {
       next: () => new Response(null, { headers: { "x-middleware-next": "1" } }),
       redirect: (url) => Response.redirect(url, 307),
@@ -64,6 +64,10 @@ test("proxy: signed out may look at the three pages; unactivated accounts may pl
   for (const path of ["/", "/pendulum", "/astro-dice"]) assert.equal((await pending.request(path)).headers.get("x-middleware-next"), "1", `pending ${path}`);
   assert.equal(new URL((await pending.request("/healing-room")).headers.get("location")).pathname, "/account");
   assert.equal((await pending.request("/api/journal")).status, 403);
+  // Just signed up, no member row yet: the trial pages open (the page's first check creates the row).
+  const fresh = await proxy("user_new", null);
+  for (const path of ["/", "/pendulum"]) assert.equal((await fresh.request(path)).headers.get("x-middleware-next"), "1", `new ${path}`);
+  assert.equal(new URL((await fresh.request("/healing-room")).headers.get("location")).pathname, "/account");
   for (const status of ["expired", "suspended"]) {
     const other = await proxy("user_2", { role: "member", status, access_expires_at: "2000-01-01" });
     assert.equal(new URL((await other.request("/")).headers.get("location")).pathname, "/account", status);
@@ -143,7 +147,10 @@ test("page gate: signed out on a trial page shows it (to register); an unactivat
   assert.doesNotMatch(html, /data-trial|PAGE_SENTINEL/, "signed in: waits for the member check first");
   const gate = await read("app/membership-gate.tsx");
   assert.match(gate, /if \(access\.status === "allowed"\) return children;\n[^\n]*\n  if \(access\.status === "pending" && isVisitorTrialPage\(pathname\)\) return <TrialProvider mode="account">/);
-  assert.match(gate, /access\.status === "pending" \? <Link className="gate-secondary" href="\/#trial">開通前，先免費體驗 3 次<\/Link>/);
+  // Pending elsewhere: registering is not applying — play first, apply through LINE when ready.
+  assert.match(gate, /pending: \["這裡是會員專屬空間", `開通前，可以先免費體驗 \$\{TRIAL_LIMIT\} 次抽牌、靈擺或星骰；想成為會員，按「申請成為會員」就會打開 Zola 的官方 LINE。`\]/);
+  assert.match(gate, /<Link className="gate-primary" href="\/#trial">先免費體驗 \{TRIAL_LIMIT\} 次<\/Link>\n\s+<a className="gate-secondary" href=\{lineMessageUrl\(MEMBERSHIP_KEYWORD\)\}[^>]*>申請成為會員<\/a>/);
+  assert.doesNotMatch(gate, /申請已收到/);
 });
 
 const componentMocks = {
