@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerE
 import "../styles/pearl-page.css";
 import "./pendulum-v1.css";
 import { choicesFromQuestion, questionQuality } from "./question-quality";
+import { TrialLimitCard, TrialMeter, membershipApplyUrl, useTrial } from "../visitor-trial";
 
 type Result = "yes" | "no" | "unclear";
 type ModeKey = "general" | "higher" | "subconscious";
@@ -161,6 +162,8 @@ const quickTools:ToolKey[]=["yesno","choices","action","food"];
 const quickLabels:Partial<Record<ToolKey,string>>={yesno:"Yes／No",choices:"多選一",action:"今日行動",food:"今天吃什麼"};
 
 export default function PendulumPage(){
+  // 免費體驗: a signed-out visitor's answer counts as one of three uses (app/visitor-trial.tsx).
+  const trial=useTrial();
   const [tool,setTool]=useState<ToolKey>("yesno");
   const [mode,setMode]=useState<ModeKey>("general");
   const [category,setCategory]=useState<CategoryKey>("love");
@@ -372,11 +375,11 @@ export default function PendulumPage(){
   }
 
   function ask(){
-    if(moving||calibrating)return;
+    if(moving||calibrating||!trial.canPlay)return;
     if(needsQuestion&&!quality.canAsk){questionRef.current?.focus();return}
     const next=createOutcome();if(!next)return;
     clearTimers();setOutcome(null);setMotionTarget(next.resultKey);setMoving(true);setCalibrated(false);setSavedId(null);setSaveError(false);updateManualAngle(0);
-    const finish=()=>{setOutcome(next);setMotionTarget(null);setMoving(false);navigator.vibrate?.(18);revealResult()};
+    const finish=()=>{setOutcome(next);setMotionTarget(null);setMoving(false);navigator.vibrate?.(18);if(trial.visitor)trial.spend("pendulum");revealResult()};
     const swing=()=>{
       if(reducedMotion()){stopActiveMotion();updateManualAngle(next.resultKey==="yes"?-24:next.resultKey==="no"?24:0);later(finish,150);return}
       runNaturalMotion(next.resultKey,duration,finish);
@@ -481,9 +484,10 @@ export default function PendulumPage(){
           </div>
           <div className="pv-stage-actions">
             {outcome?<button type="button" className="pv-start" onClick={()=>{reset(false);later(()=>{scrollToTop(ritualRef.current);questionRef.current?.focus({preventScroll:true})},40)}}>換一個問題再問</button>
-              :<button type="button" className="pv-start" disabled={startDisabled} onClick={ask}>{moving?"靈擺回應中…":"開始擺動 ✦"}</button>}
-            <p className="pv-stage-hint" aria-live="polite">{stageHint}</p>
-            {!outcome&&!moving&&<button type="button" className="pv-calibrate" disabled={calibrating} onClick={calibrate}>{calibrating?"校準中…":"想先熟悉靈擺？開始校準"}</button>}
+              :trial.canPlay?<button type="button" className="pv-start" disabled={startDisabled} onClick={ask}>{moving?"靈擺回應中…":"開始擺動 ✦"}</button>:<TrialLimitCard/>}
+            {trial.canPlay||outcome?<p className="pv-stage-hint" aria-live="polite">{stageHint}</p>:null}
+            {!outcome&&!moving&&trial.canPlay&&<button type="button" className="pv-calibrate" disabled={calibrating} onClick={calibrate}>{calibrating?"校準中…":"想先熟悉靈擺？開始校準"}</button>}
+            <TrialMeter/>
           </div>
         </div>
 
@@ -497,7 +501,7 @@ export default function PendulumPage(){
           <textarea id="pendulum-note" maxLength={500} value={note} disabled={savedId!==null} onChange={event=>setNote(event.target.value)} placeholder="看到這個答案時，我第一個浮現的感受是……"/>
           <div className="result-actions">
             <button type="button" onClick={()=>reset(false)}>清除並重問</button>
-            <button type="button" className="pv-save" disabled={savedId!==null} onClick={save}>{savedId!==null?"已儲存":"儲存結果與感受"}</button>
+            {trial.visitor?<a className="pv-save" href={membershipApplyUrl} target="_blank" rel="noreferrer">加入會員就能保存紀錄</a>:<button type="button" className="pv-save" disabled={savedId!==null} onClick={save}>{savedId!==null?"已儲存":"儲存結果與感受"}</button>}
           </div>
           {savedId!==null&&<div className="pv-saved" role="status"><p>這次的靈擺結果已保存 ✨</p><button type="button" onClick={viewRecord}>查看我的靈擺紀錄</button></div>}
           {saveError&&<p className="pv-save-error" role="alert">目前未能儲存，請確認瀏覽器允許網站儲存資料；妳寫的內容都還在。</p>}
@@ -530,12 +534,12 @@ export default function PendulumPage(){
       <div className="pv-library-list">{toolGroups[libraryGroup].keys.map(key=>{const item=tools.find(entry=>entry.key===key)!;return <button key={key} type="button" className={tool===key?"selected":""} aria-pressed={tool===key} onClick={()=>chooseFromLibrary(key)}><i aria-hidden="true">{item.icon}</i><span><b>{item.label}</b><em>{item.description}</em></span><strong>{tool===key?"使用中":"選擇"}</strong></button>})}</div>
     </section></div>}
 
-    <section className="pv-history" id="pendulum-records">
+    {!trial.visitor&&<section className="pv-history" id="pendulum-records">
       <details open={historyOpen} onToggle={event=>setHistoryOpen((event.currentTarget as HTMLDetailsElement).open)}>
         <summary><span>我的近期紀錄</span><small>{history.length===0?"還沒有紀錄":`共 ${history.length} 筆・本月 ${monthCount} 次`}</small></summary>
         {history.length===0?<p className="pv-fold-note">完成並儲存第一題後，紀錄會出現在這裡。紀錄只存在這台裝置。</p>:<div className="history-list">{history.map(entry=><article key={entry.id} id={`pendulum-entry-${entry.id}`} className={highlightId===entry.id?"is-new":""}><div><span>{entry.category}</span><time>{new Date(entry.created_at).toLocaleString("zh-TW")}</time></div><h3>{entry.question}</h3><b>{entry.result_label}</b>{entry.note&&<p>{entry.note}</p>}</article>)}</div>}
       </details>
-    </section>
+    </section>}
 
     <section className="pv-guide">
       <details>

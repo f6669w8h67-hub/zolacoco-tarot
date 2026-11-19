@@ -129,6 +129,7 @@ const uiMocks = (pathname) => ({
   "next/navigation": { usePathname: () => pathname },
   "next/link": { default: ({ children, ...props }) => React.createElement("a", props, children) },
   "./styles/pearl-page.css": {},
+  "./visitor-trial": { VisitorTrialProvider: ({ children }) => children },
 });
 
 test("unconfigured layout fallback hides VIP children but renders public pages without Clerk hooks", async () => {
@@ -204,6 +205,7 @@ test("root layout selects a closed fallback in production and retains developmen
       "./pearl-fonts": { default: () => null },
       "./membership-gate": { default: wrapper("authenticated"), UnconfiguredMembershipGate: wrapper("closed") },
       "./auth-identity": { ClerkIdentityProvider: ({ children }) => children },
+      "./visitor-trial": { VisitorTrialProvider: ({ children }) => children },
     } });
     const html = renderToStaticMarkup(React.createElement(mod.default, null, "VIP_SENTINEL"));
     if (expected === "preview") assert.doesNotMatch(html, /data-gate/);
@@ -236,7 +238,7 @@ test("signed-out visitors go to the site's own /sign-in with a way back, never C
   const gate = await boundary({ userId: null });
   assert.equal(gate.options().signInUrl, "/sign-in");
   assert.equal(gate.options().signUpUrl, "/sign-up");
-  for (const path of ["/healing-room", "/astrology-exploration", "/pendulum"]) {
+  for (const path of ["/healing-room", "/astrology-exploration", "/zola-admin"]) {
     const response = await gate.request(path);
     assert.equal(response.status, 307, path);
     const location = new URL(response.headers.get("location"));

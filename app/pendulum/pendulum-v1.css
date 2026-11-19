@@ -233,6 +233,12 @@
 }
 .pendulum-page .pv-result .result-actions .pv-save { background: linear-gradient(180deg, var(--pv-surface) 0%, var(--pv-button-end) 100%) !important; outline: 1px solid var(--pv-gold-soft); outline-offset: -5px; }
 .pendulum-page .pv-result .result-actions .pv-save:disabled { opacity: .72; cursor: default; }
+/* 免費體驗: a visitor's 加入會員就能保存紀錄 is a link to 申請成為會員, dressed like the save button */
+.pendulum-page .pv-result .result-actions a.pv-save {
+  display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 48px; padding: 10px 18px;
+  border: 1px solid var(--pv-gold) !important; border-radius: 4px !important;
+  color: var(--pv-accent) !important; font-weight: 700; text-decoration: none !important;
+}
 .pendulum-page .pv-saved { display: grid; justify-items: center; gap: 6px; margin-top: 12px; text-align: center; }
 .pendulum-page .pv-saved p { margin: 0; color: var(--pv-good); font-size: 15px; font-weight: 600; }
 .pendulum-page .pv-saved button {

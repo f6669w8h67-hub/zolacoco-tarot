@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import "../styles/pearl-page.css";
 import "./astro-dice-v1.css";
+import { TrialLimitCard, TrialMeter, membershipApplyUrl, useTrial } from "../visitor-trial";
 
 type AstroItem = { key:string; symbol:string; name:string; en:string; meaning:string; prompt:string };
 type Roll = { planet:AstroItem; sign:AstroItem; house:AstroItem };
@@ -131,6 +132,8 @@ function Glyph({item,type}:{item:AstroItem;type:DieType}){
 }
 
 export default function AstroDicePage(){
+  // 免費體驗: a signed-out visitor's roll counts as one of three uses (app/visitor-trial.tsx).
+  const trial=useTrial();
   const [category,setCategory]=useState(categories[0]);
   const [question,setQuestion]=useState("");
   // One reading = one snapshot of question, topic and dice; the result and the saved record read only from it.
@@ -179,13 +182,13 @@ export default function AstroDicePage(){
 
   function cast(){
     // lock at once, before any scrolling, so a second tap can never start another roll
-    if(!question.trim()||busyRef.current)return;
+    if(!question.trim()||busyRef.current||!trial.canPlay)return;
     busyRef.current=true;setBusy(true);
     // 再擲一次 keeps the locked question and topic of the reading on screen
     const asked=reading?{question:reading.question,category:reading.category}:{question:question.trim(),category};
     clearTimers();setReading(null);setSavedId(null);setSaveError(false);setNote("");
     const snapshot={roll:{planet:randomItem(planets),sign:randomItem(signs),house:randomItem(houses)} as Roll,...asked};
-    const show=()=>{setReading(snapshot);setRolling(false);busyRef.current=false;setBusy(false);navigator.vibrate?.(18);later(()=>{const heading=resultRef.current?.querySelector("h2") as HTMLElement|null;if(heading)scrollToTop(heading)},80)};
+    const show=()=>{setReading(snapshot);setRolling(false);busyRef.current=false;setBusy(false);navigator.vibrate?.(18);if(trial.visitor)trial.spend("astro-dice");later(()=>{const heading=resultRef.current?.querySelector("h2") as HTMLElement|null;if(heading)scrollToTop(heading)},80)};
     const start=()=>{setRolling(true);later(show,reducedMotion()?200:ROLL_MS)};
     // Bring the whole stage on screen first, then roll (星骰互動 v1).
     const wait=fullyVisible(stageRef.current)?0:scrollToTop(stageRef.current);
@@ -242,7 +245,8 @@ export default function AstroDicePage(){
           <div ref={stageRef} className={`ad2-stage ${rolling?"is-rolling":""}`}>
             <div className="ad2-dice">{dice.map(([type,item],index)=><Die key={type} type={type} item={item} rolling={rolling} index={index}/>)}</div>
           </div>
-          <button type="button" className="ad2-cast" disabled={!question.trim()||busy} onClick={cast}>{busy?"星骰正在轉動…":roll?"再擲一次 ✦":"擲出三顆星骰 ✦"}</button>
+          {trial.canPlay||busy?<button type="button" className="ad2-cast" disabled={!question.trim()||busy} onClick={cast}>{busy?"星骰正在轉動…":roll?"再擲一次 ✦":"擲出三顆星骰 ✦"}</button>:<TrialLimitCard/>}
+          <TrialMeter/>
           <p className="ad2-hint" aria-live="polite">{busy?"讓問題在心裡停留一下。":roll?`${roll.planet.name} × ${roll.sign.name} × ${roll.house.name}`:question.trim()?"依序讀取：核心能量 → 表現方式 → 生活領域":"先寫下問題，就可以擲骰。"}</p>
         </div>
       </div>
@@ -270,7 +274,7 @@ export default function AstroDicePage(){
         <p>{specific.reflection}</p>
         <label htmlFor="astro-note">寫下此刻浮現的答案</label>
         <textarea id="astro-note" maxLength={600} value={note} disabled={savedId!==null} onChange={event=>setNote(event.target.value)} placeholder="我第一個想到的是……"/>
-        <button type="button" className="ad2-save" disabled={savedId!==null} onClick={save}>{savedId!==null?"已儲存 ✓":"儲存這次星骰紀錄"}</button>
+        {trial.visitor?<a className="ad2-save" href={membershipApplyUrl} target="_blank" rel="noreferrer">加入會員就能保存紀錄</a>:<button type="button" className="ad2-save" disabled={savedId!==null} onClick={save}>{savedId!==null?"已儲存 ✓":"儲存這次星骰紀錄"}</button>}
         {savedId!==null&&<div className="ad2-saved" role="status"><p>這次星骰結果已保存 ✨</p><button type="button" onClick={viewRecord}>查看我的星骰紀錄</button></div>}
         {saveError&&<p className="ad2-save-error" role="alert">目前未能儲存，請確認瀏覽器允許網站儲存資料；妳寫的內容都還在。</p>}
       </div>
@@ -279,10 +283,10 @@ export default function AstroDicePage(){
     </section>}
 
     <section className="ad2-folds">
-      <details className="ad2-fold" id="astro-records" open={historyOpen} onToggle={event=>setHistoryOpen((event.currentTarget as HTMLDetailsElement).open)}>
+      {!trial.visitor&&<details className="ad2-fold" id="astro-records" open={historyOpen} onToggle={event=>setHistoryOpen((event.currentTarget as HTMLDetailsElement).open)}>
         <summary><span>我的星骰紀錄</span><small>{history.length?`共 ${history.length} 筆`:"還沒有紀錄"}</small></summary>
         {history.length?<div className="ad2-history">{history.map(item=><article key={item.id} id={`astro-entry-${item.id}`} className={highlightId===item.id?"is-new":""}><div><span>{item.category}</span><time>{new Date(item.created_at).toLocaleString("zh-TW")}</time></div><h3>{item.question}</h3><b>{item.planet_name} × {item.sign_name} × {item.house_name}</b>{item.note&&<p>{item.note}</p>}</article>)}</div>:<p className="ad2-fold-note">完成並儲存第一次星骰後，紀錄會出現在這裡。紀錄只存在這台裝置。</p>}
-      </details>
+      </details>}
       <details className="ad2-fold">
         <summary><span>星骰怎麼看</span><small>使用指南</small></summary>
         <div className="ad2-guide">

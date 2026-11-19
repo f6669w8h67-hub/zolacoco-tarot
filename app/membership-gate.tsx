@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 
 import { isCoachingRoute, isPublicMembershipPage, isStudentRoute } from "@/lib/membership-access";
 import { ZOLA_LINE_URL } from "@/lib/contact";
+import { isVisitorTrialPage } from "@/lib/visitor-trial";
+import { VisitorTrialProvider } from "./visitor-trial";
 import "./styles/pearl-page.css";
 
 type AccessState = {
@@ -51,6 +53,9 @@ export default function MembershipGate({ children }: { children: React.ReactNode
   if (!isLoaded || (isSignedIn && access.status === "loading")) {
     return <AccessScreen tone="loading" eyebrow="member access" title="正在確認使用權限…" message="請稍候，正在讀取妳的會員狀態。" />;
   }
+  // 免費體驗 (Zola 2026-11-19): signed out on the homepage, 靈擺 or 星骰, the page opens in trial mode
+  // (three uses, then 申請成為會員). Signed-in members who are not active keep the screens below.
+  if (!isSignedIn && isVisitorTrialPage(pathname)) return <VisitorTrialProvider>{children}</VisitorTrialProvider>;
   if (!isSignedIn) {
     return <AccessScreen tone="signed-out" eyebrow="zolacoco member" title="登入後，走進妳的占卜空間" message="使用 Email 登入或建立帳號；第一次申請後，請通知 Zola 為妳開通使用期限。">
       <SignInButton mode="modal"><button className="gate-primary" type="button">Email 登入</button></SignInButton>
