@@ -13,6 +13,7 @@ import {
   isStudentPage,
   isStudentRoute,
 } from "./lib/membership-access";
+import { isVisitorTrialPage } from "./lib/visitor-trial";
 
 const configured = isClerkConfigured(process.env);
 
@@ -32,6 +33,8 @@ const handler = configured ? clerkMiddleware(async (clerkAuth, request) => {
 
   const session = await clerkAuth();
   if (!session.userId) {
+    // 免費體驗: signed-out visitors may open the homepage, 靈擺 and 星骰 pages (never an API).
+    if (isVisitorTrialPage(request.nextUrl.pathname)) return NextResponse.next();
     if (/^\/(api|trpc)(\/|$)/.test(request.nextUrl.pathname)) {
       return Response.json({ error: "UNAUTHENTICATED" }, { status: 401 });
     }

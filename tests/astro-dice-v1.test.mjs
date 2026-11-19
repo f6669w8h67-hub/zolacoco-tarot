@@ -83,7 +83,8 @@ test("pearl palette: no browns, khaki, deep purple or dark buttons", () => {
 
 test("a roll locks at once, before scrolling, so a second tap cannot start another roll (review B1)", () => {
   const cast = page.slice(page.indexOf("  function cast(){"), page.indexOf("  function save(){"));
-  assert.match(cast, /if\(!question\.trim\(\)\|\|busyRef\.current\)return;\n    busyRef\.current=true;setBusy\(true\);/);
+  // 免費體驗 (2026-11-19): a visitor with no uses left cannot start a roll either.
+  assert.match(cast, /if\(!question\.trim\(\)\|\|busyRef\.current\|\|!trial\.canPlay\)return;\n    busyRef\.current=true;setBusy\(true\);/);
   assert.ok(cast.indexOf("busyRef.current=true") < cast.indexOf("scrollToTop(stageRef.current)"));
   assert.match(page, /className="ad2-cast" disabled=\{!question\.trim\(\)\|\|busy\}/);
 });

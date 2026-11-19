@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerE
 import "../styles/pearl-page.css";
 import "./pendulum-v1.css";
 import { choicesFromQuestion, questionQuality } from "./question-quality";
+import { TrialLimitCard, TrialMeter, useTrial } from "../visitor-trial";
 
 type Result = "yes" | "no" | "unclear";
 type ModeKey = "general" | "higher" | "subconscious";
@@ -161,6 +162,8 @@ const quickTools:ToolKey[]=["yesno","choices","action","food"];
 const quickLabels:Partial<Record<ToolKey,string>>={yesno:"Yes／No",choices:"多選一",action:"今日行動",food:"今天吃什麼"};
 
 export default function PendulumPage(){
+  // 免費體驗: a signed-out visitor's answer counts as one of three uses (app/visitor-trial.tsx).
+  const trial=useTrial();
   const [tool,setTool]=useState<ToolKey>("yesno");
   const [mode,setMode]=useState<ModeKey>("general");
   const [category,setCategory]=useState<CategoryKey>("love");
@@ -372,11 +375,11 @@ export default function PendulumPage(){
   }
 
   function ask(){
-    if(moving||calibrating)return;
+    if(moving||calibrating||!trial.canPlay)return;
     if(needsQuestion&&!quality.canAsk){questionRef.current?.focus();return}
     const next=createOutcome();if(!next)return;
     clearTimers();setOutcome(null);setMotionTarget(next.resultKey);setMoving(true);setCalibrated(false);setSavedId(null);setSaveError(false);updateManualAngle(0);
-    const finish=()=>{setOutcome(next);setMotionTarget(null);setMoving(false);navigator.vibrate?.(18);revealResult()};
+    const finish=()=>{setOutcome(next);setMotionTarget(null);setMoving(false);navigator.vibrate?.(18);if(trial.visitor)trial.spend("pendulum");revealResult()};
     const swing=()=>{
       if(reducedMotion()){stopActiveMotion();updateManualAngle(next.resultKey==="yes"?-24:next.resultKey==="no"?24:0);later(finish,150);return}
       runNaturalMotion(next.resultKey,duration,finish);
@@ -481,9 +484,10 @@ export default function PendulumPage(){
           </div>
           <div className="pv-stage-actions">
             {outcome?<button type="button" className="pv-start" onClick={()=>{reset(false);later(()=>{scrollToTop(ritualRef.current);questionRef.current?.focus({preventScroll:true})},40)}}>換一個問題再問</button>
-              :<button type="button" className="pv-start" disabled={startDisabled} onClick={ask}>{moving?"靈擺回應中…":"開始擺動 ✦"}</button>}
-            <p className="pv-stage-hint" aria-live="polite">{stageHint}</p>
-            {!outcome&&!moving&&<button type="button" className="pv-calibrate" disabled={calibrating} onClick={calibrate}>{calibrating?"校準中…":"想先熟悉靈擺？開始校準"}</button>}
+              :trial.canPlay?<button type="button" className="pv-start" disabled={startDisabled} onClick={ask}>{moving?"靈擺回應中…":"開始擺動 ✦"}</button>:<TrialLimitCard/>}
+            {trial.canPlay||outcome?<p className="pv-stage-hint" aria-live="polite">{stageHint}</p>:null}
+            {!outcome&&!moving&&trial.canPlay&&<button type="button" className="pv-calibrate" disabled={calibrating} onClick={calibrate}>{calibrating?"校準中…":"想先熟悉靈擺？開始校準"}</button>}
+            <TrialMeter/>
           </div>
         </div>
 

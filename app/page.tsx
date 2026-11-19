@@ -13,6 +13,8 @@ import "./styles/home-pearl.css";
 import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
 import { loadMemberProfile } from "@/lib/member-client";
 import { JournalTool } from "./journal/journal-tool";
+import { TrialLimitCard, TrialMeter, membershipApplyUrl, useTrial } from "./visitor-trial";
+import { TRIAL_FEATURES, TRIAL_LIMIT } from "@/lib/visitor-trial";
 import {
   QUESTION_LIMIT, SPREADS, TAROT_TOPICS, type SpreadId, cleanQuestion, consultMessage,
   memberExpiryLabel, recommendedSpread, relationshipLens, spreadAfterTopicChange, spreadForTopic, spreadsForTopic, tarotRecord,
@@ -32,6 +34,8 @@ const pageTools = [
   { href: "/pendulum", number: "04", title: "靈擺直覺問答", desc: "把問題整理成是非題，透過擺動停下來聽見此刻的直覺。", room: "/pendulum/hero-desktop.webp", charm: ["/pendulum/metal.webp", "/pendulum/crystal.webp"] },
   { href: "/astro-dice", number: "05", title: "星骰此刻指引", desc: "擲出行星、星座與宮位，拆解此刻的能量、表現方式與生活領域。", room: "/astro-dice/hero-desktop.webp", charm: ["/astro-dice/die.webp"] },
 ] as const;
+/** Pictures for the 我想玩玩看 cards (visitors only). */
+const trialArt = { tarot: "/tarot-scenes/major-17.webp", pendulum: "/pendulum/hero-desktop.webp", "astro-dice": "/astro-dice/hero-desktop.webp" } as const;
 
 /** Thin gold line icons for the three practice tabs. */
 function PracticeIcon({ id }: { id: string }) {
@@ -114,6 +118,8 @@ function synthesis(cards: TarotCard[], spreadId: string, topic: string, position
 }
 
 export default function Home() {
+  // 免費體驗: a signed-out visitor gets three completed uses in all (app/visitor-trial.tsx); members are unaffected.
+  const trial = useTrial();
   const [topic, setTopic] = useState("今日指引");
   const [selected, setSelected] = useState<TarotCard[]>([]);
   const [spreadId, setSpreadId] = useState<SpreadId>(recommendedSpread("今日指引"));
@@ -225,6 +231,7 @@ export default function Home() {
 
   // Hero status for signed-in members (Issue #9 B4). Records still live on this device only.
   useEffect(() => {
+    if (trial.visitor) return;
     let active = true;
     void loadMemberProfile().then((result) => {
       if (!active || !result.ok) return;
@@ -234,7 +241,7 @@ export default function Home() {
       setMemberBanner({ active: valid, expires: valid ? memberExpiryLabel(expires) : null });
     });
     return () => { active = false; };
-  }, []);
+  }, [trial.visitor]);
 
   useEffect(() => {
     const requestedTool = new URLSearchParams(window.location.search).get("tool");
@@ -260,7 +267,7 @@ export default function Home() {
   // Draw v4 (ChatGPT spec, 2026-11-13): the deck is cut and merged (840ms), then the fan opens
   // from the middle outwards and only then accepts a pick. Reduced motion: no waiting.
   function shuffleDeck() {
-    if (shuffling) return;
+    if (shuffling || !trial.canPlay) return;
     clearReading();
     loadReadings();
     const still = prefersReducedMotion();
@@ -286,7 +293,8 @@ export default function Home() {
     if (next.length < activeSpread.positions.length) { place(); return; }
     later(() => {
       place();
-      later(() => setRevealed(true), still ? 0 : 280);
+      // A visitor's draw counts once its reading opens.
+      later(() => { setRevealed(true); if (trial.visitor) trial.spend("tarot"); }, still ? 0 : 280);
     }, still ? 0 : MOTION.lastPickPauseMs);
   }
 
@@ -351,7 +359,13 @@ export default function Home() {
           <p className="eyebrow">A MESSAGE FOR YOUR PRESENT MOMENT</p>
           <h1><span>把問題放在心裡</span><em>抽一張屬於妳的牌</em></h1>
           <p className="intro">答案不替妳決定人生，而是陪妳看清此刻真正需要留意的方向。</p>
-          <div className="visitor-status member-status" role="status">
+          {trial.visitor ? <div className="visitor-status trial-status" role="status">
+            <span aria-hidden="true" />
+            <p>
+              <b>不用註冊，免費體驗 {TRIAL_LIMIT} 次</b>
+              <small>塔羅抽牌、靈擺、星骰任選，{trial.canPlay ? `還剩 ${trial.remaining} 次。` : "三次已經用完。"}</small>
+            </p>
+          </div> : <div className="visitor-status member-status" role="status">
             <span aria-hidden="true" />
             <p>
               {memberBanner?.active ? <b>✨ 會員探索模式已開啟</b> : null}
@@ -359,9 +373,11 @@ export default function Home() {
               <small>妳的抽牌紀錄目前保存在這台裝置，建議定期備份。</small>
             </p>
             <a href="/admin">我的占卜紀錄 →</a>
-          </div>
+          </div>}
           <div className="hero-actions">
-            <a className="primary" href="#draw">開始免費抽牌 <span aria-hidden="true">↓</span></a>
+            {trial.visitor
+              ? <a className="primary" href="#trial">我想玩玩看 <span aria-hidden="true">↓</span></a>
+              : <a className="primary" href="#draw">開始免費抽牌 <span aria-hidden="true">↓</span></a>}
             <a className="hero-secondary" href="#consult">預約一對一諮詢</a>
           </div>
           <p className="ritual">深呼吸三次，想著一個妳最近最在意的問題</p>
@@ -376,6 +392,18 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {trial.visitor ? <section className="visitor-trial" id="trial" aria-labelledby="trial-title">
+        <div className="visitor-trial-heading"><p>FREE TRIAL</p><h2 id="trial-title">我想玩玩看</h2></div>
+        <p className="visitor-trial-lead">不用註冊，下面三種體驗合計可以玩 {TRIAL_LIMIT} 次：每完成一次抽牌、一次靈擺或一次星骰，就算一次。</p>
+        <TrialMeter />
+        {trial.canPlay ? <div className="visitor-trial-grid">
+          {TRIAL_FEATURES.map((feature) => <a key={feature.id} className="visitor-trial-card" href={feature.href}>
+            <span className="visitor-trial-art" aria-hidden="true"><img src={trialArt[feature.id]} alt="" loading="lazy" /></span>
+            <span className="visitor-trial-copy"><b>{feature.title}</b><em>{feature.desc}</em><strong>開始體驗 <span aria-hidden="true">→</span></strong></span>
+          </a>)}
+        </div> : <TrialLimitCard />}
+      </section> : null}
 
       <section className="draw-section" id="draw">
         <div className="section-heading">
@@ -442,7 +470,8 @@ export default function Home() {
 
         {selected.length < activeSpread.positions.length ? (
           <div className={`deck-stage ${shuffling ? "shuffling" : ""}`}>
-            {spreadCards.length === 0 ? <>
+            {spreadCards.length === 0 && !trial.canPlay ? <TrialLimitCard /> : spreadCards.length === 0 ? <>
+              <TrialMeter />
               <div className="card-fan" aria-hidden="true">
                 {positions.map((p, i) => <TarotCardBack key={`${seed}-${i}`} className="card-back" style={{ transform: `translateX(${p * 2}px) rotate(${p}deg)` }} />)}
               </div>
@@ -539,9 +568,14 @@ export default function Home() {
               </section>
               <div className="reading-actions">
                 <button className="flow-button secondary-flow" onClick={reset}>重新抽牌</button>
-                <button className="flow-button secondary-flow" onClick={saveTarotReading} disabled={tarotSaveState === "saved"}>{tarotSaveState === "saved" ? "已儲存" : tarotSaveState === "error" ? "存檔失敗，請再試一次" : "儲存這次抽牌"}</button>
-                <a className="flow-button primary-flow" href="#explore">下一步・認識自己的解牌直覺 <b>→</b></a>
+                {trial.visitor
+                  ? <a className="flow-button secondary-flow" href={membershipApplyUrl} target="_blank" rel="noreferrer">加入會員就能保存紀錄</a>
+                  : <button className="flow-button secondary-flow" onClick={saveTarotReading} disabled={tarotSaveState === "saved"}>{tarotSaveState === "saved" ? "已儲存" : tarotSaveState === "error" ? "存檔失敗，請再試一次" : "儲存這次抽牌"}</button>}
+                {trial.visitor
+                  ? <a className="flow-button primary-flow" href="#trial">{trial.canPlay ? "繼續體驗：靈擺、星骰" : "看看怎麼成為會員"} <b>→</b></a>
+                  : <a className="flow-button primary-flow" href="#explore">下一步・認識自己的解牌直覺 <b>→</b></a>}
               </div>
+              <TrialMeter />
               {tarotSaveState === "saved" ? <p className="tarot-saved-note" role="status">這次的塔羅指引已保存 ✨ <a href="/admin">查看我的占卜紀錄 →</a></p> : null}
             </article>
           </div>
@@ -577,6 +611,14 @@ export default function Home() {
         </div>
 
         <div className="explore-layout ex-layout">
+          {trial.visitor ? <div className="visitor-locked">
+            <p className="ex-group-label">會員專屬練習</p>
+            <div className="visitor-locked-card">
+              <b>牌面直覺練習室・七日塔羅內在筆記</b>
+              <p>成為會員後，這裡可以練習自己讀牌、每天寫一則內在筆記；抽牌、靈擺、星骰也都能無限使用，並保存每一次的紀錄。</p>
+              <a href={membershipApplyUrl} target="_blank" rel="noreferrer">申請成為會員</a>
+            </div>
+          </div> : <>
           <p className="ex-group-label">在這裡就能練習</p>
           <div className="ex-tabs" role="tablist" aria-label="選擇內在探索練習" onKeyDown={(event) => {
             const index = practiceTools.findIndex((tool) => tool.id === exploreTool);
@@ -615,13 +657,14 @@ export default function Home() {
 
             {exploreTool === "journal" && <JournalTool place="home" />}
           </div>
+          </>}
 
           <div className="ex-more">
             <p className="ex-group-label">更多獨立工具</p>
             <div className="ex-more-grid">
               {pageTools.map((tool) => <a key={tool.href} className="ex-more-card" href={tool.href}>
                 <span className="ex-more-art" aria-hidden="true"><img src={tool.room} alt="" loading="lazy" /><span className="ex-more-charm">{tool.charm.map((src) => <img key={src} src={src} alt="" loading="lazy" />)}</span></span>
-                <span className="ex-more-copy"><i>{tool.number}</i><b>{tool.title}</b><em>{tool.desc}</em><strong>前往 <span aria-hidden="true">→</span></strong></span>
+                <span className="ex-more-copy"><i>{tool.number}</i><b>{tool.title}</b>{trial.visitor ? <small className="ex-more-tag">{tool.href === "/awareness" ? "免費" : "免費體驗"}</small> : null}<em>{tool.desc}</em><strong>前往 <span aria-hidden="true">→</span></strong></span>
               </a>)}
             </div>
           </div>

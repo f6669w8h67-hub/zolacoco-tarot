@@ -14,6 +14,7 @@ import { clerkLocalization } from "@/lib/clerk-localization";
 import { clerkPearlAppearance } from "@/lib/clerk-pearl-appearance";
 import SiteHeader from "./site-header";
 import PearlFonts from "./pearl-fonts";
+import { VisitorTrialProvider } from "./visitor-trial";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,7 +49,10 @@ export default function RootLayout({
     <SiteHeader />
     {authConfigured ? (
       <MembershipGate>{children}</MembershipGate>
-    ) : allowsMembershipPreview(process.env) ? children : (
+    ) : allowsMembershipPreview(process.env) ? (
+      // Development preview only (never production): MEMBERSHIP_PREVIEW_AS=visitor shows the 免費體驗 screens.
+      process.env.MEMBERSHIP_PREVIEW_AS === "visitor" ? <VisitorTrialProvider>{children}</VisitorTrialProvider> : children
+    ) : (
       <UnconfiguredMembershipGate>{children}</UnconfiguredMembershipGate>
     )}
   </>;

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import "../styles/pearl-page.css";
 import "./astro-dice-v1.css";
+import { TrialLimitCard, TrialMeter, useTrial } from "../visitor-trial";
 
 type AstroItem = { key:string; symbol:string; name:string; en:string; meaning:string; prompt:string };
 type Roll = { planet:AstroItem; sign:AstroItem; house:AstroItem };
@@ -131,6 +132,8 @@ function Glyph({item,type}:{item:AstroItem;type:DieType}){
 }
 
 export default function AstroDicePage(){
+  // 免費體驗: a signed-out visitor's roll counts as one of three uses (app/visitor-trial.tsx).
+  const trial=useTrial();
   const [category,setCategory]=useState(categories[0]);
   const [question,setQuestion]=useState("");
   // One reading = one snapshot of question, topic and dice; the result and the saved record read only from it.
@@ -179,13 +182,13 @@ export default function AstroDicePage(){
 
   function cast(){
     // lock at once, before any scrolling, so a second tap can never start another roll
-    if(!question.trim()||busyRef.current)return;
+    if(!question.trim()||busyRef.current||!trial.canPlay)return;
     busyRef.current=true;setBusy(true);
     // 再擲一次 keeps the locked question and topic of the reading on screen
     const asked=reading?{question:reading.question,category:reading.category}:{question:question.trim(),category};
     clearTimers();setReading(null);setSavedId(null);setSaveError(false);setNote("");
     const snapshot={roll:{planet:randomItem(planets),sign:randomItem(signs),house:randomItem(houses)} as Roll,...asked};
-    const show=()=>{setReading(snapshot);setRolling(false);busyRef.current=false;setBusy(false);navigator.vibrate?.(18);later(()=>{const heading=resultRef.current?.querySelector("h2") as HTMLElement|null;if(heading)scrollToTop(heading)},80)};
+    const show=()=>{setReading(snapshot);setRolling(false);busyRef.current=false;setBusy(false);navigator.vibrate?.(18);if(trial.visitor)trial.spend("astro-dice");later(()=>{const heading=resultRef.current?.querySelector("h2") as HTMLElement|null;if(heading)scrollToTop(heading)},80)};
     const start=()=>{setRolling(true);later(show,reducedMotion()?200:ROLL_MS)};
     // Bring the whole stage on screen first, then roll (星骰互動 v1).
     const wait=fullyVisible(stageRef.current)?0:scrollToTop(stageRef.current);
@@ -242,7 +245,8 @@ export default function AstroDicePage(){
           <div ref={stageRef} className={`ad2-stage ${rolling?"is-rolling":""}`}>
             <div className="ad2-dice">{dice.map(([type,item],index)=><Die key={type} type={type} item={item} rolling={rolling} index={index}/>)}</div>
           </div>
-          <button type="button" className="ad2-cast" disabled={!question.trim()||busy} onClick={cast}>{busy?"星骰正在轉動…":roll?"再擲一次 ✦":"擲出三顆星骰 ✦"}</button>
+          {trial.canPlay||busy?<button type="button" className="ad2-cast" disabled={!question.trim()||busy} onClick={cast}>{busy?"星骰正在轉動…":roll?"再擲一次 ✦":"擲出三顆星骰 ✦"}</button>:<TrialLimitCard/>}
+          <TrialMeter/>
           <p className="ad2-hint" aria-live="polite">{busy?"讓問題在心裡停留一下。":roll?`${roll.planet.name} × ${roll.sign.name} × ${roll.house.name}`:question.trim()?"依序讀取：核心能量 → 表現方式 → 生活領域":"先寫下問題，就可以擲骰。"}</p>
         </div>
       </div>
