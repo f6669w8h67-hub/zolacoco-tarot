@@ -251,10 +251,11 @@ test("signed-out visitors go to the site's own /sign-in with a way back, never C
   assert.equal(gate.lookups(), 0);
 });
 
-test("sign-in and sign-up return her to where she was going, and fall back to /account", async () => {
+test("sign-in and sign-up return her to where she was going, and fall back to /account (sign-up: /#trial)", async () => {
   for (const page of ["sign-in", "sign-up"]) {
     const source = await readFile(new URL(`../app/${page}/[[...${page}]]/page.tsx`, import.meta.url), "utf8");
-    assert.match(source, /fallbackRedirectUrl="\/account"/, page);
+    // After signing up, straight to 我想玩玩看 (Zola 2026-11-19: play first, apply later).
+    assert.match(source, page === "sign-up" ? /fallbackRedirectUrl="\/#trial"/ : /fallbackRedirectUrl="\/account"/, page);
     assert.doesNotMatch(source, /forceRedirectUrl/, page);
   }
 });

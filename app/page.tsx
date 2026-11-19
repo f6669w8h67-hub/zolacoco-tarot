@@ -366,7 +366,7 @@ export default function Home() {
             <p>
               {trial.mode === "signed-out" ? <>
                 <b>免費註冊，就能體驗 {TRIAL_LIMIT} 次</b>
-                <small>塔羅抽牌、靈擺、星骰任選，用 Email 建立帳號就能開始。</small>
+                <small>塔羅抽牌、靈擺、星骰任選，用 Email 建立帳號，註冊完馬上就能玩。</small>
               </> : <>
                 <b>開通前，免費體驗 {TRIAL_LIMIT} 次</b>
                 <small>塔羅抽牌、靈擺、星骰任選，{!trial.ready ? "正在確認次數…" : trial.canPlay ? `還剩 ${trial.remaining} 次。` : "三次已經用完。"}</small>

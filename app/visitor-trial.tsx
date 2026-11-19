@@ -128,7 +128,7 @@ export function TrialLimitCard({ className = "" }: { className?: string }) {
       <span className="trial-limit-mark" aria-hidden="true">✦</span>
       <p className="eyebrow">FREE TRIAL</p>
       <h3 id={titleId}>免費註冊，就能體驗 {TRIAL_LIMIT} 次</h3>
-      <p>用 Email 建立帳號（免費），塔羅抽牌、靈擺、星骰合計可以玩 {TRIAL_LIMIT} 次，次數記在妳的帳號上。</p>
+      <p>用 Email 建立帳號（免費），註冊完馬上就能玩，不用等開通：塔羅抽牌、靈擺、星骰合計 {TRIAL_LIMIT} 次。</p>
       <Link className="trial-apply" href="/sign-up">免費註冊</Link>
       <Link className="trial-sign-in" href="/sign-in">已經有帳號？登入</Link>
     </section>;
