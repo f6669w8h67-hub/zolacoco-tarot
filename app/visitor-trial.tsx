@@ -46,6 +46,19 @@ export function remainingFrom(data: TrialResponse) {
   return Math.min(TRIAL_LIMIT, Math.max(0, Math.floor(data.remaining)));
 }
 
+/**
+ * What a spend (POST /api/trial) means for the page: the uses left, or "failed" when the answer is not
+ * a clear one (refused, server error, unreadable). Then the trial stops until the page is reloaded; the
+ * count shown is not restored, because the server may already have taken the use.
+ */
+export function spendOutcome(status: number, data: unknown): number | "failed" {
+  const body = (data ?? {}) as TrialResponse;
+  if (status !== 200 && status !== 409) return "failed";
+  if (body.mode === "member") return Number.POSITIVE_INFINITY;
+  if (body.mode !== "trial" || typeof body.remaining !== "number" || !Number.isFinite(body.remaining)) return "failed";
+  return remainingFrom(body);
+}
+
 function AccountTrial({ children }: { children: React.ReactNode }) {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [failed, setFailed] = useState(false);
@@ -66,8 +79,13 @@ function AccountTrial({ children }: { children: React.ReactNode }) {
     // The result is already on screen: show the new count at once, then take the server's word for it.
     setRemaining((current) => current === null ? current : Math.max(0, current - 1));
     fetch("/api/trial", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ feature }) })
-      .then(async (response) => { if (response.ok || response.status === 409) setRemaining(remainingFrom(await response.json() as TrialResponse)); })
-      .catch(() => { /* the count shown above stands until the next page load */ });
+      .then(async (response) => {
+        let data: unknown = null;
+        try { data = await response.json(); } catch { /* unreadable: spendOutcome says failed */ }
+        const outcome = spendOutcome(response.status, data);
+        if (outcome === "failed") setFailed(true); else setRemaining(outcome);
+      })
+      .catch(() => { setFailed(true); });
   }, []);
 
   const ready = remaining !== null;

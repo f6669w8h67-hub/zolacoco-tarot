@@ -155,6 +155,7 @@ const componentMocks = {
 
 test("members see nothing; signed out sees 免費註冊; the account's count comes from /api/trial", async () => {
   const ui = await loadTypescript("app/visitor-trial.tsx", { mocks: componentMocks });
+  const source0 = await read("app/visitor-trial.tsx");
   const both = (provider) => renderToStaticMarkup(provider(React.createElement(React.Fragment, null, React.createElement(ui.TrialMeter), React.createElement(ui.TrialLimitCard))));
   assert.equal(both((children) => children), "", "no provider = member");
   const signedOut = both((children) => React.createElement(ui.TrialProvider, { mode: "signed-out" }, children));
@@ -168,6 +169,13 @@ test("members see nothing; signed out sees 免費註冊; the account's count com
     { mode: "member" }, { mode: "trial", remaining: 2 }, { mode: "trial", remaining: 9 }, { mode: "trial", remaining: -1 },
     { mode: "trial", remaining: "2" }, { mode: "none" }, {},
   ].map((data) => ui.remainingFrom(data)), [Number.POSITIVE_INFINITY, 2, 3, 0, 0, 0, 0]);
+  // A spend that is not clearly answered stops the trial (ChatGPT review #51): refused, server error,
+  // unreadable or a network failure; 409 (used up) and a normal answer give the server's count.
+  assert.deepEqual([
+    [200, { mode: "trial", remaining: 2 }], [409, { mode: "trial", remaining: 0 }], [200, { mode: "member" }],
+    [403, { error: "TRIAL_NOT_AVAILABLE" }], [500, { error: "x" }], [401, null], [200, null], [200, { mode: "trial" }], [200, { mode: "none" }],
+  ].map(([status, data]) => ui.spendOutcome(status, data)), [2, 0, Number.POSITIVE_INFINITY, "failed", "failed", "failed", "failed", "failed", "failed"]);
+  assert.match(source0, /if \(outcome === "failed"\) setFailed\(true\); else setRemaining\(outcome\);\n\s+\}\)\n\s+\.catch\(\(\) => \{ setFailed\(true\); \}\);/, "network failure stops too");
   assert.equal(ui.membershipApplyUrl, `https://line.me/R/oaMessage/${encodeURIComponent("@903ijdgr")}/?${encodeURIComponent("申請會員")}`);
   const source = await read("app/visitor-trial.tsx");
   assert.match(source, /fetch\("\/api\/trial", \{ cache: "no-store" \}\)/);
