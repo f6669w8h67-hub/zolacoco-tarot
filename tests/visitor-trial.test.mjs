@@ -116,7 +116,11 @@ test("members see nothing of the trial; a visitor sees the meter, and 申請成�
   assert.equal((visitor.match(/class="left"/g) || []).length, 3);
   assert.equal(ui.membershipApplyUrl, `https://line.me/R/oaMessage/${encodeURIComponent("@903ijdgr")}/?${encodeURIComponent("申請會員")}`);
   const source = await read("app/visitor-trial.tsx");
-  assert.match(source, /<h3 id="trial-limit-title">三次免費體驗用完了<\/h3>/);
+  assert.match(source, /const titleId = useId\(\);/, "unique title id when the card shows twice");
+  assert.match(source, /<h3 id=\{titleId\}>三次免費體驗用完了<\/h3>/);
+  // Only what VIP months really give (ChatGPT review #50): no promise of 學員練習室 or 陪跑, no 全站.
+  assert.match(source, /抽牌、靈擺、星骰不再限制次數，也能保存紀錄；還有星盤探索、療癒室、直覺練習和七日內在筆記。/);
+  assert.doesNotMatch(source, /全站|練習室|陪跑/);
   assert.match(source, /<a className="trial-apply" href=\{membershipApplyUrl\} target="_blank" rel="noreferrer">申請成為會員<\/a>/);
   assert.match(source, /送出「\{MEMBERSHIP_KEYWORD\}」就會收到申請方式/);
   assert.match(source, /href="\/sign-in">已經是會員？登入/);
@@ -137,11 +141,16 @@ test("each feature spends one use when it completes, and cannot start once none 
   assert.match(pendulum, /if\(moving\|\|calibrating\|\|!trial\.canPlay\)return;/);
   assert.match(pendulum, /navigator\.vibrate\?\.\(18\);if\(trial\.visitor\)trial\.spend\("pendulum"\);revealResult\(\)/);
   assert.match(pendulum, /:trial\.canPlay\?<button type="button" className="pv-start"[^]*?:<TrialLimitCard\/>\}/);
+  // Saving is a member benefit on all three pages: visitors get the 申請 link and no record list.
+  assert.match(pendulum, /\{trial\.visitor\?<a className="pv-save" href=\{membershipApplyUrl\}[^>]*>加入會員就能保存紀錄<\/a>:<button type="button" className="pv-save"/);
+  assert.match(pendulum, /\{!trial\.visitor&&<section className="pv-history" id="pendulum-records">/);
 
   const dice = await read("app/astro-dice/page.tsx");
   assert.match(dice, /if\(!question\.trim\(\)\|\|busyRef\.current\|\|!trial\.canPlay\)return;/);
   assert.match(dice, /navigator\.vibrate\?\.\(18\);if\(trial\.visitor\)trial\.spend\("astro-dice"\);/);
   assert.match(dice, /\{trial\.canPlay\|\|busy\?<button type="button" className="ad2-cast"[^]*?:<TrialLimitCard\/>\}/);
+  assert.match(dice, /\{trial\.visitor\?<a className="ad2-save" href=\{membershipApplyUrl\}[^>]*>加入會員就能保存紀錄<\/a>:<button type="button" className="ad2-save"/);
+  assert.match(dice, /\{!trial\.visitor&&<details className="ad2-fold" id="astro-records"/);
 
   for (const [name, source] of [["home", home], ["pendulum", pendulum], ["dice", dice]]) {
     assert.doesNotMatch(source, /fetch\(\s*["'`]\/api\/(?!membership\/me)/, `${name}: the trial adds no API call`);

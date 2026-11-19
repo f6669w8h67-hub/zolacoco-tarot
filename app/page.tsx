@@ -615,7 +615,7 @@ export default function Home() {
             <p className="ex-group-label">會員專屬練習</p>
             <div className="visitor-locked-card">
               <b>牌面直覺練習室・七日塔羅內在筆記</b>
-              <p>成為會員後，這裡可以練習自己讀牌、每天寫一則內在筆記；抽牌、靈擺、星骰也都能無限使用，並保存每一次的紀錄。</p>
+              <p>成為會員後，這裡可以練習自己讀牌、每天寫一則內在筆記；抽牌、靈擺、星骰也不再限制次數，並能保存紀錄。</p>
               <a href={membershipApplyUrl} target="_blank" rel="noreferrer">申請成為會員</a>
             </div>
           </div> : <>

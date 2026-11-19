@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { createContext, useCallback, useContext, useSyncExternalStore } from "react";
+import { createContext, useCallback, useContext, useId, useSyncExternalStore } from "react";
 
 import { lineMessageUrl } from "@/lib/contact";
 import {
@@ -80,12 +80,14 @@ export function TrialMeter({ className = "" }: { className?: string }) {
 /** Shown in place of the next draw, swing or roll once the three uses are spent. Visitors only. */
 export function TrialLimitCard({ className = "" }: { className?: string }) {
   const trial = useTrial();
+  // The homepage can show this card twice (我想玩玩看 and the draw), so each gets its own title id.
+  const titleId = useId();
   if (!trial.visitor) return null;
-  return <section className={`trial-limit ${className}`} aria-labelledby="trial-limit-title">
+  return <section className={`trial-limit ${className}`} aria-labelledby={titleId}>
     <span className="trial-limit-mark" aria-hidden="true">✦</span>
     <p className="eyebrow">FREE TRIAL</p>
-    <h3 id="trial-limit-title">三次免費體驗用完了</h3>
-    <p>喜歡這樣的陪伴，就申請成為 Zolacoco 會員：抽牌、靈擺、星骰和全站功能都能無限使用，也能保存每一次的紀錄。</p>
+    <h3 id={titleId}>三次免費體驗用完了</h3>
+    <p>喜歡這樣的陪伴，就申請成為 Zolacoco 會員：抽牌、靈擺、星骰不再限制次數，也能保存紀錄；還有星盤探索、療癒室、直覺練習和七日內在筆記。</p>
     <a className="trial-apply" href={membershipApplyUrl} target="_blank" rel="noreferrer">申請成為會員</a>
     <small>會打開 Zola 的官方 LINE，送出「{MEMBERSHIP_KEYWORD}」就會收到申請方式。</small>
     <Link className="trial-sign-in" href="/sign-in">已經是會員？登入</Link>
