@@ -57,8 +57,13 @@ html body #trial a.visitor-trial-card {
   box-shadow: 0 14px 30px rgba(132, 52, 80, .08); transition: transform 200ms ease, box-shadow 200ms ease;
 }
 html body #trial a.visitor-trial-card:hover { transform: translateY(-2px); box-shadow: 0 18px 36px rgba(132, 52, 80, .12); }
-html body #trial .visitor-trial-art { display: block; aspect-ratio: 16 / 10; overflow: hidden; background: var(--vt-blush); }
-html body #trial .visitor-trial-art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+html body #trial .visitor-trial-art { position: relative; display: block; aspect-ratio: 16 / 10; overflow: hidden; background: var(--vt-blush); }
+html body #trial .visitor-trial-art > img { width: 100%; height: 100%; object-fit: cover; object-position: center 40%; display: block; }
+/* the pendulum hanging in its room, the die resting in its own (as in 更多獨立工具) */
+html body #trial .visitor-trial-charm { position: absolute; left: 50%; filter: drop-shadow(0 8px 10px rgba(38, 52, 73, .22)); }
+html body #trial .visitor-trial-charm img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+html body #trial [data-feature="pendulum"] .visitor-trial-charm { top: -18px; width: 34px; height: 168px; transform: translateX(-50%) rotate(4deg); transform-origin: 50% 0; }
+html body #trial [data-feature="astro-dice"] .visitor-trial-charm { top: 50%; width: 92px; height: 92px; transform: translate(-50%, -46%) rotate(-8deg); }
 html body #trial .visitor-trial-copy { display: grid; gap: 6px; padding: 16px 18px 18px; }
 html body #trial .visitor-trial-copy b { color: var(--vt-title) !important; font: 700 19px/1.4 "Noto Serif TC", serif !important; }
 html body #trial .visitor-trial-copy em { color: var(--vt-muted) !important; font-style: normal; font-size: 14px; line-height: 1.75; }
@@ -85,6 +90,8 @@ html body #explore .ex-more-copy .ex-more-tag {
   html body #trial .visitor-trial-grid { grid-template-columns: 1fr; gap: 14px; }
   html body #trial a.visitor-trial-card { grid-template-columns: 112px 1fr; grid-template-rows: none; }
   html body #trial .visitor-trial-art { aspect-ratio: auto; height: 100%; min-height: 112px; }
+  html body #trial [data-feature="pendulum"] .visitor-trial-charm { top: -14px; width: 30px; height: 150px; }
+  html body #trial [data-feature="astro-dice"] .visitor-trial-charm { width: 68px; height: 68px; }
   html body #trial .visitor-trial-copy { padding: 14px 16px; }
   html body .trial-limit { padding: 26px 18px 22px !important; }
   html body .trial-limit a.trial-apply { width: 100%; min-width: 0; }

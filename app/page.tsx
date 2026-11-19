@@ -35,8 +35,13 @@ const pageTools = [
   { href: "/pendulum", number: "04", title: "靈擺直覺問答", desc: "把問題整理成是非題，透過擺動停下來聽見此刻的直覺。", room: "/pendulum/hero-desktop.webp", charm: ["/pendulum/metal.webp", "/pendulum/crystal.webp"] },
   { href: "/astro-dice", number: "05", title: "星骰此刻指引", desc: "擲出行星、星座與宮位，拆解此刻的能量、表現方式與生活領域。", room: "/astro-dice/hero-desktop.webp", charm: ["/astro-dice/die.webp"] },
 ] as const;
-/** Pictures for the 我想玩玩看 cards (visitors only). */
-const trialArt = { tarot: "/tarot-scenes/major-17.webp", pendulum: "/pendulum/hero-desktop.webp", "astro-dice": "/astro-dice/hero-desktop.webp" } as const;
+/** Pictures for the 我想玩玩看 cards (visitors only): the room, and the pendulum or die that hangs or
+ * rests in it, the same layers as the 更多獨立工具 cards (the room pictures alone are empty rooms). */
+const trialArt = {
+  tarot: { room: "/tarot-scenes/major-17.webp", charm: [] as string[] },
+  pendulum: { room: "/pendulum/hero-desktop.webp", charm: ["/pendulum/metal.webp", "/pendulum/crystal.webp"] },
+  "astro-dice": { room: "/astro-dice/hero-desktop.webp", charm: ["/astro-dice/die.webp"] },
+} as const;
 
 /** Thin gold line icons for the three practice tabs. */
 function PracticeIcon({ id }: { id: string }) {
@@ -407,7 +412,7 @@ export default function Home() {
         {trial.canPlay ? null : <TrialLimitCard />}
         {trial.canPlay || trial.mode === "signed-out" ? <div className="visitor-trial-grid">
           {TRIAL_FEATURES.map((feature) => <a key={feature.id} className="visitor-trial-card" href={feature.href}>
-            <span className="visitor-trial-art" aria-hidden="true"><img src={trialArt[feature.id]} alt="" loading="lazy" /></span>
+            <span className="visitor-trial-art" data-feature={feature.id} aria-hidden="true"><img src={trialArt[feature.id].room} alt="" loading="lazy" />{trialArt[feature.id].charm.length ? <span className="visitor-trial-charm">{trialArt[feature.id].charm.map((src) => <img key={src} src={src} alt="" loading="lazy" />)}</span> : null}</span>
             <span className="visitor-trial-copy"><b>{feature.title}</b><em>{feature.desc}</em><strong>{trial.canPlay ? "開始體驗" : "先看看"} <span aria-hidden="true">→</span></strong></span>
           </a>)}
         </div> : null}
