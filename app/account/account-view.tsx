@@ -23,6 +23,7 @@ import {
   validateProfileInput,
 } from "@/lib/account-state";
 import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
+import { TRIAL_LIMIT, trialRemaining } from "@/lib/visitor-trial";
 import type { ClientMember, MemberLoadFailure } from "@/lib/member-client";
 
 export type SaveProfile = (input: ProfileInput) => Promise<{ ok: true } | { ok: false; message: string }>;
@@ -109,6 +110,16 @@ function LineRequest({ label, message, primaryRef }: { label: string; message: s
       <pre>{message}</pre>
     </details>
   </div>;
+}
+
+/** 免費體驗: before Zola activates the account, three uses of 抽牌、靈擺、星骰 (lib/visitor-trial.ts). */
+function TrialInvite({ member }: { member: ClientMember }) {
+  const left = trialRemaining(member.trial_used ?? 0);
+  return <p className="account-trial-invite">
+    {left > 0
+      ? <>開通前，可以先免費體驗 {TRIAL_LIMIT} 次抽牌、靈擺或星骰，<Link href="/#trial">現在還剩 {left} 次 →</Link></>
+      : <>{TRIAL_LIMIT} 次免費體驗已經用完，開通後就不再限制次數。</>}
+  </p>;
 }
 
 function JourneySteps({ profileDone, signedIn }: { profileDone: boolean; signedIn: boolean }) {
@@ -342,6 +353,7 @@ export function MemberAccountView({ member, now, onSave, signOut }: {
       heroBody = <>
         <p className="account-lead">填好姓名、LINE 名稱與生日後，再傳 LINE 通知 Zola，Zola 確認後會為妳開通使用期限。</p>
         <div className="account-actions"><a className="account-primary" href="#member-profile">填寫會員資料</a></div>
+        <TrialInvite member={member} />
         <JourneySteps profileDone={false} signedIn />
       </>;
       break;
@@ -350,6 +362,7 @@ export function MemberAccountView({ member, now, onSave, signOut }: {
       heroBody = <>
         <p className="account-lead">傳一則 LINE 給 Zola，確認後會為妳開通使用期限。如果已經傳過了，請等 Zola 回覆；開通後回到這一頁就會看到期限。</p>
         <LineRequest label="傳 LINE 通知 Zola" message={activationRequestMessage(member)} primaryRef={lineCta} />
+        <TrialInvite member={member} />
         <JourneySteps profileDone signedIn />
       </>;
       break;

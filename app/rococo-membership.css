@@ -114,6 +114,9 @@
   line-height: 1.9;
 }
 .account-hero .account-actions { margin-top: 24px; }
+/* 免費體驗 before activation (account-view.tsx TrialInvite) */
+.account-hero p.account-trial-invite { max-width: 600px; margin: 16px auto 0; color: var(--mp-muted); font-size: 15px; line-height: 1.8; }
+.account-hero p.account-trial-invite a { color: var(--mp-title); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
 .account-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
 
 /* status chip: words first, colour only helps */

@@ -29,6 +29,8 @@
 .zola-admin-page.pearl-page .member-admin-identity h2 { color: var(--za-title); font: 700 20px/1.4 "Noto Serif TC", serif; }
 .zola-admin-page.pearl-page .member-admin-identity p { color: var(--za-ink); }
 .zola-admin-page.pearl-page .member-admin-identity small { color: var(--za-muted); font-size: 13px; }
+/* 免費體驗 before activation: how many of the three uses this applicant has spent */
+.zola-admin-page.pearl-page .member-admin-identity small.member-admin-trial { display: block; margin-top: 4px; color: var(--za-title); font-weight: 600; }
 .zola-admin-page.pearl-page .member-admin-expiry small, .zola-admin-page.pearl-page .member-admin-expiry span { color: var(--za-muted); font-size: 13px; }
 .zola-admin-page.pearl-page .member-admin-expiry strong { color: var(--za-ink); font: 700 20px "Noto Serif TC", serif; }
 .zola-admin-page.pearl-page .member-admin-actions label { color: var(--za-muted); font-size: 14px; }

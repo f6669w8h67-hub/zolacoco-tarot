@@ -10,23 +10,18 @@ const read = (file) => readFile(new URL(`../${file}`, import.meta.url), "utf8");
 const plain = (value) => JSON.parse(JSON.stringify(value));
 const trial = await loadTypescript("lib/visitor-trial.ts");
 
-test("three uses in all, counted on the visitor's device; unreadable values never give more", () => {
+test("three uses for a registered account Zola has not activated; never for others", () => {
   assert.equal(trial.TRIAL_LIMIT, 3);
   assert.equal(trial.MEMBERSHIP_KEYWORD, "申請會員", "Zola's LINE auto-reply keyword");
-  assert.deepEqual(plain(trial.parseTrial(null)), { used: 0, last: null });
-  for (const raw of ["", "not json", "[]", '{"used":"2"}', '{"used":-4}', '{"used":null}']) assert.equal(trial.parseTrial(raw).used, 0, raw);
-  assert.equal(trial.parseTrial('{"used":2.9}').used, 2);
-  assert.equal(trial.parseTrial('{"used":99}').used, 3, "never past the limit");
-  let raw = null;
-  const steps = [];
-  for (const feature of ["tarot", "pendulum", "astro-dice", "tarot"]) {
-    const next = trial.spendTrial(raw, feature, new Date("2026-11-19T10:00:00Z"));
-    raw = next.value;
-    steps.push(next.used);
+  assert.equal(trial.hasTrialAccess({ role: "member", status: "pending" }), true);
+  for (const member of [null, undefined, {}, { role: "admin", status: "pending" }, { role: "member", status: "active" }, { role: "member", status: "expired" }, { role: "member", status: "suspended" }]) {
+    assert.equal(trial.hasTrialAccess(member), false, JSON.stringify(member));
   }
-  assert.deepEqual(steps, [1, 2, 3, 3]);
-  assert.equal(JSON.parse(raw).last, "tarot@2026-11-19T10:00:00.000Z");
-  assert.deepEqual([0, 1, 2, 3, 4].map((used) => trial.trialRemaining(used)), [3, 2, 1, 0, 0]);
+  assert.deepEqual([0, 1, 2, 3, 7, -2].map((used) => trial.trialRemaining(used)), [3, 2, 1, 0, 0, 3]);
+  for (const odd of [undefined, null, "1", Number.NaN, Number.POSITIVE_INFINITY]) assert.equal(trial.trialRemaining(odd), 0, `${odd} counts as used up`);
+  assert.equal(trial.trialRemaining(1.7), 2);
+  for (const id of ["tarot", "pendulum", "astro-dice"]) assert.equal(trial.isTrialFeature(id), true);
+  for (const id of ["", "journal", "TAROT", null, 1]) assert.equal(trial.isTrialFeature(id), false);
   assert.deepEqual(plain(trial.TRIAL_FEATURES.map((feature) => [feature.id, feature.href])), [["tarot", "/#draw"], ["pendulum", "/pendulum"], ["astro-dice", "/astro-dice"]]);
 });
 
@@ -53,7 +48,7 @@ async function proxy(userId, member = { role: "member", status: "pending", acces
   return { request: (path) => mod.default({ url: `https://site.test${path}`, nextUrl: new URL(path, "https://site.test") }, {}), lookups: () => lookups };
 }
 
-test("proxy: signed-out visitors reach the three trial pages; everything else is as before", async () => {
+test("proxy: signed out may look at the three pages; unactivated accounts may play there; nothing else changes", async () => {
   const out = await proxy(null);
   for (const path of ["/", "/pendulum", "/astro-dice"]) assert.equal((await out.request(path)).headers.get("x-middleware-next"), "1", path);
   for (const path of ["/healing-room", "/astrology-exploration", "/pendulum/extra", "/tarot-readings"]) {
@@ -61,12 +56,62 @@ test("proxy: signed-out visitors reach the three trial pages; everything else is
     assert.equal(new URL(response.headers.get("location")).pathname, "/sign-in", path);
   }
   for (const path of ["/api/journal", "/api/practice", "/api/membership/admin/x"]) assert.equal((await out.request(path)).status, 401, path);
+  // /api/trial checks the account itself (like /api/membership/me), so the proxy lets it through.
+  assert.equal((await out.request("/api/trial")).headers.get("x-middleware-next"), "1");
   assert.equal(out.lookups(), 0);
-  // Signed in but not active: unchanged, the homepage still sends her to /account.
+
   const pending = await proxy("user_1");
-  const response = await pending.request("/");
-  assert.equal(new URL(response.headers.get("location")).pathname, "/account");
-  assert.equal(pending.lookups(), 1);
+  for (const path of ["/", "/pendulum", "/astro-dice"]) assert.equal((await pending.request(path)).headers.get("x-middleware-next"), "1", `pending ${path}`);
+  assert.equal(new URL((await pending.request("/healing-room")).headers.get("location")).pathname, "/account");
+  assert.equal((await pending.request("/api/journal")).status, 403);
+  for (const status of ["expired", "suspended"]) {
+    const other = await proxy("user_2", { role: "member", status, access_expires_at: "2000-01-01" });
+    assert.equal(new URL((await other.request("/")).headers.get("location")).pathname, "/account", status);
+  }
+});
+
+function trialService(member, { updated = [{ trial_used: (member.trial_used ?? 0) + 1 }] } = {}) {
+  const queries = [];
+  return loadTypescript("app/api/trial/route.ts", { mocks: {
+    "@/lib/membership": {
+      syncCurrentMember: async () => member,
+      getSql: () => async (strings, ...values) => { queries.push({ text: strings.join("?"), values }); return updated; },
+      membershipErrorResponse: () => Response.json({ error: "x" }, { status: 500 }),
+    },
+  } }).then((route) => ({ route, queries }));
+}
+const post = (body) => ({ json: async () => body });
+
+test("/api/trial: reads and spends the account's three uses, in one guarded statement", async () => {
+  const pendingMember = { id: "m1", role: "member", status: "pending", access_expires_at: null, trial_used: 1 };
+  let { route, queries } = await trialService(pendingMember);
+  assert.deepEqual(plain(await (await route.GET()).json()), { mode: "trial", used: 1, remaining: 2 });
+  assert.equal((await route.POST(post({ feature: "journal" }))).status, 400);
+  assert.equal((await route.POST(post(null))).status, 400);
+  assert.equal(queries.length, 0, "a bad request touches nothing");
+  const spent = await route.POST(post({ feature: "pendulum" }));
+  assert.deepEqual(plain(await spent.json()), { mode: "trial", used: 2, remaining: 1 });
+  assert.match(queries[0].text, /UPDATE members SET trial_used = trial_used \+ 1\s+WHERE id = \? AND role = 'member' AND status = 'pending' AND trial_used < \?\s+RETURNING trial_used/);
+  assert.deepEqual(queries[0].values, ["m1", 3]);
+
+  ({ route } = await trialService({ ...pendingMember, trial_used: 3 }, { updated: [] }));
+  assert.deepEqual(plain(await (await route.GET()).json()), { mode: "trial", used: 3, remaining: 0 });
+  const full = await route.POST(post({ feature: "tarot" }));
+  assert.equal(full.status, 409);
+  assert.equal((await full.json()).remaining, 0);
+
+  ({ route, queries } = await trialService({ id: "m2", role: "member", status: "active", access_expires_at: "2099-01-01" }));
+  assert.deepEqual(plain(await (await route.GET()).json()), { mode: "member" });
+  assert.deepEqual(plain(await (await route.POST(post({ feature: "tarot" }))).json()), { mode: "member" });
+  assert.equal(queries.length, 0, "members are never counted");
+  for (const status of ["expired", "suspended"]) {
+    ({ route, queries } = await trialService({ id: "m3", role: "member", status, access_expires_at: "2000-01-01" }));
+    assert.deepEqual(plain(await (await route.GET()).json()), { mode: "none" }, status);
+    assert.equal((await route.POST(post({ feature: "tarot" }))).status, 403, status);
+    assert.equal(queries.length, 0);
+  }
+  const schema = await read("lib/membership.ts");
+  assert.match(schema, /ALTER TABLE members ADD COLUMN IF NOT EXISTS trial_used integer NOT NULL DEFAULT 0/);
 });
 
 const gateMocks = (pathname, auth) => ({
@@ -76,28 +121,29 @@ const gateMocks = (pathname, auth) => ({
   "next/navigation": { usePathname: () => pathname },
   "next/link": { default: ({ children, ...props }) => React.createElement("a", props, children) },
   "./styles/pearl-page.css": {},
-  "./visitor-trial": { VisitorTrialProvider: ({ children }) => React.createElement("div", { "data-trial": "visitor" }, children) },
+  "./visitor-trial": { TrialProvider: ({ mode, children }) => React.createElement("div", { "data-trial": mode }, children) },
 });
 
-test("page gate: signed out on a trial page opens it in trial mode; elsewhere the sign-in screen stays", async () => {
-  for (const [pathname, auth, trialMode] of [
-    ["/", { isLoaded: true, isSignedIn: false }, true],
-    ["/pendulum", { isLoaded: true, isSignedIn: false }, true],
-    ["/astro-dice", { isLoaded: true, isSignedIn: false }, true],
-    ["/healing-room", { isLoaded: true, isSignedIn: false }, false],
-    ["/astrology-exploration", { isLoaded: true, isSignedIn: false }, false],
-    ["/", { isLoaded: false, isSignedIn: false }, false],
+test("page gate: signed out on a trial page shows it (to register); an unactivated account plays there", async () => {
+  for (const [pathname, auth, mode] of [
+    ["/", { isLoaded: true, isSignedIn: false }, "signed-out"],
+    ["/pendulum", { isLoaded: true, isSignedIn: false }, "signed-out"],
+    ["/astro-dice", { isLoaded: true, isSignedIn: false }, "signed-out"],
+    ["/healing-room", { isLoaded: true, isSignedIn: false }, null],
+    ["/astrology-exploration", { isLoaded: true, isSignedIn: false }, null],
+    ["/", { isLoaded: false, isSignedIn: false }, null],
   ]) {
     const { default: Gate } = await loadTypescript("app/membership-gate.tsx", { mocks: gateMocks(pathname, auth) });
     const html = renderToStaticMarkup(React.createElement(Gate, null, "PAGE_SENTINEL"));
-    assert.equal(html.includes('data-trial="visitor"'), trialMode, `${pathname} ${JSON.stringify(auth)}`);
-    assert.equal(html.includes("PAGE_SENTINEL"), trialMode, pathname);
+    assert.equal(html.match(/data-trial="([^"]+)"/)?.[1] ?? null, mode, `${pathname} ${JSON.stringify(auth)}`);
+    assert.equal(html.includes("PAGE_SENTINEL"), Boolean(mode), pathname);
   }
-  // Signed in: still waits for the member check, never trial mode.
   const { default: Gate } = await loadTypescript("app/membership-gate.tsx", { mocks: gateMocks("/", { isLoaded: true, isSignedIn: true }) });
   const html = renderToStaticMarkup(React.createElement(Gate, null, "PAGE_SENTINEL"));
-  assert.doesNotMatch(html, /data-trial|PAGE_SENTINEL/);
-  assert.match(html, /正在確認使用權限/);
+  assert.doesNotMatch(html, /data-trial|PAGE_SENTINEL/, "signed in: waits for the member check first");
+  const gate = await read("app/membership-gate.tsx");
+  assert.match(gate, /if \(access\.status === "allowed"\) return children;\n[^\n]*\n  if \(access\.status === "pending" && isVisitorTrialPage\(pathname\)\) return <TrialProvider mode="account">/);
+  assert.match(gate, /access\.status === "pending" \? <Link className="gate-secondary" href="\/#trial">開通前，先免費體驗 3 次<\/Link>/);
 });
 
 const componentMocks = {
@@ -107,23 +153,37 @@ const componentMocks = {
   "./styles/visitor-trial.css": {},
 };
 
-test("members see nothing of the trial; a visitor sees the meter, and 申請成為會員 opens LINE with the keyword", async () => {
+test("members see nothing; signed out sees 免費註冊; the account's count comes from /api/trial", async () => {
   const ui = await loadTypescript("app/visitor-trial.tsx", { mocks: componentMocks });
-  const bare = renderToStaticMarkup(React.createElement(React.Fragment, null, React.createElement(ui.TrialMeter), React.createElement(ui.TrialLimitCard)));
-  assert.equal(bare, "", "no provider = member");
-  const visitor = renderToStaticMarkup(React.createElement(ui.VisitorTrialProvider, null, React.createElement(ui.TrialMeter)));
-  assert.match(visitor, /免費體驗還剩 <b>3<\/b> 次/);
-  assert.equal((visitor.match(/class="left"/g) || []).length, 3);
+  const source0 = await read("app/visitor-trial.tsx");
+  const both = (provider) => renderToStaticMarkup(provider(React.createElement(React.Fragment, null, React.createElement(ui.TrialMeter), React.createElement(ui.TrialLimitCard))));
+  assert.equal(both((children) => children), "", "no provider = member");
+  const signedOut = both((children) => React.createElement(ui.TrialProvider, { mode: "signed-out" }, children));
+  assert.match(signedOut, /<h3 id="[^"]+">免費註冊，就能體驗 3 次<\/h3>/);
+  assert.match(signedOut, /<a class="trial-apply" href="\/sign-up">免費註冊<\/a>/);
+  assert.match(signedOut, /<a class="trial-sign-in" href="\/sign-in">已經有帳號？登入<\/a>/);
+  assert.doesNotMatch(signedOut, /trial-meter/);
+  const loading = both((children) => React.createElement(ui.TrialProvider, { mode: "account" }, children));
+  assert.match(loading, /正在確認妳的體驗次數/, "nothing to play until the account's count is read");
+  assert.deepEqual([
+    { mode: "member" }, { mode: "trial", remaining: 2 }, { mode: "trial", remaining: 9 }, { mode: "trial", remaining: -1 },
+    { mode: "trial", remaining: "2" }, { mode: "none" }, {},
+  ].map((data) => ui.remainingFrom(data)), [Number.POSITIVE_INFINITY, 2, 3, 0, 0, 0, 0]);
+  // A spend that is not clearly answered stops the trial (ChatGPT review #51): refused, server error,
+  // unreadable or a network failure; 409 (used up) and a normal answer give the server's count.
+  assert.deepEqual([
+    [200, { mode: "trial", remaining: 2 }], [409, { mode: "trial", remaining: 0 }], [200, { mode: "member" }],
+    [403, { error: "TRIAL_NOT_AVAILABLE" }], [500, { error: "x" }], [401, null], [200, null], [200, { mode: "trial" }], [200, { mode: "none" }],
+  ].map(([status, data]) => ui.spendOutcome(status, data)), [2, 0, Number.POSITIVE_INFINITY, "failed", "failed", "failed", "failed", "failed", "failed"]);
+  assert.match(source0, /if \(outcome === "failed"\) setFailed\(true\); else setRemaining\(outcome\);\n\s+\}\)\n\s+\.catch\(\(\) => \{ setFailed\(true\); \}\);/, "network failure stops too");
   assert.equal(ui.membershipApplyUrl, `https://line.me/R/oaMessage/${encodeURIComponent("@903ijdgr")}/?${encodeURIComponent("申請會員")}`);
   const source = await read("app/visitor-trial.tsx");
-  assert.match(source, /const titleId = useId\(\);/, "unique title id when the card shows twice");
-  assert.match(source, /<h3 id=\{titleId\}>三次免費體驗用完了<\/h3>/);
-  // Only what VIP months really give (ChatGPT review #50): no promise of 學員練習室 or 陪跑, no 全站.
+  assert.match(source, /fetch\("\/api\/trial", \{ cache: "no-store" \}\)/);
+  assert.match(source, /fetch\("\/api\/trial", \{ method: "POST", headers: \{ "content-type": "application\/json" \}, body: JSON\.stringify\(\{ feature \}\) \}\)/);
+  assert.match(source, /canPlay: ready && !failed && left > 0/);
   assert.match(source, /抽牌、靈擺、星骰不再限制次數，也能保存紀錄；還有星盤探索、療癒室、直覺練習和七日內在筆記。/);
-  assert.doesNotMatch(source, /全站|練習室|陪跑/);
+  assert.doesNotMatch(source, /全站|練習室|陪跑|localStorage/);
   assert.match(source, /<a className="trial-apply" href=\{membershipApplyUrl\} target="_blank" rel="noreferrer">申請成為會員<\/a>/);
-  assert.match(source, /送出「\{MEMBERSHIP_KEYWORD\}」就會收到申請方式/);
-  assert.match(source, /href="\/sign-in">已經是會員？登入/);
 });
 
 test("each feature spends one use when it completes, and cannot start once none are left", async () => {
@@ -153,13 +213,29 @@ test("each feature spends one use when it completes, and cannot start once none 
   assert.match(dice, /\{!trial\.visitor&&<details className="ad2-fold" id="astro-records"/);
 
   for (const [name, source] of [["home", home], ["pendulum", pendulum], ["dice", dice]]) {
-    assert.doesNotMatch(source, /fetch\(\s*["'`]\/api\/(?!membership\/me)/, `${name}: the trial adds no API call`);
+    // The pages themselves call no API for the trial; only app/visitor-trial.tsx talks to /api/trial.
+    assert.doesNotMatch(source, /fetch\(\s*["'`]\/api\/(?!membership\/me)/, `${name}: no API call from the page`);
   }
 });
 
-test("development preview can show visitor mode; production never takes that branch", async () => {
+test("signed out is asked to register; the account page and Zola's admin show the count", async () => {
+  const home = await read("app/page.tsx");
+  assert.match(home, /<b>免費註冊，就能體驗 \{TRIAL_LIMIT\} 次<\/b>/);
+  assert.match(home, /\{trial\.mode === "signed-out" \? "用 Email 免費註冊後，" : ""\}下面三種體驗合計可以玩/);
+  assert.match(home, /\{trial\.canPlay \|\| trial\.mode === "signed-out" \? <div className="visitor-trial-grid">/, "signed out still sees what there is to try");
+  assert.match(home, /\{trial\.mode === "signed-out"\n\s+\? <Link href="\/sign-up">先免費註冊<\/Link>/);
+  assert.doesNotMatch(home, /不用註冊/);
+  const account = await read("app/account/account-view.tsx");
+  assert.match(account, /function TrialInvite\(\{ member \}: \{ member: ClientMember \}\) \{\n  const left = trialRemaining\(member\.trial_used \?\? 0\);/);
+  assert.equal((account.match(/<TrialInvite member=\{member\} \/>/g) || []).length, 2, "both pending stages");
+  assert.match(account, /<Link href="\/#trial">現在還剩 \{left\} 次 →<\/Link>/);
+  const admin = await read("app/zola-admin/admin-client.tsx");
+  assert.match(admin, /member\.effective_status === "pending" \? <small className="member-admin-trial">免費體驗：已用 \{Math\.min\(3, member\.trial_used \?\? 0\)\}／3 次<\/small>/);
+});
+
+test("development preview can show the trial screens; production never takes that branch", async () => {
   const layout = await read("app/layout.tsx");
-  assert.match(layout, /allowsMembershipPreview\(process\.env\) \? \(\n\s+\/\/[^\n]*\n\s+process\.env\.MEMBERSHIP_PREVIEW_AS === "visitor" \? <VisitorTrialProvider>/);
+  assert.match(layout, /process\.env\.MEMBERSHIP_PREVIEW_AS === "signed-out" \|\| process\.env\.MEMBERSHIP_PREVIEW_AS === "account"\n\s+\? <TrialProvider mode=\{process\.env\.MEMBERSHIP_PREVIEW_AS\}>/);
   const { allowsMembershipPreview } = await loadTypescript("lib/membership-access.ts");
   assert.equal(allowsMembershipPreview({ NODE_ENV: "production", VERCEL_ENV: "production", MEMBERSHIP_PREVIEW: "true" }), false);
 });

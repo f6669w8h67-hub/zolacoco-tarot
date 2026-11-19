@@ -151,7 +151,7 @@ test("the gate card renders as a pearl arch with a shell, title, words and two c
     "next/navigation": { usePathname: () => "/healing-room" },
     "next/link": { default: ({ href, children, ...rest }) => jsxRuntime.jsx("a", { href, ...rest, children }) },
     "./styles/pearl-page.css": {},
-    "./visitor-trial": { VisitorTrialProvider: ({ children }) => children },
+    "./visitor-trial": { TrialProvider: ({ children }) => children },
   } });
   const html = renderToStaticMarkup(jsxRuntime.jsx(mod.default, { children: "VIP_SENTINEL" }));
   assert.equal(html.includes("VIP_SENTINEL"), false, "signed out: the room stays closed");
