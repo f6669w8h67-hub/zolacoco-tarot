@@ -11,6 +11,8 @@ import "./styles/draw-pearl.css";
 import "./styles/draw-fan.css";
 import "./styles/pearl-page.css";
 import "./styles/home-pearl.css";
+import "./styles/story-host.css";
+import StoryHome from "./story/story-home";
 import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
 import { loadMemberProfile } from "@/lib/member-client";
 import { JournalTool } from "./journal/journal-tool";
@@ -359,13 +361,15 @@ export default function Home() {
 
   return (
     <main className="home-pearl pearl-page">
+      <StoryHome />
 
+      {/* After the storybook (2026-11-20) this block opens the full site, so it no longer repeats the prologue's headline. */}
       <section className="hero" id="top">
         <span className="pearl-corners" aria-hidden="true" />
         <div className="hero-copy">
-          <p className="eyebrow">A MESSAGE FOR YOUR PRESENT MOMENT</p>
-          <h1><span>把問題放在心裡</span><em>抽一張屬於妳的牌</em></h1>
-          <p className="intro">答案不替妳決定人生，而是陪妳看清此刻真正需要留意的方向。</p>
+          <p className="eyebrow">THE FULL READING</p>
+          <h1><span>想看得更完整</span><em>從這裡開始</em></h1>
+          <p className="intro">主題牌陣抽牌、靈擺、星骰和覺察工具都在下面，也可以直接預約 Zola 一對一諮詢。</p>
           {trial.visitor ? <div className="visitor-status trial-status" role="status">
             <span aria-hidden="true" />
             <p>
@@ -392,7 +396,6 @@ export default function Home() {
               : <a className="primary" href="#draw">開始免費抽牌 <span aria-hidden="true">↓</span></a>}
             <a className="hero-secondary" href="#consult">預約一對一諮詢</a>
           </div>
-          <p className="ritual">深呼吸三次，想著一個妳最近最在意的問題</p>
         </div>
         <div className="hero-portrait" aria-label="Zolacoco Tarot 主理人形象照">
           <img src="/zolacoco-hero-v2.png" alt="Zolacoco Tarot 主理人 Zola" />

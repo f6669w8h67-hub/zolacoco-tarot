@@ -6,11 +6,12 @@ import test from "node:test";
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("the site speaks to her as 妳 everywhere, the brand line included", async () => {
-  for (const file of ["app/page.tsx", "app/layout.tsx", "app/site-header.tsx", "app/admin/page.tsx"]) {
+  for (const file of ["app/page.tsx", "app/layout.tsx", "app/site-header.tsx", "app/admin/page.tsx", "app/story/story-content.ts", "app/story/story-engine.js"]) {
     assert.equal((await read(file)).includes("你"), false, file);
   }
   assert.match(await read("app/layout.tsx"), /title: "Zolacoco Tarot｜抽一張屬於妳的牌"/);
-  assert.match(await read("app/page.tsx"), /<em>抽一張屬於妳的牌<\/em>/);
+  // since the storybook home (2026-11-20) the headline opens its prologue
+  assert.match(await read("app/story/story-content.ts"), /<em>抽一張屬於妳的牌<\/em>/);
   // her own greeting to Zola in the LINE message is her words, not ours
   assert.match(await read("lib/tarot-reading.ts"), /"你好 Zola ✨"/);
 });
