@@ -339,6 +339,8 @@ h2 { margin: 0 0 10px; font-size: clamp(25px, 6.4vw, 38px); line-height: 1.35; f
   .drawn .flip, .fan-card .back { transition: none; }
 }
 
+/* in the site: well past the story its fixed layers leave the page (the story sleeps, see story-engine) */
+:host([data-away]) :is(#dust, .sky, .sparkles, .chapters-nav) { display: none; }
 /* in the site: the closing chapter hands over to the full draw below */
 .chapter.after:last-of-type { padding-bottom: 12svh; }
 `;

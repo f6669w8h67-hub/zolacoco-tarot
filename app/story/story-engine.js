@@ -6,20 +6,49 @@ import majorsData from "./majors.json";
 import extraData from "./extra.json";
 
 export function mountStory(root, host) {
-  let alive = true;
-  const listeners = [];
-  const RAF = cb => requestAnimationFrame(t => { if (alive) cb(t); });
+  let alive = true, awake = true, onScreen = true;
+  const listeners = [], timers = new Set(), observers = [], cleanups = [], parked = new Set();
   const ON = (type, fn, o) => { window.addEventListener(type, fn, o); listeners.push([type, fn, o]); };
+  // Frame loops run only while the story is on screen and the tab is visible. With reduced motion they
+  // run only for a moment after the reader scrolls, resizes or touches something. A loop that asks for a
+  // frame when it may not run is parked and picks up again when it may.
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let busyUntil = performance.now() + 1500;
+  const canRun = () => awake && (!reduceMotion || performance.now() < busyUntil);
+  const RAF = cb => {
+    if (!alive) return;
+    if (!canRun()) { parked.add(cb); return; }
+    requestAnimationFrame(t => { if (alive) cb(t); });
+  };
+  const resume = () => {
+    if (!canRun() || !parked.size) return;
+    const cbs = [...parked]; parked.clear();
+    cbs.forEach(cb => requestAnimationFrame(t => { if (alive) cb(t); }));
+  };
+  const wake = () => { awake = onScreen && !document.hidden; resume(); };
+  if (reduceMotion) {
+    const poke = () => { busyUntil = performance.now() + 700; resume(); };
+    ["scroll", "resize", "pointerdown", "pointermove", "keydown", "click"].forEach(type => ON(type, poke, { passive: true }));
+  }
   const OFF = (type, fn, o) => window.removeEventListener(type, fn, o);
+  const TO = (fn, ms) => { const id = setTimeout(() => { timers.delete(id); if (alive) fn(); }, ms); timers.add(id); return id; };
+  const IO = (cb, o) => { const io = new IntersectionObserver(cb, o); observers.push(io); return io; };
+  const RO = cb => { const ro = new ResizeObserver(cb); observers.push(ro); return ro; };
   // links between chapters live inside the shadow root, so the browser cannot follow them by itself
-  root.addEventListener("click", e => {
+  const onRootClick = e => {
     const a = e.target.closest && e.target.closest('a[href^="#"]');
     if (!a) return;
     const target = root.getElementById(a.getAttribute("href").slice(1));
     if (!target) return; // a link to the rest of the home page (#draw, #trial …) is left to the browser
     e.preventDefault();
     target.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
-  });
+  };
+  root.addEventListener("click", onRootClick);
+  // once the reader is well into the full draw below, the story sleeps and its fixed layers leave the page
+  const seen = IO(es => { onScreen = es.some(e => e.isIntersecting); host.toggleAttribute("data-away", !onScreen); wake(); }, { rootMargin: "240px 0px" });
+  seen.observe(host);
+  document.addEventListener("visibilitychange", wake);
+
 
   const MAJORS = majorsData;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -235,8 +264,10 @@ export function mountStory(root, host) {
     out[0] = x1; out[1] = y1; out[2] = z1;
   }
 
+  let stillKey = "";
   function frame(now) {
     RAF(frame);
+    if (reduce) { const key = `${scrollY}|${innerWidth}|${innerHeight}|${revealTarget}`; if (key === stillKey) return; stillKey = key; }
     const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now;
     const t = now / 1000;
     const target = scrollState();
@@ -443,7 +474,7 @@ export function mountStory(root, host) {
   // a tap on the table only turns the card a little and lets its colour show for a moment
   function peek(c) {
     c.r += (Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 10); ease(c, 420); setCard(c);
-    c.el.classList.add("peek"); setTimeout(() => c.el.classList.remove("peek"), 700);
+    c.el.classList.add("peek"); TO(() => c.el.classList.remove("peek"), 700);
     gatherBtn.classList.remove("nudge"); void gatherBtn.offsetWidth; gatherBtn.classList.add("nudge");
   }
   mixBtn.addEventListener("click", () => { if (mode === "table" && chosen < 0) toTable(14); });
@@ -453,7 +484,7 @@ export function mountStory(root, host) {
   // the cards are dealt onto the clouds the first time the stage comes into view
   const dealIn = () => { if (mode === "stack") toTable(32); };
   if ("IntersectionObserver" in window) {
-    const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); dealIn(); } }, { threshold: 0.3 });
+    const io = IO(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); dealIn(); } }, { threshold: 0.3 });
     io.observe(stage);
   } else dealIn();
   setMode("stack"); hint.textContent = HINTS.table;
@@ -478,7 +509,7 @@ export function mountStory(root, host) {
     RAF(() => RAF(() => {
       drawnEl.style.transition = reduce ? "none" : "transform .85s cubic-bezier(.2, .8, .2, 1)";
       drawnEl.style.transform = "none";
-      setTimeout(() => {
+      TO(() => {
         drawnEl.classList.add("open"); revealTarget = 1;
         root.getElementById("rKw").textContent = card.kw;
         root.getElementById("rTitle").innerHTML = `<i>${card.num}</i>${card.name}<small>${card.en}</small>`;
@@ -490,7 +521,7 @@ export function mountStory(root, host) {
   }
   root.getElementById("again").addEventListener("click", () => {
     revealTarget = 0; drawnEl.classList.remove("open");
-    setTimeout(() => {
+    TO(() => {
       drawnEl.classList.remove("show"); drawnEl.style.transform = "none";
       if (chosen >= 0) cards[chosen].el.classList.remove("taken");
       chosen = -1; shuffle(); fan.classList.remove("dim"); hint.style.opacity = "1";
@@ -504,6 +535,7 @@ export function mountStory(root, host) {
   const storyImg = root.getElementById("storyImg"), storyShare = root.getElementById("storyShare");
   const storyDl = root.getElementById("storyDl"), storyTip = root.getElementById("storyTip");
   let storyUrl = "", storyFile = null, storyBlob = null, lastFocus = null;
+  cleanups.push(() => { if (storyUrl) URL.revokeObjectURL(storyUrl); });
   const SERIF = '"Noto Serif TC", "Songti TC", "Noto Serif CJK TC", serif', LATIN = '"Cormorant Garamond", Georgia, serif';
   function wrapCJK(g, text, maxW) {
     const lines = []; let line = "";
@@ -602,7 +634,27 @@ export function mountStory(root, host) {
     g.font = `italic 600 26px ${LATIN}`; g.fillStyle = "#8a7480"; g.fillText("zolacoco-tarot.vercel.app", 540, fy + 44);
     return new Promise(res => cv.toBlob(res, "image/png"));
   }
-  function closeSheet() { sheet.hidden = true; document.documentElement.style.overflow = ""; if (lastFocus) lastFocus.focus({ preventScroll: true }); }
+  let inerted = [];
+  function setBackgroundInert(on) {
+    inerted.forEach(el => { el.inert = false; }); inerted = [];
+    if (!on) return;
+    inerted = [root.querySelector(".story-main"), root.querySelector(".chapters-nav")];
+    // and outside the shadow root: every sibling on the way up from the story to <body>
+    for (let el = host; el && el !== document.body; el = el.parentElement) {
+      for (const sib of el.parentElement ? el.parentElement.children : []) if (sib !== el && !sib.inert) inerted.push(sib);
+    }
+    inerted = inerted.filter(Boolean); inerted.forEach(el => { el.inert = true; });
+  }
+  cleanups.push(() => setBackgroundInert(false));
+  function closeSheet() { sheet.hidden = true; setBackgroundInert(false); document.documentElement.style.overflow = ""; if (lastFocus) lastFocus.focus({ preventScroll: true }); }
+  sheet.addEventListener("keydown", e => {
+    if (e.key !== "Tab") return;
+    const stops = [...sheet.querySelectorAll("button, a[href]")].filter(el => !el.hidden && !el.disabled && el.getClientRects().length);
+    if (!stops.length) return;
+    const first = stops[0], last = stops[stops.length - 1], cur = root.activeElement;
+    if (e.shiftKey && (cur === first || !sheet.contains(cur))) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && (cur === last || !sheet.contains(cur))) { e.preventDefault(); first.focus(); }
+  });
   storyBtn.addEventListener("click", async () => {
     if (!currentCard) return;
     lastFocus = storyBtn; storyBtn.disabled = true; const label = storyBtn.textContent; storyBtn.textContent = "製作圖卡中…";
@@ -615,7 +667,7 @@ export function mountStory(root, host) {
       storyDl.href = storyUrl; storyDl.download = storyFile.name;
       storyShare.hidden = !(navigator.canShare && navigator.canShare({ files: [storyFile] }));
       storyTip.textContent = matchMedia("(pointer: coarse)").matches ? "長按圖片，選「儲存到照片」，就能貼到 IG 限動" : "按「下載圖片」存起來，再上傳到 IG 限動";
-      sheet.hidden = false; document.documentElement.style.overflow = "hidden";
+      sheet.hidden = false; setBackgroundInert(true); document.documentElement.style.overflow = "hidden";
       root.getElementById("storyClose").focus({ preventScroll: true });
     } catch (_) { storyBtn.textContent = "圖卡製作失敗，再試一次"; storyBtn.disabled = false; return; }
     storyBtn.textContent = label; storyBtn.disabled = false;
@@ -623,16 +675,6 @@ export function mountStory(root, host) {
   storyShare.addEventListener("click", async () => {
     try { await navigator.share({ files: [storyFile], title: "Zolacoco Tarot" }); }
     catch (e) { if (e && e.name !== "AbortError") storyTip.textContent = "這個畫面不能直接分享，長按圖片儲存就可以了"; }
-  });
-  // inside the Claude artifact viewer a file is handed over through its downloads capability; on the real site the plain link works
-  storyDl.addEventListener("click", async e => {
-    const host = window.claude && typeof window.claude.use === "function" ? window.claude : null;
-    if (!host || !storyBlob) return;
-    e.preventDefault();
-    const dl = await host.use("downloads");
-    if (!dl) { storyTip.textContent = "這個畫面不能下載，長按圖片儲存就可以了"; return; }
-    try { await dl.save({ filename: storyFile.name, data: storyBlob }); }
-    catch (err) { if (!err || err.code !== "declined") storyTip.textContent = "下載沒有成功，長按圖片儲存也可以"; }
   });
   root.getElementById("storyClose").addEventListener("click", closeSheet);
   sheet.addEventListener("click", e => { if (e.target === sheet) closeSheet(); });
@@ -670,7 +712,7 @@ export function mountStory(root, host) {
       tilt(-((e.clientY - r.top) / r.height - 0.5) * 16, ((e.clientX - r.left) / r.width - 0.5) * 24);
     }
   });
-  const hEnd = () => { if (!hDrag) return; hDrag = null; holo.classList.remove("dragging"); tilt(0, 0); setTimeout(() => { hMoved = false; }, 0); };
+  const hEnd = () => { if (!hDrag) return; hDrag = null; holo.classList.remove("dragging"); tilt(0, 0); TO(() => { hMoved = false; }, 0); };
   holo.addEventListener("pointerup", hEnd); holo.addEventListener("pointercancel", hEnd);
   holo.addEventListener("pointerleave", () => { if (!hDrag) tilt(0, 0); });
   holo.addEventListener("click", e => {
@@ -682,7 +724,7 @@ export function mountStory(root, host) {
       const sp = document.createElement("span"), a = Math.random() * TAU, d = 50 + Math.random() * 120, z = 14 + Math.random() * 18;
       sp.className = "spark";
       sp.style.cssText = `left:${x - w.left}px;top:${y - w.top}px;width:${z}px;height:${z}px;margin:${-z / 2}px 0 0 ${-z / 2}px;--c:${cols[k % 4]};--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d}px`;
-      cardWorld.appendChild(sp); setTimeout(() => sp.remove(), 1050);
+      cardWorld.appendChild(sp); TO(() => sp.remove(), 1050);
     }
     holoHint.textContent = MAJORS[17].truth;
   });
@@ -713,6 +755,7 @@ export function mountStory(root, host) {
 
   function pendLoop(now) {
     RAF(pendLoop);
+    if (reduce && !asking && !(pDrag && pDrag.on) && Math.abs(pw) < 1e-4 && fxDirty) { lastP = now; return; }
     const dt = Math.max(0, Math.min(0.033, (now - lastP) / 1000)); lastP = now; const t = now / 1000;
     if (guide && !(pDrag && pDrag.on)) { // the swing plane searches the chart, then settles on the answer
       const e = (now - askAt) / 1000;
@@ -808,7 +851,7 @@ export function mountStory(root, host) {
     const x1 = wr.width / 2, y1 = pendEl.offsetTop + pendEl.offsetHeight * 0.93 + 10;
     el.style.left = x0 + "px"; el.style.top = y0 + "px";
     RAF(() => RAF(() => { el.style.transform = `translate(-50%, -50%) translate(${x1 - x0}px, ${y1 - y0}px) scale(.55)`; el.style.opacity = "0"; }));
-    setTimeout(() => el.remove(), 1500);
+    TO(() => el.remove(), 1500);
   }
   askBtn.addEventListener("click", () => {
     if (asking) return;
@@ -821,12 +864,11 @@ export function mountStory(root, host) {
     askForm.hidden = true; pendHint.hidden = true;
     asking = true; askAt = performance.now(); guide = reduce ? null : { cur: Math.PI / 2 };
     let u = Math.random(), k = 0; for (; k < weights.length - 1; k++) { u -= weights[k]; if (u < 0) break; }
-    if (reduce) pw += (Math.random() < 0.5 ? -1 : 1) * 0.6;
     pendResult.innerHTML = '<p class="line">靈擺正在感應妳的問題…</p>';
-    setTimeout(() => {
+    TO(() => {
       asking = false;
       if (guide) { guide.k = k === 0 ? 0 : k === 1 ? 2 : 1; guide.phi = CH[guide.k].p; guide.from = guide.cur; guide.at = performance.now(); }
-      setTimeout(() => {
+      TO(() => {
         const r = EXTRA.answers[k];
         pendResult.innerHTML = `${q ? `<p class="q">妳問：「${esc(q)}」</p>` : ""}<p class="big">${r.l}<i>${r.en}</i></p><p class="line">${r.d}</p>`;
         askBtn.textContent = "再問一次"; answered = true;
@@ -849,7 +891,7 @@ export function mountStory(root, host) {
     dieFace.style.transform = quad(100, 100, [[0.05, 0.262], [0.775, 0.27], [0.77, 0.962], [0.035, 0.948]].map(([x, y]) => [x * sz, y * sz]));
   }
   fitFace(); ON("resize", fitFace);
-  if ("ResizeObserver" in window) new ResizeObserver(fitFace).observe(dieEl);
+  if ("ResizeObserver" in window) RO(fitFace).observe(dieEl);
   function showPlanet(p) {
     dieGlyph.textContent = p.s + "\uFE0E"; dieName.textContent = p.n;
     dieFace.classList.remove("swap"); void dieFace.offsetWidth; dieFace.classList.add("swap");
@@ -863,18 +905,18 @@ export function mountStory(root, host) {
     dieFace.style.opacity = "0";
     const shadowEl = root.getElementById("dieShadow");
     dieEl.classList.add("rolling"); shadowEl.classList.add("rolling");
-    setTimeout(() => { // the die lands: a small burst of stardust on the clouds
+    TO(() => { // the die lands: a small burst of stardust on the clouds
       const w = diceWorld.getBoundingClientRect(), d = dieEl.getBoundingClientRect();
       const cx = d.left + d.width / 2 - w.left, cy = d.bottom - d.height * 0.12 - w.top, cols = ["#d48ea8", "#e9b9ca", "#c4a46c", "#f1cbd8"];
       for (let k = 0; k < 16; k++) {
         const sp = document.createElement("span"), a = Math.PI + Math.random() * Math.PI, dd = 40 + Math.random() * 90, z = 10 + Math.random() * 14;
         sp.className = "spark";
         sp.style.cssText = `left:${cx}px;top:${cy}px;width:${z}px;height:${z}px;margin:${-z / 2}px 0 0 ${-z / 2}px;--c:${cols[k % 4]};--dx:${Math.cos(a) * dd * 1.4}px;--dy:${Math.sin(a) * dd * 0.6}px`;
-        diceWorld.appendChild(sp); setTimeout(() => sp.remove(), 1050);
+        diceWorld.appendChild(sp); TO(() => sp.remove(), 1050);
       }
       showPlanet(roll.p);
     }, reduce ? 0 : 1036);
-    setTimeout(() => {
+    TO(() => {
       const { p, s, h } = roll;
       diceResult.innerHTML = `<p class="dice-line">${txt(p.s)} ${p.n}<b>·</b>${txt(s.s)} ${s.n}<b>·</b>${txt(h.s)} ${h.n}</p><p class="line">${p.m}。${h.p}</p>`;
       dieEl.classList.remove("rolling"); shadowEl.classList.remove("rolling");
@@ -901,7 +943,7 @@ export function mountStory(root, host) {
     if (state !== "granted") { shakeBtn.textContent = state === "denied" ? "沒有開啟動作權限，用點的也可以擲骰" : "這個預覽畫面讀不到手機動作，正式網站上就能搖"; return; }
     ON("devicemotion", onMotion); shakeOn = true; shakeBtn.classList.add("on");
     shakeBtn.textContent = "已開啟：拿起手機搖一搖，星骰就會擲出";
-    setTimeout(() => { if (!gotMotion) { OFF("devicemotion", onMotion); shakeOn = false; shakeBtn.classList.remove("on"); shakeBtn.textContent = "這個預覽畫面讀不到手機動作，正式網站上就能搖"; } }, 1500);
+    TO(() => { if (!gotMotion) { OFF("devicemotion", onMotion); shakeOn = false; shakeBtn.classList.remove("on"); shakeBtn.textContent = "這個預覽畫面讀不到手機動作，正式網站上就能搖"; } }, 1500);
   });
 
   /* ---------- client voices: a LINE-style thread that types itself out as it comes into view ---------- */
@@ -928,14 +970,14 @@ export function mountStory(root, host) {
     if (reduce) { CHAT.forEach(m => chat.appendChild(bubble(m))); return; }
     let t = 0;
     CHAT.forEach(m => {
-      if (m.label) { setTimeout(() => chat.appendChild(bubble(m)), t); t += 450; return; }
+      if (m.label) { TO(() => chat.appendChild(bubble(m)), t); t += 450; return; }
       const wait = m.who === "z" ? 600 : 900;
-      setTimeout(() => { const dots = bubble(m, true); chat.appendChild(dots); setTimeout(() => dots.replaceWith(bubble(m)), wait); }, t);
+      TO(() => { const dots = bubble(m, true); chat.appendChild(dots); TO(() => dots.replaceWith(bubble(m)), wait); }, t);
       t += wait + 650;
     });
   }
   if ("IntersectionObserver" in window) {
-    const io2 = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io2.disconnect(); playChat(); } }, { threshold: 0.25 });
+    const io2 = IO(es => { if (es.some(e => e.isIntersecting)) { io2.disconnect(); playChat(); } }, { threshold: 0.25 });
     io2.observe(chat);
   } else playChat();
 
@@ -985,6 +1027,13 @@ export function mountStory(root, host) {
   return () => {
     alive = false;
     listeners.forEach(([type, fn, o]) => window.removeEventListener(type, fn, o));
+    document.removeEventListener("visibilitychange", wake);
+    root.removeEventListener("click", onRootClick);
+    observers.forEach(o => o.disconnect());
+    timers.forEach(id => clearTimeout(id)); timers.clear();
+    parked.clear();
+    cleanups.forEach(fn => fn());
     document.documentElement.style.overflow = "";
+    host.removeAttribute("data-away");
   };
 }

@@ -27,11 +27,40 @@ test("the story's little plays are free and never touch the 3 free uses", async 
   assert.equal(/useTrial|\.spend\(|visitor-trial/.test(engine), false);
 });
 
-test("every frame loop and window listener comes down when the story unmounts", async () => {
+test("everything the story starts comes down when it unmounts (ChatGPT review on #54)", async () => {
   const engine = await read("app/story/story-engine.js");
-  assert.equal(/(?<![\w.])requestAnimationFrame\(/.test(engine.replace("const RAF = cb => requestAnimationFrame(", "")), false);
-  assert.equal(/(?<![\w.])addEventListener\(/.test(engine), false);
-  assert.match(engine, /listeners\.forEach\(\(\[type, fn, o\]\) => window\.removeEventListener\(type, fn, o\)\);/);
+  const body = engine.slice(engine.indexOf("const onRootClick"));
+  // frames, timers and observers only through the tracked helpers
+  assert.equal(/requestAnimationFrame\(/.test(body), false, "frames go through RAF");
+  assert.equal(/setTimeout\(/.test(body), false, "timers go through TO");
+  assert.equal(/new (Intersection|Resize)Observer\(/.test(body), false, "observers go through IO / RO");
+  assert.equal(/(?<![\w.])addEventListener\(/.test(engine), false, "window listeners go through ON");
+  const teardown = engine.slice(engine.lastIndexOf("return () => {"));
+  for (const step of ["alive = false", "window.removeEventListener(type, fn, o)", 'document.removeEventListener("visibilitychange", wake)', 'root.removeEventListener("click", onRootClick)', "observers.forEach(o => o.disconnect())", "timers.forEach(id => clearTimeout(id))", "cleanups.forEach(fn => fn())"]) assert.ok(teardown.includes(step), step);
+  assert.match(engine, /cleanups\.push\(\(\) => \{ if \(storyUrl\) URL\.revokeObjectURL\(storyUrl\); \}\);/);
+});
+
+test("the story sleeps off screen, in a hidden tab, and redraws little with reduced motion", async () => {
+  const engine = await read("app/story/story-engine.js");
+  assert.match(engine, /if \(!canRun\(\)\) \{ parked\.add\(cb\); return; \}/);
+  assert.match(engine, /const canRun = \(\) => awake && \(!reduceMotion \|\| performance\.now\(\) < busyUntil\);/);
+  assert.match(engine, /const wake = \(\) => \{ awake = onScreen && !document\.hidden; resume\(\); \};/);
+  assert.match(engine, /\["scroll", "resize", "pointerdown", "pointermove", "keydown", "click"\]\.forEach\(type => ON\(type, poke, \{ passive: true \}\)\)/);
+  assert.equal(/if \(reduce\) pw \+=/.test(engine), false, "no swing with reduced motion");
+  assert.match(engine, /host\.toggleAttribute\("data-away", !onScreen\)/);
+  assert.match(engine, /if \(reduce\) \{ const key = `\$\{scrollY\}/);
+  assert.match(engine, /if \(reduce && !asking && !\(pDrag && pDrag\.on\) && Math\.abs\(pw\) < 1e-4 && fxDirty\)/);
+  const content = await read("app/story/story-content.ts");
+  assert.match(content, /:host\(\[data-away\]\) :is\(#dust, \.sky, \.sparkles, \.chapters-nav\) \{ display: none; \}/);
+});
+
+test("the story image dialog keeps focus inside, makes the page behind it inert and gives focus back", async () => {
+  const engine = await read("app/story/story-engine.js");
+  assert.match(engine, /sheet\.addEventListener\("keydown", e => \{\n\s+if \(e\.key !== "Tab"\) return;/);
+  assert.match(engine, /if \(e\.shiftKey && \(cur === first \|\| !sheet\.contains\(cur\)\)\) \{ e\.preventDefault\(\); last\.focus\(\); \}/);
+  assert.match(engine, /sheet\.hidden = false; setBackgroundInert\(true\);/);
+  assert.match(engine, /function closeSheet\(\) \{ sheet\.hidden = true; setBackgroundInert\(false\);[^}]*lastFocus\.focus/);
+  assert.match(engine, /if \(e\.key === "Escape" && !sheet\.hidden\) closeSheet\(\);/);
 });
 
 test("pictures come from the site's own folders; only the cloud sea is new", async () => {
