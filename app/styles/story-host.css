@@ -1,0 +1,8 @@
+/* ===== 首頁故事版 (2026-11-20) =====
+   The storybook draws itself inside .story-host (a shadow root, see app/story). Until it has mounted, the
+   host holds one screen of space so the full draw below does not flash at the top of the page. */
+html body main.home-pearl .story-host { display: block; min-height: 100svh; }
+html body main.home-pearl .story-host[data-ready] { min-height: 0; }
+/* the full draw, tools and consultation follow the story and sit above its fixed stardust */
+html body main.home-pearl > section { position: relative; z-index: 2; }
+html body main.home-pearl #top { scroll-margin-top: 72px; }

@@ -86,7 +86,8 @@ test("the whole home page opts into the pearl ground, header and notice", () => 
 });
 
 test("hero: free draw first, consultation second, both 44px or taller; the portrait is unchanged", () => {
-  const actions = page.slice(page.indexOf('<div className="hero-actions">'), page.indexOf('<p className="ritual">'));
+  const start = page.indexOf('<div className="hero-actions">');
+  const actions = page.slice(start, page.indexOf("</div>", start));
   assert.ok(actions.indexOf('href="#draw"') < actions.indexOf('href="#consult"'), "開始免費抽牌 comes first");
   assert.match(actions, /開始免費抽牌/);
   assert.match(actions, /預約一對一諮詢/);
