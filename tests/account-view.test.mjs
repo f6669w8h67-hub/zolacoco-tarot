@@ -11,6 +11,7 @@ const view = await loadTypescript("app/account/account-view.tsx", {
     react: React,
     "react/jsx-runtime": jsxRuntime,
     "next/link": { default: ({ href, children, ...rest }) => jsxRuntime.jsx("a", { href, ...rest, children }) },
+    "../member-prices": { default: () => jsxRuntime.jsx("div", { className: "member-prices", "data-mock": "member-prices" }) },
   },
 });
 

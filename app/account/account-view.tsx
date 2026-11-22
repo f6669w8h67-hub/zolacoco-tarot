@@ -25,6 +25,7 @@ import {
 import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
 import { TRIAL_LIMIT, trialRemaining } from "@/lib/visitor-trial";
 import type { ClientMember, MemberLoadFailure } from "@/lib/member-client";
+import MemberPrices from "../member-prices";
 
 export type SaveProfile = (input: ProfileInput) => Promise<{ ok: true } | { ok: false; message: string }>;
 
@@ -354,6 +355,7 @@ export function MemberAccountView({ member, now, onSave, signOut }: {
         <p className="account-lead">填好姓名、LINE 名稱與生日後，再傳 LINE 通知 Zola，Zola 確認後會為妳開通使用期限。</p>
         <div className="account-actions"><a className="account-primary" href="#member-profile">填寫會員資料</a></div>
         <TrialInvite member={member} />
+        <MemberPrices />
         <JourneySteps profileDone={false} signedIn />
       </>;
       break;
@@ -363,6 +365,7 @@ export function MemberAccountView({ member, now, onSave, signOut }: {
         <p className="account-lead">傳一則 LINE 給 Zola，確認後會為妳開通使用期限。如果已經傳過了，請等 Zola 回覆；開通後回到這一頁就會看到期限。</p>
         <LineRequest label="傳 LINE 通知 Zola" message={activationRequestMessage(member)} primaryRef={lineCta} />
         <TrialInvite member={member} />
+        <MemberPrices />
         <JourneySteps profileDone signedIn />
       </>;
       break;
