@@ -36,6 +36,44 @@ test("an empty file, a disguised file and a cut-off picture are all refused", ()
   assert.equal(sniff.sniffImage(brokenHeader), null, "a PNG whose header checksum no longer matches");
 });
 
+test("a header with a size but no picture after it is refused (ChatGPT re-review of PR #56)", () => {
+  const join = (...parts) => {
+    const out = new Uint8Array(parts.reduce((sum, part) => sum + part.length, 0));
+    let at = 0;
+    for (const part of parts) { out.set(part, at); at += part.length; }
+    return out;
+  };
+  const png = bytes("png"), jpeg = bytes("jpeg");
+  const iend = new Uint8Array([0, 0, 0, 0, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82]);
+  assert.equal(sniff.sniffImage(join(png.subarray(0, 33), iend)), null, "PNG with only IHDR and IEND");
+  const emptyIdat = new Uint8Array([0, 0, 0, 0, 0x49, 0x44, 0x41, 0x54, 0x35, 0xaf, 0x06, 0x1e]);
+  assert.equal(sniff.sniffImage(join(png.subarray(0, 33), emptyIdat, iend)), null, "PNG whose IDAT holds nothing");
+
+  const sos = jpeg.findIndex((byte, i) => byte === 0xff && jpeg[i + 1] === 0xda);
+  assert.ok(sos > 0);
+  assert.equal(sniff.sniffImage(join(jpeg.subarray(0, sos), new Uint8Array([0xff, 0xd9]))), null, "JPEG with a frame header but no scan");
+  const sosLength = (jpeg[sos + 2] << 8) | jpeg[sos + 3];
+  assert.equal(sniff.sniffImage(join(jpeg.subarray(0, sos + 2 + sosLength), new Uint8Array([0xff, 0xd9]))), null, "JPEG scan with no data");
+
+  const riff = (chunks) => {
+    const body = join(new TextEncoder().encode("WEBP"), ...chunks);
+    const head = new Uint8Array(8); head.set(new TextEncoder().encode("RIFF")); new DataView(head.buffer).setUint32(4, body.length, true);
+    return join(head, body);
+  };
+  const chunk = (fourcc, data) => {
+    const head = new Uint8Array(8); head.set(new TextEncoder().encode(fourcc)); new DataView(head.buffer).setUint32(4, data.length, true);
+    return join(head, data, new Uint8Array(data.length & 1));
+  };
+  const vp8x = (flags) => { const d = new Uint8Array(10); d[0] = flags; d[4] = 2; d[7] = 1; return chunk("VP8X", d); }; // 3×2
+  assert.equal(sniff.sniffImage(riff([vp8x(0)])), null, "WebP with only the VP8X header");
+  const lossy = bytes("webpLossy"), lossyChunk = lossy.subarray(12);
+  assert.ok(sniff.sniffImage(riff([vp8x(0), lossyChunk])), "the same header with the real picture after it is fine");
+  assert.equal(sniff.sniffImage(riff([vp8x(0x02), lossyChunk])), null, "an animation is not a quiz picture");
+  assert.equal(sniff.sniffImage(riff([vp8x(0), lossyChunk, lossyChunk])), null, "two pictures in one file");
+  const headerOnly = lossy.slice(12, 12 + 8 + 10); new DataView(headerOnly.buffer).setUint32(4, 10, true);
+  assert.equal(sniff.sniffImage(riff([headerOnly])), null, "a VP8 frame header with no data after it");
+});
+
 test("the upload check: right kind, matching label, sensible size, in Zola's words", () => {
   assert.equal(sniff.checkUploadedImage(bytes("webpLossy"), "image/webp").ok, true);
   assert.equal(sniff.checkUploadedImage(bytes("jpeg"), "image/jpeg").ok, true);
