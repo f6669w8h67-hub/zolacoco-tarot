@@ -56,3 +56,62 @@ test("the journal tool uses the round's cards, and a device can start a new roun
   assert.match(tool, /這台裝置上的七天筆記和七日回顧會清空，換七張新的牌重新開始。確定嗎？/);
   assert.match(tool, /localStorage\.setItem\(JOURNAL_DECK_KEY, seed\);/);
 });
+
+// PR #55 review (Blocking 3): starting a new round on a device is all or nothing.
+function fakeStore(initial, failOn = {}) {
+  const data = new Map(Object.entries(initial));
+  let calls = 0;
+  return {
+    data,
+    getItem(key) { if (failOn.get?.(key)) throw new Error("blocked"); return data.has(key) ? data.get(key) : null; },
+    setItem(key, value) { calls++; if (failOn.set?.(key, calls)) throw new Error("full"); data.set(key, String(value)); },
+    removeItem(key) { if (failOn.remove?.(key)) throw new Error("blocked"); data.delete(key); },
+  };
+}
+const KEYS = { notes: "n", review: "r", deck: "d" };
+const OLD = { n: JSON.stringify({ 0: "第一天" }), r: JSON.stringify({ local: { a: 1 }, "member:x": { b: 2 } }), d: "device:old" };
+
+test("a new device round clears the notes and this device's 回顧, keeps other 回顧, and stores the new seed", () => {
+  const store = fakeStore(OLD);
+  assert.equal(cards.restartDeviceRound(store, "device:new", KEYS), true);
+  assert.equal(store.data.has("n"), false);
+  assert.deepEqual(JSON.parse(store.data.get("r")), { "member:x": { b: 2 } });
+  assert.equal(store.data.get("d"), "device:new");
+});
+
+test("if any step fails, notes, 回顧 and cards are all put back and nothing changes", () => {
+  for (const failOn of [
+    { set: (key) => key === "d" },                 // the new seed cannot be stored
+    { set: (key) => key === "r" },                 // the 回顧 cannot be rewritten
+    { remove: (key) => key === "n" },              // the notes cannot be removed
+  ]) {
+    const store = fakeStore(OLD, failOn);
+    assert.equal(cards.restartDeviceRound(store, "device:new", KEYS), false);
+    assert.deepEqual(Object.fromEntries(store.data), OLD);
+  }
+  const unreadable = fakeStore(OLD, { get: () => true });
+  assert.equal(cards.restartDeviceRound(unreadable, "device:new", KEYS), false);
+  assert.deepEqual(Object.fromEntries(unreadable.data), OLD);
+});
+
+test("a write that does not read back counts as a failure", () => {
+  const store = fakeStore(OLD);
+  store.setItem = function (key, value) { if (key !== "d") this.data.set(key, String(value)); };   // the seed is silently dropped
+  assert.equal(cards.restartDeviceRound(store, "device:new", KEYS), false);
+  assert.deepEqual(Object.fromEntries(store.data), OLD);
+});
+
+test("an unreadable 回顧 store does not block a new round", () => {
+  const store = fakeStore({ ...OLD, r: "{broken" });
+  assert.equal(cards.restartDeviceRound(store, "device:new", KEYS), true);
+  assert.equal(store.data.get("r"), "{broken");
+  assert.equal(store.data.has("n"), false);
+});
+
+test("the journal only shows a new round when the device kept it, and says so when it did not", async () => {
+  const tool = await read("app/journal/journal-tool.tsx");
+  assert.match(tool, /if \(!kept\) \{ setRestartFailed\(true\); return; \}\n    setLocalNotes\(\{\}\); setSavedLocal\(\{\}\); setDeviceSeed\(seed\);/);
+  assert.match(tool, /無法開始新的一輪，原有的筆記和牌都沒有變更。/);
+  assert.equal(cards.roundDeckSeed({ id: "x", startedAt: null }), cards.ORIGINAL_DECK, "no start time: keep the original seven");
+  assert.ok(cards.DRAWN_CARDS_FROM >= Date.parse("2026-11-23T00:00:00+08:00"), "new cards start no earlier than the deploy");
+});

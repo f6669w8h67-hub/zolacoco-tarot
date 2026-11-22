@@ -46,6 +46,7 @@ html body #explore .journal-tool .js-link {
 }
 html body #explore .journal-tool .js-stop-link { display: block; margin: 6px auto 0; color: var(--hp-muted); font-weight: 500; font-size: 14px; }
 html body #explore .journal-tool .js-stop > div { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+html body #explore .journal-tool .js-stop p.js-error { color: #b4405f; font-weight: 500; }
 html body #explore .journal-tool .js-danger {
   min-height: 44px; padding: 6px 20px; border: 1px solid #b4405f; border-radius: 12px; background: #ffffff;
   color: #b4405f; font: 700 15px/1.3 "Noto Serif TC", serif; cursor: pointer;

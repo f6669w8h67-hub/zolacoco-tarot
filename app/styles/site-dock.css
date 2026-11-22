@@ -1,12 +1,15 @@
 /* ===== Bottom dock + 全部功能 tray (Zola picked the G layout on 2026-11-22: C 放大 Dock + E 玻璃分頁) =====
-   Phone and desktop alike. Four everyday features sit in the dock and grow under the finger or mouse;
+   Phone and desktop alike. Four everyday features sit in the dock. With a mouse (480px and wider) the
+   buttons grow like a desk dock; under a finger only the icon grows, so no button moves while pressed;
    ＋ raises a tray whose glass pill slides between 占卜工具 / 內在探索 / 療癒空間. Below the site header
    (z 1000) and every modal; above page content. */
 .site-dock {
   position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); z-index: 990;
   transform: translateX(-50%);
-  display: flex; align-items: flex-end; gap: 10px;
-  height: 74px; padding: 0 14px 12px;
+  /* five buttons always fit: 44.8px at 320px wide, 50px from 346px up */
+  --dock-size: clamp(44px, calc((100vw - 96px) / 5), 50px);
+  display: flex; align-items: flex-end; gap: clamp(6px, 2.4vw, 10px);
+  height: 74px; padding: 0 clamp(10px, 3.5vw, 14px) 12px;
   border-radius: 26px; border: 1px solid rgba(196, 164, 108, .5);
   background: rgba(255, 253, 251, .9);
   -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
@@ -15,6 +18,7 @@
 }
 .dock-item {
   position: relative; flex: none; display: grid; place-items: center;
+  width: var(--dock-size); height: var(--dock-size);
   border-radius: 30%; border: 1px solid rgba(196, 164, 108, .45);
   background: linear-gradient(160deg, #fffdfb, #f6e9ee); color: #8a3a59;
   box-shadow: 0 6px 14px rgba(138, 58, 89, .14);
@@ -24,8 +28,10 @@
 .dock-item.calm { transition: width .35s cubic-bezier(.34, 1.4, .5, 1), height .35s cubic-bezier(.34, 1.4, .5, 1); }
 .dock-item svg { width: 46%; height: 46%; transition: transform .4s cubic-bezier(.34, 1.4, .5, 1); }
 .dock-item:focus-visible, .dock-card:focus-visible, .dock-tab:focus-visible, .dock-font button:focus-visible, .dock-account:focus-visible { outline: 2px solid #77552e; outline-offset: 3px; }
+.dock-item.touched svg { transform: scale(1.3); }
 .dock-all { background: #8a3a59; border-color: #8a3a59; color: #fff; }
 .dock-all.open svg { transform: rotate(45deg); }
+.dock-all.open.touched svg { transform: rotate(45deg) scale(1.3); }
 .dock-dot { position: absolute; left: 50%; bottom: -8px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #8a3a59; opacity: 0; transition: opacity .25s; }
 .dock-item.here .dock-dot { opacity: 1; }
 .dock-tip {
@@ -43,6 +49,8 @@
   width: min(420px, calc(100vw - 28px)); margin-left: max(-210px, calc(14px - 50vw));
   padding: 8px 8px 6px; border-radius: 28px; border: 1px solid rgba(196, 164, 108, .45);
   background: rgba(255, 253, 251, .97); box-shadow: 0 22px 46px rgba(72, 63, 71, .18);
+  /* short or landscape screens: the tray scrolls instead of running under the header */
+  max-height: calc(100svh - 110px - env(safe-area-inset-bottom) - var(--rococo-header-h, 72px) - 12px); overflow-y: auto; overscroll-behavior: contain;
   opacity: 0; transform: translateY(24px) scale(.94); transform-origin: 50% 100%; pointer-events: none;
   transition: opacity .25s, transform .5s cubic-bezier(.2, .9, .3, 1.12);
 }
@@ -71,12 +79,17 @@
 .dock-card small { padding: 0 6px; font-size: 11.5px; line-height: 1.35; color: #6a5e67; }
 .dock-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding: 2px 4px 0 8px; }
 .dock-font { display: flex; align-items: center; gap: 4px; }
-.dock-font span { margin-right: 4px; font-size: 12px; letter-spacing: .08em; color: #77552e; }
+.dock-font span { margin-right: 4px; font-size: 12px; letter-spacing: .08em; color: #77552e; white-space: nowrap; }
 .dock-font button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid rgba(196, 164, 108, .55); background: #fffdfb; color: #8a3a59; font-size: 14px; cursor: pointer; }
 .dock-font button.on { background: #8a3a59; border-color: #8a3a59; color: #fff; }
-.dock-account { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 10px; border-radius: 999px; color: #8a3a59; font-size: 13px; letter-spacing: .08em; text-decoration: none; }
+.dock-account { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 10px; border-radius: 999px; color: #8a3a59; font-size: 13px; letter-spacing: .08em; text-decoration: none; white-space: nowrap; }
 .dock-account:hover { background: #fbf1f4; }
 .site-dock-space { height: calc(112px + env(safe-area-inset-bottom)); }
+/* the narrowest phones: tab labels without icons, and the size buttons speak for themselves (the group keeps its label) */
+@media (max-width: 360px) {
+  .dock-tab svg, .dock-font span { display: none; }
+  .dock-tab { letter-spacing: .04em; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .dock-item, .dock-item.calm, .dock-item svg, .dock-tray, .dock-set, .dock-pill.to-right, .dock-pill.to-left, .dock-veil, .dock-tip { transition: none; }

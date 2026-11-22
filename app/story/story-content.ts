@@ -288,8 +288,8 @@ h2 { margin: 0 0 10px; font-size: clamp(25px, 6.4vw, 38px); line-height: 1.35; f
 .reel-btn { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(196, 164, 108, .75); background: rgba(255, 253, 251, .85); color: var(--rose); cursor: pointer; transition: opacity .2s, background .2s; -webkit-tap-highlight-color: transparent; }
 .reel-btn:hover:not(:disabled) { background: #fbe6ee; }
 .reel-btn:disabled { opacity: .35; cursor: default; }
-.reel-dots { display: flex; gap: 2px; }
-.reel-dot { width: 26px; height: 26px; display: grid; place-items: center; border: 0; padding: 0; background: none; cursor: pointer; }
+.reel-dots { display: flex; gap: 0; }
+.reel-dot { width: 36px; height: 44px; display: grid; place-items: center; border: 0; padding: 0; background: none; cursor: pointer; }
 .reel-dot::before { content: ""; width: 8px; height: 8px; transform: rotate(45deg); border: 1px solid var(--gold); transition: background .25s, border-color .25s; }
 .reel-dot[aria-current="true"]::before { background: var(--rose); border-color: var(--rose); }
 .msg { display: flex; align-items: flex-end; gap: 8px; animation: pop .45s cubic-bezier(.2, .8, .2, 1) both; }

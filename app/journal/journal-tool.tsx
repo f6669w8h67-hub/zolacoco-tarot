@@ -17,7 +17,7 @@ import { PracticeCard } from "@/app/practice-card";
 import { tarotCards } from "@/app/tarot-data";
 import type { PublicCycle, PublicEntry } from "@/lib/coaching-input";
 import { JOURNAL_DAYS, JOURNAL_PROMPT_VERSION, journalPromptFor } from "@/lib/journal-prompts";
-import { JOURNAL_DECK_KEY, ORIGINAL_DECK, drawJournalCards, isOriginalCard, newDeviceDeckSeed, roundDeckSeed } from "@/lib/journal-cards";
+import { JOURNAL_DECK_KEY, ORIGINAL_DECK, drawJournalCards, isOriginalCard, newDeviceDeckSeed, restartDeviceRound, roundDeckSeed } from "@/lib/journal-cards";
 import { journalResponse } from "@/lib/journal-responses";
 import { JOURNAL_REVIEW_KEY, REVIEW_TEXT_LIMIT, defaultHighlights, isSevenDaysWritten, reviewMessage, type ReviewNotes } from "@/lib/journal-review";
 import "./journal-sync.css";
@@ -88,6 +88,7 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
   const [localNotes, setLocalNotes] = useState(readLocalNotes);
   const [deviceSeed, setDeviceSeed] = useState(readDeckSeed);
   const [confirmRestart, setConfirmRestart] = useState(false);
+  const [restartFailed, setRestartFailed] = useState(false);
   // What is saved on this device (the box can hold unsaved words); 七日回顧 reads only saved notes.
   const [savedLocal, setSavedLocal] = useState(readLocalNotes);
   const [view, setView] = useState<"write" | "review">("write");
@@ -184,15 +185,13 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
   }
 
   // A new round on this device: the seven notes and the 七日回顧 boxes are cleared and seven new cards drawn.
+  // Nothing changes on screen unless the device really kept the new round (see restartDeviceRound).
   function restartLocal() {
     const seed = newDeviceDeckSeed();
-    try {
-      localStorage.removeItem(JOURNAL_STORAGE_KEY);
-      const reviews = JSON.parse(localStorage.getItem(JOURNAL_REVIEW_KEY) ?? "{}") as Record<string, unknown>;
-      if (reviews && typeof reviews === "object" && "local" in reviews) { delete reviews.local; localStorage.setItem(JOURNAL_REVIEW_KEY, JSON.stringify(reviews)); }
-      localStorage.setItem(JOURNAL_DECK_KEY, seed);
-    } catch { /* this visit still starts over */ }
-    setLocalNotes({}); setSavedLocal({}); setDeviceSeed(seed);
+    let kept = false;
+    try { kept = restartDeviceRound(localStorage, seed, { notes: JOURNAL_STORAGE_KEY, review: JOURNAL_REVIEW_KEY, deck: JOURNAL_DECK_KEY }); } catch { kept = false; }
+    if (!kept) { setRestartFailed(true); return; }
+    setLocalNotes({}); setSavedLocal({}); setDeviceSeed(seed); setRestartFailed(false);
     setConfirmRestart(false); setView("write"); setResponseFor(null); setLocalSave("idle"); setDay(0);
   }
 
@@ -345,7 +344,8 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
       {complete ? <CompleteBanner onOpen={() => setView("review")} /> : null}
       {complete ? confirmRestart ? <div className="js-stop">
         <p>這台裝置上的七天筆記和七日回顧會清空，換七張新的牌重新開始。確定嗎？</p>
-        <div><button type="button" className="js-danger" onClick={restartLocal}>清空並開始新的一輪</button><button type="button" className="js-link" onClick={() => setConfirmRestart(false)}>先不要</button></div>
+        {restartFailed ? <p className="js-error" role="alert">無法開始新的一輪，原有的筆記和牌都沒有變更。請稍後再試。</p> : null}
+        <div><button type="button" className="js-danger" onClick={restartLocal}>清空並開始新的一輪</button><button type="button" className="js-link" onClick={() => { setConfirmRestart(false); setRestartFailed(false); }}>先不要</button></div>
       </div> : <button type="button" className="js-link" onClick={() => setConfirmRestart(true)}>開始新的一輪，換七張新牌</button> : null}
       <p className="privacy-note">筆記會保存在目前使用的手機或電腦瀏覽器中，重新開啟網站仍可繼續查看，不會公開顯示。</p>
     </> : round ? <>

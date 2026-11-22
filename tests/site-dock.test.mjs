@@ -52,7 +52,8 @@ test("the dock is on every page but the immersive ones; the header keeps only th
   assert.match(dock, /\/\^\\\/healing-room\\\/yuanchen/);
   assert.match(dock, /\/\^\\\/zola-admin/);
   assert.match(dock, /aria-expanded=\{open\} aria-controls="dock-tray"/);
-  assert.match(dock, /localStorage\.getItem\("zolacoco-font-tier"\)/, "the reading size moved here and keeps its saved choice");
+  assert.match(dock, /setFontTier\(readFontTier\(browserStore\(\)\)\)/, "the reading size moved here and keeps its saved choice");
+  assert.match(await read("lib/font-tier.ts"), /export const FONT_TIER_KEY = "zolacoco-font-tier";/);
   assert.match(dock, /role="tablist"/);
   const header = await read("app/site-header.tsx");
   assert.doesNotMatch(header, /全部功能|global-function-menu|use client/);
@@ -62,4 +63,40 @@ test("the dock is on every page but the immersive ones; the header keeps only th
 test("the story's chapter dots sit above the dock on phones", async () => {
   const story = await read("app/story/story-content.ts");
   assert.match(story, /\.chapters-nav \{ top: auto; bottom: calc\(112px \+ env\(safe-area-inset-bottom\)\);/);
+});
+
+// PR #55 review (Blocking 1 and 2)
+const fontTier = await loadTypescript("lib/font-tier.ts");
+
+test("a saved 小 or 大 is read back, and reading never writes", () => {
+  for (const saved of ["small", "large"]) {
+    const writes = [];
+    const store = { getItem: () => saved, setItem: (...args) => writes.push(args) };
+    assert.equal(fontTier.readFontTier(store), saved);
+    assert.deepEqual(writes, []);
+  }
+  assert.equal(fontTier.readFontTier({ getItem: () => "huge", setItem() {} }), "medium");
+  assert.equal(fontTier.readFontTier(null), "medium");
+});
+
+test("blocked or full storage never throws: the size still applies for this visit", () => {
+  assert.equal(fontTier.readFontTier({ getItem() { throw new Error("blocked"); }, setItem() {} }), "medium");
+  assert.equal(fontTier.writeFontTier({ getItem: () => null, setItem() { throw new Error("full"); } }, "large"), false);
+  assert.equal(fontTier.writeFontTier(null, "large"), false);
+  const kept = [];
+  assert.equal(fontTier.writeFontTier({ getItem: () => null, setItem: (...args) => kept.push(args) }, "small"), true);
+  assert.deepEqual(kept, [["zolacoco-font-tier", "small"]]);
+});
+
+test("the dock writes the size only when she picks one, and never moves buttons under a finger", async () => {
+  const dock = await read("app/site-dock.tsx");
+  assert.match(dock, /useState<FontTier \| null>\(null\)/, "no default is assumed before the saved size is read");
+  assert.match(dock, /function chooseFont\(next: FontTier\) \{\n    setFontTier\(next\);\n    writeFontTier\(browserStore\(\), next\);/);
+  assert.equal((dock.match(/writeFontTier\(/g) ?? []).length, 1, "the only write is her own choice");
+  assert.match(dock, /event\.pointerType === "mouse" && window\.innerWidth >= MAGNIFY_MIN_WIDTH/, "only a mouse on a wide screen resizes buttons");
+  assert.match(dock, /setTouchAt\(itemAt\(event\.currentTarget, event\.clientX\)\)/);
+  const css = await read("app/styles/site-dock.css");
+  assert.match(css, /--dock-size: clamp\(44px, calc\(\(100vw - 96px\) \/ 5\), 50px\);/);
+  assert.match(css, /\.dock-item\.touched svg \{ transform: scale\(1\.3\); \}/);
+  assert.match(css, /max-height: calc\(100svh - 110px/);
 });
