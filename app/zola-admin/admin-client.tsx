@@ -142,7 +142,7 @@ export default function AdminClient() {
   }
 
   return <main className="zola-admin-page pearl-page">
-    <header><div><p className="eyebrow">Zolacoco Private Admin</p><h1>VIP 會員權限後台</h1><p>選擇月份後開通；到期會自動停權，也可以隨時手動暫停或恢復。</p></div><nav className="zola-admin-links"><Link href="/zola-admin/practice">學員練習 →</Link><Link href="/zola-admin/coaching">陪跑筆記 →</Link><Link href="/account">返回會員中心</Link></nav></header>
+    <header><div><p className="eyebrow">Zolacoco Private Admin</p><h1>VIP 會員權限後台</h1><p>選擇月份後開通；到期會自動停權，也可以隨時手動暫停或恢復。</p></div><nav className="zola-admin-links"><Link href="/zola-admin/quizzes">心理測驗上傳 →</Link><Link href="/zola-admin/practice">學員練習 →</Link><Link href="/zola-admin/coaching">陪跑筆記 →</Link><Link href="/account">返回會員中心</Link></nav></header>
     <section className="admin-stat-grid">
       <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}><small>全部會員</small><strong>{members.filter((item) => item.role === "member").length}</strong></button>
       {(["pending", "active", "suspended", "expired"] as const).map((status) => <button key={status} className={filter === status ? "active" : ""} onClick={() => setFilter(status)}><small>{statusLabels[status]}</small><strong>{counts[status] ?? 0}</strong></button>)}
