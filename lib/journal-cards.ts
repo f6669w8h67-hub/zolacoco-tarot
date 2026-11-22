@@ -53,34 +53,63 @@ export function newDeviceDeckSeed() {
 }
 
 type KeyValueStore = Pick<Storage, "getItem" | "setItem" | "removeItem">;
-export type DeviceRoundKeys = { notes: string; review: string; deck: string };
+
+/** This device's seven notes. The original round keeps the key it always had; every newer round has its own. */
+export const JOURNAL_NOTES_KEY = "zolacoco-journal-notes-v1";
+export function notesKeyFor(seed: string) {
+  return seed === ORIGINAL_DECK ? JOURNAL_NOTES_KEY : `${JOURNAL_NOTES_KEY}:${seed}`;
+}
+/** Where this device's 七日回顧 is kept inside the 回顧 store, per round in the same way. */
+export function reviewSlotFor(seed: string) {
+  return seed === ORIGINAL_DECK ? "local" : `local:${seed}`;
+}
 
 /**
- * Start a new round on this device: the seven notes and this device's 七日回顧 go, and the new seed is kept.
- * All or nothing: if any step fails (storage full, blocked, or the result does not read back), every key is put
- * back as it was and false is returned, so old notes never end up under new cards.
+ * The round this device is on. Someone already part-way through (notes under the original key, no round kept yet)
+ * stays on the original seven; anyone else starts with a fresh seed. If the seed cannot be kept, the original seven.
  */
-export function restartDeviceRound(store: KeyValueStore, seed: string, keys: DeviceRoundKeys): boolean {
-  const order = [keys.notes, keys.review, keys.deck];
-  let before: (string | null)[];
-  try { before = order.map((key) => store.getItem(key)); } catch { return false; }
-  let review = before[1];
+export function deviceDeckSeed(store: KeyValueStore, makeSeed: () => string = newDeviceDeckSeed): string {
   try {
-    const all = review ? JSON.parse(review) : null;
-    if (all && typeof all === "object" && !Array.isArray(all) && "local" in all) { delete all.local; review = JSON.stringify(all); }
-  } catch { /* an unreadable 回顧 store is left as it is: the page already reads it as empty */ }
-  try {
-    store.removeItem(keys.notes);
-    if (review !== before[1] && review !== null) store.setItem(keys.review, review);
-    store.setItem(keys.deck, seed);
-    if (store.getItem(keys.notes) !== null || store.getItem(keys.deck) !== seed || store.getItem(keys.review) !== review) throw new Error("not kept");
-    return true;
+    const saved = store.getItem(JOURNAL_DECK_KEY);
+    if (saved) return saved;
+    let started = false;
+    try {
+      const notes = JSON.parse(store.getItem(JOURNAL_NOTES_KEY) ?? "{}");
+      started = Boolean(notes) && typeof notes === "object" && Object.values(notes).some((text) => typeof text === "string" && text.trim() !== "");
+    } catch { started = false; }
+    const seed = started ? ORIGINAL_DECK : makeSeed();
+    store.setItem(JOURNAL_DECK_KEY, seed);
+    return seed;
   } catch {
-    order.forEach((key, index) => {
-      try { if (before[index] === null) store.removeItem(key); else store.setItem(key, before[index] as string); } catch { /* best effort */ }
-    });
+    return ORIGINAL_DECK;
+  }
+}
+
+/**
+ * Start a new round on this device. Notes and 回顧 live under the round's own keys, so the switch is one write:
+ * the round pointer. If it fails nothing has changed, on screen or after a reload. Only once the new round is
+ * kept are the old round's notes and 回顧 tidied away; if that tidying fails, what is left is never shown.
+ */
+export function restartDeviceRound(store: KeyValueStore, previousSeed: string, seed: string, reviewKey: string): boolean {
+  let kept = false;
+  try {
+    store.setItem(JOURNAL_DECK_KEY, seed);
+    kept = store.getItem(JOURNAL_DECK_KEY) === seed;
+  } catch {
+    kept = false;
+  }
+  if (!kept) {
+    // the pointer may or may not have been written: point it back at the old round (its notes were never touched)
+    try { store.setItem(JOURNAL_DECK_KEY, previousSeed); } catch { /* the old notes are still under their own key */ }
     return false;
   }
+  try { store.removeItem(notesKeyFor(previousSeed)); } catch { /* an unseen leftover */ }
+  try {
+    const all = JSON.parse(store.getItem(reviewKey) ?? "null");
+    const slot = reviewSlotFor(previousSeed);
+    if (all && typeof all === "object" && !Array.isArray(all) && slot in all) { delete all[slot]; store.setItem(reviewKey, JSON.stringify(all)); }
+  } catch { /* an unseen leftover */ }
+  return true;
 }
 
 /** The day's first reply speaks about the original card by name, so it only fits when that card was drawn. */

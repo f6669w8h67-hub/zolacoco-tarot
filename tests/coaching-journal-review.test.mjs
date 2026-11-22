@@ -39,7 +39,7 @@ test("LINE: the wish to book by default; her notes only when ticked, only the su
 test("the review: answers, two boxes of her own words, 附上 unticked each time, a preview before LINE", () => {
   const part = tool.slice(tool.indexOf("function SevenDayReview("));
   assert.match(part, /const \[attach, setAttach\] = useState\(false\);/);
-  assert.match(tool, /<SevenDayReview key=\{synced && round \? round\.id : "local"\}/, "opened fresh for each round");
+  assert.match(tool, /<SevenDayReview key=\{synced && round \? round\.id : reviewSlotFor\(deviceSeed\)\}/, "opened fresh for each round");
   assert.match(part, /<span>我最常注意到的事情<\/span>/);
   assert.match(part, /<span>我想繼續探索的方向<\/span>/);
   assert.match(part, /用妳自己的話寫下來就好/, "guided, never filled in for her");

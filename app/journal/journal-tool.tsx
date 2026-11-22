@@ -17,12 +17,12 @@ import { PracticeCard } from "@/app/practice-card";
 import { tarotCards } from "@/app/tarot-data";
 import type { PublicCycle, PublicEntry } from "@/lib/coaching-input";
 import { JOURNAL_DAYS, JOURNAL_PROMPT_VERSION, journalPromptFor } from "@/lib/journal-prompts";
-import { JOURNAL_DECK_KEY, ORIGINAL_DECK, drawJournalCards, isOriginalCard, newDeviceDeckSeed, restartDeviceRound, roundDeckSeed } from "@/lib/journal-cards";
+import { JOURNAL_NOTES_KEY, ORIGINAL_DECK, deviceDeckSeed, drawJournalCards, isOriginalCard, newDeviceDeckSeed, notesKeyFor, restartDeviceRound, reviewSlotFor, roundDeckSeed } from "@/lib/journal-cards";
 import { journalResponse } from "@/lib/journal-responses";
 import { JOURNAL_REVIEW_KEY, REVIEW_TEXT_LIMIT, defaultHighlights, isSevenDaysWritten, reviewMessage, type ReviewNotes } from "@/lib/journal-review";
 import "./journal-sync.css";
 
-export const JOURNAL_STORAGE_KEY = "zolacoco-journal-notes-v1";
+export const JOURNAL_STORAGE_KEY = JOURNAL_NOTES_KEY;
 
 type Place = "home" | "page";
 type Mode = "local" | "synced";
@@ -30,10 +30,10 @@ type Journal = { canWrite: boolean; cycles: PublicCycle[]; entries: PublicEntry[
 type Remote = { state: "loading" } | { state: "signed-out" } | { state: "closed" } | { state: "error" } | ({ state: "ready" } & Journal);
 type Notice = { tone: "ok" | "error"; text: string } | null;
 
-function readLocalNotes(): Record<number, string> {
+function readLocalNotes(seed: string): Record<number, string> {
   if (typeof window === "undefined") return {};
   try {
-    const value = JSON.parse(localStorage.getItem(JOURNAL_STORAGE_KEY) ?? "{}");
+    const value = JSON.parse(localStorage.getItem(notesKeyFor(seed)) ?? "{}");
     return value && typeof value === "object" && !Array.isArray(value) ? value as Record<number, string> : {};
   } catch {
     return {};
@@ -42,19 +42,10 @@ function readLocalNotes(): Record<number, string> {
 
 const ALL_CARD_IDS = tarotCards.map((item) => item.id);
 
-/** This device's round of cards. Someone already part-way through keeps the original seven. */
+/** This device's round of cards (see deviceDeckSeed). Someone already part-way through keeps the original seven. */
 function readDeckSeed(): string {
   if (typeof window === "undefined") return ORIGINAL_DECK;
-  try {
-    const saved = localStorage.getItem(JOURNAL_DECK_KEY);
-    if (saved) return saved;
-    const started = Object.values(readLocalNotes()).some((text) => typeof text === "string" && text.trim());
-    const seed = started ? ORIGINAL_DECK : newDeviceDeckSeed();
-    localStorage.setItem(JOURNAL_DECK_KEY, seed);
-    return seed;
-  } catch {
-    return ORIGINAL_DECK;
-  }
+  try { return deviceDeckSeed(localStorage); } catch { return ORIGINAL_DECK; }
 }
 
 async function postJson(url: string, body: unknown) {
@@ -85,12 +76,12 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
   const [freshReplies, setFreshReplies] = useState<ReadonlySet<string>>(() => new Set());
   const [chosenMode, setChosenMode] = useState<Mode | null>(null);
   const [day, setDay] = useState(0);
-  const [localNotes, setLocalNotes] = useState(readLocalNotes);
   const [deviceSeed, setDeviceSeed] = useState(readDeckSeed);
+  const [localNotes, setLocalNotes] = useState(() => readLocalNotes(deviceSeed));
   const [confirmRestart, setConfirmRestart] = useState(false);
   const [restartFailed, setRestartFailed] = useState(false);
   // What is saved on this device (the box can hold unsaved words); 七日回顧 reads only saved notes.
-  const [savedLocal, setSavedLocal] = useState(readLocalNotes);
+  const [savedLocal, setSavedLocal] = useState(() => readLocalNotes(deviceSeed));
   const [view, setView] = useState<"write" | "review">("write");
   const [localSave, setLocalSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [roundId, setRoundId] = useState<string | null>(null);
@@ -176,7 +167,7 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
     setLocalSave("saving");
     try {
       const next = { ...localNotes, [day]: content };
-      localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(notesKeyFor(deviceSeed), JSON.stringify(next));
       setLocalNotes(next);
       setSavedLocal(next);
       setLocalSave("saved");
@@ -189,7 +180,7 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
   function restartLocal() {
     const seed = newDeviceDeckSeed();
     let kept = false;
-    try { kept = restartDeviceRound(localStorage, seed, { notes: JOURNAL_STORAGE_KEY, review: JOURNAL_REVIEW_KEY, deck: JOURNAL_DECK_KEY }); } catch { kept = false; }
+    try { kept = restartDeviceRound(localStorage, deviceSeed, seed, JOURNAL_REVIEW_KEY); } catch { kept = false; }
     if (!kept) { setRestartFailed(true); return; }
     setLocalNotes({}); setSavedLocal({}); setDeviceSeed(seed); setRestartFailed(false);
     setConfirmRestart(false); setView("write"); setResponseFor(null); setLocalSave("idle"); setDay(0);
@@ -328,7 +319,7 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
       <button type="button" className="tool-primary" disabled={!consent || Boolean(busy)} onClick={() => void startRound()}>{busy === "start" ? "開始中…" : "開始同步這一輪"}</button>
     </div> : null}
 
-    {reviewing ? <SevenDayReview key={synced && round ? round.id : "local"} days={reviewDays} storeKey={synced && round ? round.id : "local"} coaching={synced && Boolean(ready?.canWrite)} onClose={() => setView("write")} /> : null}
+    {reviewing ? <SevenDayReview key={synced && round ? round.id : reviewSlotFor(deviceSeed)} days={reviewDays} storeKey={synced && round ? round.id : reviewSlotFor(deviceSeed)} coaching={synced && Boolean(ready?.canWrite)} onClose={() => setView("write")} /> : null}
 
     {!reviewing && (!synced || round) ? <>
       <div className="journal-card-row"><PracticeCard card={card} /><div className="journal-date"><i>{day + 1}</i><span>今天的內在提問</span></div></div>

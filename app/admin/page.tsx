@@ -6,6 +6,7 @@ import { tarotCards } from "../tarot-data";
 import { loadMemberProfile } from "@/lib/member-client";
 import { AWARENESS_RECORDS_PREFIX, awarenessAccess, currentSession, readRecords, type AwarenessSession } from "@/lib/awareness-records";
 import { useIdentityKey } from "../auth-identity";
+import { JOURNAL_DECK_KEY, JOURNAL_NOTES_KEY, ORIGINAL_DECK, notesKeyFor } from "@/lib/journal-cards";
 import "../styles/pearl-page.css";
 import "./archive-pearl.css";
 
@@ -23,6 +24,11 @@ const sources = [
   // Zolacoco 覺察卡 keeps one list per member (lib/awareness-records); read with the signed-in member's id.
   { key: AWARENESS_RECORDS_PREFIX, title: "Zolacoco 覺察卡紀錄", href: "/awareness", start: "抽一張覺察卡" },
 ] as const;
+
+/** The 七日筆記 round this device is on; read only, so opening the archive never starts a round. */
+function currentDeckSeed() {
+  try { return localStorage.getItem(JOURNAL_DECK_KEY) || ORIGINAL_DECK; } catch { return ORIGINAL_DECK; }
+}
 
 function count(value: StoredValue | undefined) {
   return Array.isArray(value) ? value.length : value ? Object.values(value).filter(Boolean).length : 0;
@@ -77,7 +83,9 @@ export default function ArchivePage() {
       const next: Archive = {};
       for (const source of sources) {
         if (source.key === AWARENESS_RECORDS_PREFIX) continue;
-        try { next[source.key] = JSON.parse(localStorage.getItem(source.key) ?? (source.key.includes("journal") ? "{}" : "[]")); }
+        // 七日內在筆記 are kept per round on this device; the archive shows the round she is on
+        const storageKey = source.key === JOURNAL_NOTES_KEY ? notesKeyFor(currentDeckSeed()) : source.key;
+        try { next[source.key] = JSON.parse(localStorage.getItem(storageKey) ?? (source.key.includes("journal") ? "{}" : "[]")); }
         catch { next[source.key] = source.key.includes("journal") ? {} : []; }
       }
       setDeviceArchive(next);

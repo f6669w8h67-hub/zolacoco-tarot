@@ -38,7 +38,7 @@ test("consent: a round starts only from the ticked box; nothing on this device i
   // The only writes to the coaching API: start, save (one day, by the member's tap) and stop.
   const posts = [...tool.matchAll(/postJson\("\/api\/coaching\/journal", \{ action: "(\w+)"/g)].map((match) => match[1]);
   assert.deepEqual(posts.sort(), ["save", "start", "stop"]);
-  assert.equal((tool.match(/localStorage\.getItem\(JOURNAL_STORAGE_KEY/g) ?? []).length, 1, "local notes are read in one place");
+  assert.equal((tool.match(/localStorage\.getItem\(notesKeyFor\(seed\)\)/g) ?? []).length, 1, "local notes are read in one place");
   // A local note reaches a shared round only through 帶入 (into the box, not saved) and then 儲存.
   assert.match(tool, /onClick=\{\(\) => setDrafts\(\(current\) => \(\{ \.\.\.current, \[key\]: \(localNotes\[day\] \?\? ""\)\.trim\(\) \}\)\)\}>帶入這台裝置上的第 \{day \+ 1\} 天筆記<\/button>/);
   assert.match(tool, /這台裝置上原本的筆記不會自動上傳/);
@@ -74,7 +74,8 @@ test("stopping: a confirm that says what it can and cannot take back; no browser
 
 test("account switches start fresh; the home page keeps its device notes under the same key", async () => {
   assert.match(tool, /return <JournalBody key=\{identityKey \?\? "loading"\} place=\{place\} waiting=\{identityKey === null\} \/>;/);
-  assert.match(tool, /export const JOURNAL_STORAGE_KEY = "zolacoco-journal-notes-v1";/);
+  assert.match(tool, /export const JOURNAL_STORAGE_KEY = JOURNAL_NOTES_KEY;/);
+  assert.match(await read("lib/journal-cards.ts"), /export const JOURNAL_NOTES_KEY = "zolacoco-journal-notes-v1";/, "the original round keeps the key it always had");
   const home = await read("app/page.tsx");
   assert.match(home, /\{exploreTool === "journal" && <JournalTool place="home" \/>\}/);
   assert.doesNotMatch(home, /JOURNAL_STORAGE_KEY|saveJournal|journalNotes/, "the journal lives in one component");
