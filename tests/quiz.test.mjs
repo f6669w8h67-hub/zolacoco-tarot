@@ -97,12 +97,39 @@ test("a quiz is free for its first 24 hours, then needs a free account; drafts a
   assert.equal(quiz.isPublished({ status: "draft", publishAt: "2026-11-20T00:00:00Z" }, now), false);
 });
 
-test("after reading: every link to Zola's own LINE opens with the code and her pick typed in; another LINE opens as it is", () => {
-  const message = quiz.quizMessage({ kind: "abc", code: "2026112201" }, "B");
-  assert.equal(message, "我剛剛完成心理測驗 2026112201，選的是 B，想進一步聊聊我的狀況。");
-  const sight = quiz.quizMessage({ kind: "first-sight", code: "F2026120201" }, "黑貓");
-  assert.equal(sight, "我剛剛完成心理測驗 F2026120201，第一眼看到的是黑貓，想進一步聊聊我的狀況。", "the first-sight message names its code too");
+test("after reading: the LINE message carries the whole title, the pick and what it said (Zola 2026-11-22)", () => {
+  const abc = { kind: "abc", code: "2026112201", title: "他最近忽冷忽熱 妳該主動還是等？", data: { analysis: {
+    A: "a", C: "c",
+    B: "這段關係還差一個對的時機 ⏳ 妳的心已經往前走了一步。\n\n先照顧好自己的生活。想知道他接下來會怎麼做，歡迎留言告訴我妳的困擾和年齡。",
+  } } };
+  assert.equal(quiz.quizMessage(abc, "B"), [
+    "我剛剛在網站完成心理測驗 2026112201",
+    "題目：他最近忽冷忽熱 妳該主動還是等？",
+    "我選到：B｜這段關係還差一個對的時機 ⏳ 妳的心已經往前走了一步。\n先照顧好自己的生活。",
+    "想進一步聊聊我的狀況。",
+  ].join("\n"), "the hook that speaks to her is left out");
 
+  const sight = { kind: "first-sight", code: "F2026120201", title: "妳第一眼看到什麼？", data: {
+    subtitle: "那就是妳 12 月最需要的訊息",
+    objects: [{ name: "黑貓", hint: "有個秘密在等妳揭開", line: "真相不可怕，猜測才累人。", text: "…" }],
+  } };
+  assert.equal(quiz.quizMessage(sight, "黑貓"), [
+    "我剛剛在網站完成心理測驗 F2026120201",
+    "題目：妳第一眼看到什麼？那就是妳 12 月最需要的訊息",
+    "我第一眼看到：黑貓｜有個秘密在等妳揭開。真相不可怕，猜測才累人。",
+    "想進一步聊聊我的狀況。",
+  ].join("\n"));
+
+  const long = "今天的妳值得被好好對待。".repeat(30);
+  const cut = quiz.messageContent(long);
+  assert.ok(cut.endsWith("。…") && Array.from(cut).length <= 181, "a long reading stops at a sentence end");
+  const moons = quiz.messageContent("🌙".repeat(200));
+  assert.equal(Array.from(moons).length, 181);
+  assert.doesNotMatch(moons, /[\uD800-\uDBFF](?![\uDC00-\uDFFF])/, "no emoji is cut in half");
+});
+
+test("after reading: every link to Zola's own LINE opens with the message typed in; another LINE opens as it is", async () => {
+  const message = "我剛剛在網站完成心理測驗 2026112201";
   const typedIn = { href: `https://line.me/R/oaMessage/@903ijdgr/?${encodeURIComponent(message)}`, prefilled: true, open: "https://lin.ee/tchILJk" };
   for (const zola of ["https://lin.ee/tchILJk", "https://lin.ee/XIi2Nam", "https://lin.ee/sPw8XmU/", "https://line.me/R/ti/p/@903ijdgr", "https://line.me/ti/p/%40903ijdgr"]) {
     assert.deepEqual(plain(quiz.quizLineLink(zola, message)), typedIn, zola);
@@ -110,13 +137,10 @@ test("after reading: every link to Zola's own LINE opens with the code and her p
   for (const other of ["https://lin.ee/6iPii8m", "https://lin.ee/tchILJkx", "https://line.me/R/ti/p/@someoneelse", "http://lin.ee/tchILJk", "https://evil.example/lin.ee/tchILJk"]) {
     assert.deepEqual(plain(quiz.quizLineLink(other, message)), { href: other, prefilled: false, open: other }, other);
   }
-
-  const cta = read("app/quizzes/[code]/quiz-line-cta.tsx");
-  return cta.then((source) => {
-    assert.match(source, /prefilled \? `會帶上測驗代碼/, "only a typed-in message is described as typed in");
-    assert.match(source, /不會自動帶入訊息/, "otherwise the page says so and shows the message to copy");
-    assert.match(source, /複製這句話/);
-  });
+  const cta = await read("app/quizzes/[code]/quiz-line-cta.tsx");
+  assert.match(cta, /prefilled \? `會帶上題目/, "only a typed-in message is described as typed in");
+  assert.match(cta, /不會自動帶入訊息/, "otherwise the page says so and shows the message to copy");
+  assert.match(cta, /複製這段訊息/);
 });
 
 test("what the admin page sends is checked before it is saved", () => {

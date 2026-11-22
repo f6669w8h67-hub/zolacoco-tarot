@@ -233,11 +233,49 @@ export function firstSightFromState(state: Record<string, unknown>, ratio: unkno
 
 /* ---------- after reading: the message she sends Zola ---------- */
 
-// Both kinds carry the quiz code and what she picked, so Zola knows which quiz the message is about.
-export function quizMessage(quiz: Pick<Quiz, "kind" | "code">, picked: string) {
-  return quiz.kind === "abc"
-    ? `我剛剛完成心理測驗 ${quiz.code}，選的是 ${picked}，想進一步聊聊我的狀況。`
-    : `我剛剛完成心理測驗 ${quiz.code}，第一眼看到的是${picked}，想進一步聊聊我的狀況。`;
+// Zola 2026-11-22: 「傳給我的話應該是題目（完整題目）選到什麼（內容）」. So the message carries the whole title,
+// what she picked and what it said, plus the code, so Zola can answer without looking the quiz up.
+const HOOK_LINE = /想知道|困擾|年齡|留言告訴我|直接回覆我|最後想跟妳說/;
+const MESSAGE_CONTENT_MAX = 180;
+
+/** The reading she got, as one short block: without the closing hook that speaks to her (想知道…留言告訴我妳的
+ *  困擾和年齡), and cut at a sentence end if it is long. Counts characters, so an emoji is never split. */
+export function messageContent(text: string, max = MESSAGE_CONTENT_MAX) {
+  const paragraphs = text.replace(/\r\n?/g, "\n").split(/\n+/).map((line) => line.trim()).filter(Boolean);
+  // Drop hook sentences from the end, and a last paragraph that was nothing but the hook.
+  while (paragraphs.length) {
+    const sentences = paragraphs[paragraphs.length - 1].match(/[^。！？!?]+[。！？!?]*/g) ?? [];
+    while (sentences.length && HOOK_LINE.test(sentences[sentences.length - 1])) sentences.pop();
+    if (sentences.length) { paragraphs[paragraphs.length - 1] = sentences.join("").trim(); break; }
+    if (paragraphs.length === 1) break; // all of it reads like a hook: keep it rather than send nothing
+    paragraphs.pop();
+  }
+  const chars = Array.from(paragraphs.join("\n"));
+  if (chars.length <= max) return chars.join("");
+  const cut = chars.slice(0, max).join("");
+  const end = Math.max(...["。", "！", "？"].map((mark) => cut.lastIndexOf(mark)));
+  return `${end > cut.length / 2 ? cut.slice(0, end + 1) : cut}…`;
+}
+
+/** The title as she saw it: a first-sight quiz adds its subtitle (「妳第一眼看到什麼？那就是妳 12 月最需要的訊息」). */
+export function fullQuizTitle(quiz: Quiz) {
+  const sub = quiz.kind === "first-sight" ? quiz.data.subtitle.trim() : "";
+  if (!sub) return quiz.title;
+  return /[。！？!?]$/.test(quiz.title) ? `${quiz.title}${sub}` : `${quiz.title}，${sub}`;
+}
+
+export function quizMessage(quiz: Quiz, picked: string) {
+  let line: string;
+  if (quiz.kind === "abc") {
+    const content = messageContent(quiz.data.analysis[picked as Choice] ?? "");
+    line = `我選到：${picked}${content ? `｜${content}` : ""}`;
+  } else {
+    const object = quiz.data.objects.find((item) => item.name === picked);
+    const hint = object?.hint.trim() ?? "", said = object?.line.trim() ?? "";
+    const content = hint && said ? `${hint}${/[。！？!?]$/.test(hint) ? "" : "。"}${said}` : hint || said;
+    line = `我第一眼看到：${picked}${content ? `｜${content}` : ""}`;
+  }
+  return `我剛剛在網站完成心理測驗 ${quiz.code}\n題目：${fullQuizTitle(quiz)}\n${line}\n想進一步聊聊我的狀況。`;
 }
 
 export type QuizLineLink = { href: string; prefilled: boolean; open: string };

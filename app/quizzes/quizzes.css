@@ -105,7 +105,7 @@
 .qz-cta h3 { font-size: 18px; letter-spacing: .08em; }
 .qz-cta-hook { font-size: 15px; line-height: 1.85; white-space: pre-line; }
 .qz-cta-small, .qz-cta-note { font-size: 12px; line-height: 1.6; color: var(--quiz-muted); min-height: 1em; }
-.qz-cta-message { padding: 10px 14px; border-radius: 14px; background: var(--quiz-card); border: 1px dashed var(--quiz-border); font-size: 14px; line-height: 1.7; }
+.qz-cta-message { padding: 10px 14px; border-radius: 14px; background: var(--quiz-card); border: 1px dashed var(--quiz-border); font-size: 14px; line-height: 1.7; text-align: left; white-space: pre-line; }
 .qz-cta-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; }
 .qz-cta-copy, .qz-cta-alt { min-height: 44px; padding: 0 14px; border: 0; background: none; color: var(--quiz-rose); font-size: 14px; text-decoration: underline; text-underline-offset: 4px; display: inline-flex; align-items: center; }
 
