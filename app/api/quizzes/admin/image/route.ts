@@ -1,6 +1,8 @@
 // One quiz picture (Zola only), already turned into WebP in her browser: POST form data {code, slot, file}.
-// Stored in the site's Vercel Blob store; the answer is its public address.
+// Stored in the site's Vercel Blob store; the answer is its public address. The files are public, so the
+// bytes are checked to be a whole WebP, JPG or PNG of a sensible size, and stored as the kind they really are.
 import { put } from "@vercel/blob";
+import { checkUploadedImage } from "@/lib/image-sniff";
 import { isQuizCode } from "@/lib/quiz";
 import { membershipErrorResponse, requireAdmin } from "@/lib/membership";
 
@@ -21,8 +23,12 @@ export async function POST(request: Request) {
     if (!isQuizCode(code) || !SLOTS.test(slot)) return Response.json({ error: "代碼或圖片位置不正確。" }, { status: 400, headers: noStore });
     if (!(file instanceof File) || !TYPES.has(file.type)) return Response.json({ error: "只能上傳 WebP、JPG 或 PNG 圖片。" }, { status: 400, headers: noStore });
     if (file.size > MAX_BYTES) return Response.json({ error: "圖片太大了（上限 4 MB）。" }, { status: 400, headers: noStore });
-    const extension = file.type === "image/webp" ? "webp" : file.type === "image/png" ? "png" : "jpg";
-    const blob = await put(`quizzes/${code}/${slot}.${extension}`, file, { access: "public", addRandomSuffix: true, contentType: file.type, cacheControlMaxAge: 60 * 60 * 24 * 365 });
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const checked = checkUploadedImage(bytes, file.type);
+    if (!checked.ok) return Response.json({ error: checked.error }, { status: 400, headers: noStore });
+    const { image } = checked;
+    const extension = image.type === "image/webp" ? "webp" : image.type === "image/png" ? "png" : "jpg";
+    const blob = await put(`quizzes/${code}/${slot}.${extension}`, new Blob([bytes], { type: image.type }), { access: "public", addRandomSuffix: true, contentType: image.type, cacheControlMaxAge: 60 * 60 * 24 * 365 });
     return Response.json({ url: blob.url }, { headers: noStore });
   } catch (error) {
     return membershipErrorResponse(error);

@@ -97,12 +97,26 @@ test("a quiz is free for its first 24 hours, then needs a free account; drafts a
   assert.equal(quiz.isPublished({ status: "draft", publishAt: "2026-11-20T00:00:00Z" }, now), false);
 });
 
-test("after reading: Zola's own LINE opens with the message typed in; another LINE opens as it is", () => {
-  const message = quiz.quizMessage({ kind: "abc", code: "2026112201", title: "t" }, "B");
+test("after reading: every link to Zola's own LINE opens with the code and her pick typed in; another LINE opens as it is", () => {
+  const message = quiz.quizMessage({ kind: "abc", code: "2026112201" }, "B");
   assert.equal(message, "我剛剛完成心理測驗 2026112201，選的是 B，想進一步聊聊我的狀況。");
-  assert.equal(quiz.quizLineLink("https://lin.ee/tchILJk", message), `https://line.me/R/oaMessage/@903ijdgr/?${encodeURIComponent(message)}`);
-  assert.equal(quiz.quizLineLink("https://lin.ee/6iPii8m", message), "https://lin.ee/6iPii8m");
-  assert.match(quiz.quizMessage({ kind: "first-sight", code: "F2026120201", title: "妳第一眼看到什麼？" }, "黑貓"), /第一眼看到的是黑貓/);
+  const sight = quiz.quizMessage({ kind: "first-sight", code: "F2026120201" }, "黑貓");
+  assert.equal(sight, "我剛剛完成心理測驗 F2026120201，第一眼看到的是黑貓，想進一步聊聊我的狀況。", "the first-sight message names its code too");
+
+  const typedIn = { href: `https://line.me/R/oaMessage/@903ijdgr/?${encodeURIComponent(message)}`, prefilled: true, open: "https://lin.ee/tchILJk" };
+  for (const zola of ["https://lin.ee/tchILJk", "https://lin.ee/XIi2Nam", "https://lin.ee/sPw8XmU/", "https://line.me/R/ti/p/@903ijdgr", "https://line.me/ti/p/%40903ijdgr"]) {
+    assert.deepEqual(plain(quiz.quizLineLink(zola, message)), typedIn, zola);
+  }
+  for (const other of ["https://lin.ee/6iPii8m", "https://lin.ee/tchILJkx", "https://line.me/R/ti/p/@someoneelse", "http://lin.ee/tchILJk", "https://evil.example/lin.ee/tchILJk"]) {
+    assert.deepEqual(plain(quiz.quizLineLink(other, message)), { href: other, prefilled: false, open: other }, other);
+  }
+
+  const cta = read("app/quizzes/[code]/quiz-line-cta.tsx");
+  return cta.then((source) => {
+    assert.match(source, /prefilled \? `會帶上測驗代碼/, "only a typed-in message is described as typed in");
+    assert.match(source, /不會自動帶入訊息/, "otherwise the page says so and shows the message to copy");
+    assert.match(source, /複製這句話/);
+  });
 });
 
 test("what the admin page sends is checked before it is saved", () => {

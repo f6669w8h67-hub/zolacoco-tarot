@@ -88,7 +88,8 @@ export default function AbcQuizView({ quiz }: { quiz: AbcQuiz }) {
         {CHOICES.map((letter, i) => {
           const art = quiz.data.choices[i];
           return <button type="button" role="radio" aria-checked={choice === letter} key={letter} className={`qz-option${choice === letter ? " on" : ""}${choice && choice !== letter ? " dim" : ""}`} onClick={() => pick(letter)}>
-            {art ? <>{/* eslint-disable-next-line @next/next/no-img-element */}<img src={art} alt="" width={270} height={390} loading="lazy" /></> : <span className="qz-option-plain" aria-hidden="true">{letter}</span>}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {art ? <img src={art} alt="" width={270} height={390} loading="lazy" /> : <span className="qz-option-plain" aria-hidden="true">{letter}</span>}
             {art ? <b>{letter}</b> : null}
           </button>;
         })}
@@ -109,7 +110,7 @@ export default function AbcQuizView({ quiz }: { quiz: AbcQuiz }) {
           <div className="qz-others-body">{paragraphs(quiz.data.analysis[letter]).map((p, i) => <p key={i}>{p}</p>)}</div>
         </details>)}
       </div>
-      <QuizLineCta hook={quiz.data.hook} href={quizLineLink(quiz.data.lineUrl, message)} fallback={quiz.data.lineUrl} message={message} code={quiz.code} />
+      <QuizLineCta hook={quiz.data.hook} link={quizLineLink(quiz.data.lineUrl, message)} message={message} code={quiz.code} />
     </section> : null}
 
     <p className="qz-back"><Link href="/quizzes">看更多心理測驗</Link></p>

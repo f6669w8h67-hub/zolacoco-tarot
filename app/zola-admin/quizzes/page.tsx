@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   CHOICES, FIRST_SIGHT_THEMES, QUIZ_COLORS, RAINBOW, type Choice, type FirstSightTheme, type Quiz, type QuizColor,
-  abcCodeInfo, firstSightCode, firstSightFromState, isPublished, parseAbcCaption, readGeneratorHtml, toneColor,
+  ZOLA_LINE_URL, abcCodeInfo, firstSightCode, firstSightFromState, isPublished, isZolaLine, parseAbcCaption, readGeneratorHtml, toneColor,
 } from "@/lib/quiz";
 import "./quiz-admin.css";
 
@@ -246,7 +246,13 @@ export default function QuizAdminPage() {
         <label>公開時間（台灣）<input type="datetime-local" value={taipeiInput(draft.publishAt)} onChange={(event) => setDraft({ ...draft, publishAt: fromTaipeiInput(event.target.value) } as Draft)} /></label>
         <label className="wide">標題<input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value } as Draft)} /></label>
         {draft.kind === "abc" ? <fieldset className="wide qa-colors"><legend>這組的彩虹色</legend>{RAINBOW.map((color) => <button type="button" key={color} aria-pressed={draft.tone === color} style={{ "--c": QUIZ_COLORS[color].ink } as React.CSSProperties} onClick={() => setDraft({ ...draft, tone: color })}>{QUIZ_COLORS[color].label}</button>)}</fieldset>
-          : <p className="wide qa-meta">色系：{FIRST_SIGHT_THEMES[draft.tone].label}　LINE：{draft.state.lineUrl}</p>}
+          : <div className="wide qa-meta">
+            <p>色系：{FIRST_SIGHT_THEMES[draft.tone].label}</p>
+            {isZolaLine(draft.state.lineUrl)
+              ? <p>LINE：官方帳號，客人按下去會自動帶入測驗代碼和她選的東西。</p>
+              : <p className="qa-warn">LINE：{draft.state.lineUrl}　這不是官方帳號已知的連結，客人要自己複製訊息貼上。
+                <button type="button" className="qa-link" onClick={() => setDraft({ ...draft, state: { ...draft.state, lineUrl: ZOLA_LINE_URL } })}>改用官方帳號</button></p>}
+          </div>}
       </div>
 
       {draft.kind === "first-sight" ? <div className="qa-fs">

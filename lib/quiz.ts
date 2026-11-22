@@ -31,6 +31,18 @@ export type FirstSightTheme = keyof typeof FIRST_SIGHT_THEMES;
 
 export const ZOLA_LINE_URL = "https://lin.ee/tchILJk";
 const ZOLA_LINE_ID = "@903ijdgr";
+// Zola's official account @903ijdgr: today's link and the two she used before it (Zola, 2026-11).
+const ZOLA_LINE_SHORT = new Set(["tchILJk", "XIi2Nam", "sPw8XmU"]);
+const ZOLA_LINE_PATH = /^\/(?:R\/)?(?:ti\/p|oaMessage)\/(?:@|%40)903ijdgr\/?$/i;
+
+/** A link that opens Zola's own official account, where the visitor's message can be typed in for her. */
+export function isZolaLine(url: string) {
+  let parsed: URL;
+  try { parsed = new URL(url); } catch { return false; }
+  if (parsed.protocol !== "https:") return false;
+  if (parsed.hostname === "lin.ee") return ZOLA_LINE_SHORT.has(parsed.pathname.replace(/^\/|\/$/g, ""));
+  return parsed.hostname === "line.me" && ZOLA_LINE_PATH.test(parsed.pathname);
+}
 
 export type Choice = "A" | "B" | "C";
 export const CHOICES: Choice[] = ["A", "B", "C"];
@@ -221,16 +233,20 @@ export function firstSightFromState(state: Record<string, unknown>, ratio: unkno
 
 /* ---------- after reading: the message she sends Zola ---------- */
 
-export function quizMessage(quiz: Pick<Quiz, "kind" | "code" | "title">, picked: string) {
+// Both kinds carry the quiz code and what she picked, so Zola knows which quiz the message is about.
+export function quizMessage(quiz: Pick<Quiz, "kind" | "code">, picked: string) {
   return quiz.kind === "abc"
     ? `我剛剛完成心理測驗 ${quiz.code}，選的是 ${picked}，想進一步聊聊我的狀況。`
-    : `我剛剛玩了第一眼測驗「${quiz.title}」，第一眼看到的是${picked}，想進一步聊聊我的狀況。`;
+    : `我剛剛完成心理測驗 ${quiz.code}，第一眼看到的是${picked}，想進一步聊聊我的狀況。`;
 }
 
-/** Zola's own LINE opens with the message typed in (she still presses send); another account opens as is. */
-export function quizLineLink(lineUrl: string, message: string) {
-  if (lineUrl === ZOLA_LINE_URL) return `https://line.me/R/oaMessage/${ZOLA_LINE_ID}/?${encodeURIComponent(message)}`;
-  return lineUrl;
+export type QuizLineLink = { href: string; prefilled: boolean; open: string };
+
+/** Any link to Zola's own account opens her chat with the message typed in (the visitor still presses send).
+ *  Any other LINE link is kept exactly as given and the page says the message has to be copied in by hand. */
+export function quizLineLink(lineUrl: string, message: string): QuizLineLink {
+  if (isZolaLine(lineUrl)) return { href: `https://line.me/R/oaMessage/${ZOLA_LINE_ID}/?${encodeURIComponent(message)}`, prefilled: true, open: ZOLA_LINE_URL };
+  return { href: lineUrl, prefilled: false, open: lineUrl };
 }
 
 export function quizCover(quiz: Quiz) {

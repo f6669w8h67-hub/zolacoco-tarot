@@ -106,7 +106,7 @@ export default function FirstSightView({ quiz }: { quiz: FirstSightQuiz }) {
           <div className="qz-others-body">{sections(object.text).map((part, j) => <div className="fs-part" key={j}>{part.heading ? <h4>{part.heading}</h4> : null}<p>{part.body}</p></div>)}</div>
         </details>)}
       </div>
-      <QuizLineCta hook={quiz.data.hook} href={quizLineLink(quiz.data.lineUrl, message)} fallback={quiz.data.lineUrl} message={message} code={quiz.code} />
+      <QuizLineCta hook={quiz.data.hook} link={quizLineLink(quiz.data.lineUrl, message)} message={message} code={quiz.code} />
     </section> : null}
 
     <p className="qz-back"><Link href="/quizzes">看更多心理測驗</Link></p>
