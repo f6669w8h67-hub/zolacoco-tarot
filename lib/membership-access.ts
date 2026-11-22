@@ -2,7 +2,9 @@
 // /awareness (Zolacoco 覺察卡) is open to everyone; writing and saving answers stays member-only
 // on the page itself, and every data API is still checked on the server.
 export function isPublicMembershipPage(pathname: string) {
-  return ["/account", "/sign-in", "/sign-up", "/awareness"].some(
+  // 心理測驗 (Zola 2026-11-22): the wall is open to everyone and each quiz is free for its first 24 hours;
+  // the quiz page itself asks for a free account for older ones. Only quizzes whose time has come are served.
+  return ["/account", "/sign-in", "/sign-up", "/awareness", "/quizzes"].some(
     (path) => pathname === path || pathname.startsWith(`${path}/`),
   );
 }
@@ -12,7 +14,8 @@ export function isPublicMembershipPage(pathname: string) {
 export function isMembershipServiceRoute(pathname: string) {
   // The daily reminder run is called by Vercel Cron and checks CRON_SECRET itself.
   // /api/trial (免費體驗) needs a signed-in account and decides itself who may use it.
-  return ["/api/membership/me", "/api/membership/admin", "/api/cron/membership-reminders", "/api/trial"].some(
+  // /api/quizzes is the public 心理測驗 wall; its admin routes check Zola themselves (requireAdmin).
+  return ["/api/membership/me", "/api/membership/admin", "/api/cron/membership-reminders", "/api/trial", "/api/quizzes", "/api/quizzes/admin", "/api/quizzes/admin/image"].some(
     (path) => pathname === path || pathname === `${path}/`,
   );
 }
