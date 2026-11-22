@@ -31,6 +31,21 @@ test("settings: nothing is sent unless enabled, with Gmail and an https site ori
   assert.deepEqual(plain(emails.memberEmailSettings(ENV)), { gmail: { user: "zola@gmail.example", pass: "abcdefghijklmnop" }, origin: "https://zolacoco-tarot.vercel.app" });
 });
 
+test("a first yearly activation reminds her of the gift question and its last day; nothing else does (Zola 2026-11-22)", () => {
+  const origin = "https://zolacoco-tarot.vercel.app";
+  const now = new Date("2026-11-22T06:00:00Z");
+  const year = { full_name: "小美", access_expires_at: "2027-11-22T06:00:00Z" };
+  const activated = emails.memberEmail("activated", year, origin, now);
+  assert.match(activated.text, /可以使用到 2027年11月22日。\n\n年費方案附贈一題 Zola 親自占卜：請在開通後 14 天內（到 2026年12月6日 為止），到 LINE 官方帳號私訊我使用。\n\n回到網站/);
+  const month = emails.memberEmail("activated", { ...year, access_expires_at: "2026-12-22T06:00:00Z" }, origin, now);
+  assert.doesNotMatch(month.text, /附贈/, "a month for a coaching client is not a yearly plan");
+  const eleven = emails.memberEmail("activated", { ...year, access_expires_at: "2027-10-22T06:00:00Z" }, origin, now);
+  assert.doesNotMatch(eleven.text, /附贈/, "11 months is not a yearly plan");
+  const extended = emails.memberEmail("extended", year, origin, now);
+  assert.doesNotMatch(extended.text, /附贈/, "續約延長的信不加");
+  assert.doesNotMatch(emails.memberEmail("expiry_reminder", year, origin, now).text, /附贈/);
+});
+
 test("email texts: Taiwan date, links to the site and 會員中心, LINE, signed Zola, always 妳", () => {
   const member = { full_name: "小美", access_expires_at: "2026-12-14T16:30:00Z" };
   const origin = "https://zolacoco-tarot.vercel.app";
