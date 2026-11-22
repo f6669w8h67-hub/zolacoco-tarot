@@ -131,10 +131,10 @@ test("after reading: the LINE message carries the whole title, the pick and what
 test("after reading: every link to Zola's own LINE opens with the message typed in; another LINE opens as it is", async () => {
   const message = "我剛剛在網站完成心理測驗 2026112201";
   const typedIn = { href: `https://line.me/R/oaMessage/@903ijdgr/?${encodeURIComponent(message)}`, prefilled: true, open: "https://lin.ee/tchILJk" };
-  for (const zola of ["https://lin.ee/tchILJk", "https://lin.ee/XIi2Nam", "https://lin.ee/sPw8XmU/", "https://line.me/R/ti/p/@903ijdgr", "https://line.me/ti/p/%40903ijdgr"]) {
+  for (const zola of ["https://lin.ee/tchILJk", "https://lin.ee/XIi2Nam", "https://lin.ee/sPw8XmU/", "https://lin.ee/6iPii8m", "https://line.me/R/ti/p/@903ijdgr", "https://line.me/ti/p/%40903ijdgr"]) {
     assert.deepEqual(plain(quiz.quizLineLink(zola, message)), typedIn, zola);
   }
-  for (const other of ["https://lin.ee/6iPii8m", "https://lin.ee/tchILJkx", "https://line.me/R/ti/p/@someoneelse", "http://lin.ee/tchILJk", "https://evil.example/lin.ee/tchILJk"]) {
+  for (const other of ["https://lin.ee/6iPii8mx", "https://lin.ee/tchILJkx", "https://line.me/R/ti/p/@someoneelse", "http://lin.ee/tchILJk", "https://evil.example/lin.ee/tchILJk"]) {
     assert.deepEqual(plain(quiz.quizLineLink(other, message)), { href: other, prefilled: false, open: other }, other);
   }
   const cta = await read("app/quizzes/[code]/quiz-line-cta.tsx");

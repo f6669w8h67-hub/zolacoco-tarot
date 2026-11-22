@@ -31,8 +31,9 @@ export type FirstSightTheme = keyof typeof FIRST_SIGHT_THEMES;
 
 export const ZOLA_LINE_URL = "https://lin.ee/tchILJk";
 const ZOLA_LINE_ID = "@903ijdgr";
-// Zola's official account @903ijdgr: today's link and the two she used before it (Zola, 2026-11).
-const ZOLA_LINE_SHORT = new Set(["tchILJk", "XIi2Nam", "sPw8XmU"]);
+// Zola's official account @903ijdgr: today's link, the two she used before it (Zola, 2026-11), and the one in
+// her 第一眼 generator (Zola 2026-11-22: lin.ee/6iPii8m 「也是我的官方帳號」).
+const ZOLA_LINE_SHORT = new Set(["tchILJk", "XIi2Nam", "sPw8XmU", "6iPii8m"]);
 const ZOLA_LINE_PATH = /^\/(?:R\/)?(?:ti\/p|oaMessage)\/(?:@|%40)903ijdgr\/?$/i;
 
 /** A link that opens Zola's own official account, where the visitor's message can be typed in for her. */
