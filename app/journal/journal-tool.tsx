@@ -16,7 +16,8 @@ import { lineMessageUrl } from "@/lib/contact";
 import { PracticeCard } from "@/app/practice-card";
 import { tarotCards } from "@/app/tarot-data";
 import type { PublicCycle, PublicEntry } from "@/lib/coaching-input";
-import { JOURNAL_DAYS, JOURNAL_PROMPT_VERSION, journalCardIds, journalPromptFor } from "@/lib/journal-prompts";
+import { JOURNAL_DAYS, JOURNAL_PROMPT_VERSION, journalPromptFor } from "@/lib/journal-prompts";
+import { JOURNAL_DECK_KEY, ORIGINAL_DECK, drawJournalCards, isOriginalCard, newDeviceDeckSeed, roundDeckSeed } from "@/lib/journal-cards";
 import { journalResponse } from "@/lib/journal-responses";
 import { JOURNAL_REVIEW_KEY, REVIEW_TEXT_LIMIT, defaultHighlights, isSevenDaysWritten, reviewMessage, type ReviewNotes } from "@/lib/journal-review";
 import "./journal-sync.css";
@@ -36,6 +37,23 @@ function readLocalNotes(): Record<number, string> {
     return value && typeof value === "object" && !Array.isArray(value) ? value as Record<number, string> : {};
   } catch {
     return {};
+  }
+}
+
+const ALL_CARD_IDS = tarotCards.map((item) => item.id);
+
+/** This device's round of cards. Someone already part-way through keeps the original seven. */
+function readDeckSeed(): string {
+  if (typeof window === "undefined") return ORIGINAL_DECK;
+  try {
+    const saved = localStorage.getItem(JOURNAL_DECK_KEY);
+    if (saved) return saved;
+    const started = Object.values(readLocalNotes()).some((text) => typeof text === "string" && text.trim());
+    const seed = started ? ORIGINAL_DECK : newDeviceDeckSeed();
+    localStorage.setItem(JOURNAL_DECK_KEY, seed);
+    return seed;
+  } catch {
+    return ORIGINAL_DECK;
   }
 }
 
@@ -68,6 +86,8 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
   const [chosenMode, setChosenMode] = useState<Mode | null>(null);
   const [day, setDay] = useState(0);
   const [localNotes, setLocalNotes] = useState(readLocalNotes);
+  const [deviceSeed, setDeviceSeed] = useState(readDeckSeed);
+  const [confirmRestart, setConfirmRestart] = useState(false);
   // What is saved on this device (the box can hold unsaved words); 七日回顧 reads only saved notes.
   const [savedLocal, setSavedLocal] = useState(readLocalNotes);
   const [view, setView] = useState<"write" | "review">("write");
@@ -113,7 +133,8 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
   const editable = Boolean(ready?.canWrite && round?.shared);
   const syncedText = drafts[key] ?? entry?.content ?? "";
   const showConsent = mode === "synced" && Boolean(ready?.canWrite) && !openRound;
-  const card = tarotCards.find((item) => item.id === journalCardIds[day]) ?? tarotCards[day];
+  const deck = drawJournalCards(mode === "synced" ? round ? roundDeckSeed(round) : ORIGINAL_DECK : deviceSeed, ALL_CARD_IDS);
+  const card = tarotCards.find((item) => item.id === deck[day]) ?? tarotCards[day];
   const prompt = journalPromptFor(mode === "synced" && entry ? entry.promptVersion : JOURNAL_PROMPT_VERSION, day + 1);
 
   // Reading a reply marks it read (only the owner can; the server checks). The mark stays for now.
@@ -160,6 +181,19 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
       setLocalSave("saved");
       setResponseFor(day);
     } catch { setLocalSave("error"); }
+  }
+
+  // A new round on this device: the seven notes and the 七日回顧 boxes are cleared and seven new cards drawn.
+  function restartLocal() {
+    const seed = newDeviceDeckSeed();
+    try {
+      localStorage.removeItem(JOURNAL_STORAGE_KEY);
+      const reviews = JSON.parse(localStorage.getItem(JOURNAL_REVIEW_KEY) ?? "{}") as Record<string, unknown>;
+      if (reviews && typeof reviews === "object" && "local" in reviews) { delete reviews.local; localStorage.setItem(JOURNAL_REVIEW_KEY, JSON.stringify(reviews)); }
+      localStorage.setItem(JOURNAL_DECK_KEY, seed);
+    } catch { /* this visit still starts over */ }
+    setLocalNotes({}); setSavedLocal({}); setDeviceSeed(seed);
+    setConfirmRestart(false); setView("write"); setResponseFor(null); setLocalSave("idle"); setDay(0);
   }
 
   async function startRound() {
@@ -264,7 +298,7 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
   const complete = (!synced || Boolean(round)) && isSevenDaysWritten(reviewDays.map((item) => item.answer));
   const savedNote = synced ? entry?.content ?? "" : savedLocal[day] ?? "";
   const unsaved = synced ? drafts[key] !== undefined && drafts[key].trim() !== savedNote : (localNotes[day] ?? "").trim() !== savedNote;
-  const dayResponse = savedNote.trim() && !unsaved ? journalResponse(day + 1, savedNote, reviewDays.map((item) => Boolean(item.answer.trim()))) : null;
+  const dayResponse = savedNote.trim() && !unsaved ? journalResponse(day + 1, savedNote, reviewDays.map((item) => Boolean(item.answer.trim())), JOURNAL_PROMPT_VERSION, isOriginalCard(day + 1, deck[day])) : null;
   const responseBlock = dayResponse ? responseFor === day
     ? <DayResponseCard day={day + 1} response={dayResponse} onNext={(next) => pickDay(next - 1)} />
     : <button type="button" className="js-link js-response-open" onClick={() => setResponseFor(day)}>看這一天的回應</button>
@@ -309,6 +343,10 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
       <button className="tool-primary journal-save" disabled={localSave === "saving" || !(localNotes[day] ?? "").trim()} onClick={saveLocal}>{localSave === "saving" ? "儲存中…" : localSave === "saved" ? "已儲存 ✓" : localSave === "error" ? "存檔失敗，請再試一次" : "儲存今天的筆記"}</button>
       {responseBlock}
       {complete ? <CompleteBanner onOpen={() => setView("review")} /> : null}
+      {complete ? confirmRestart ? <div className="js-stop">
+        <p>這台裝置上的七天筆記和七日回顧會清空，換七張新的牌重新開始。確定嗎？</p>
+        <div><button type="button" className="js-danger" onClick={restartLocal}>清空並開始新的一輪</button><button type="button" className="js-link" onClick={() => setConfirmRestart(false)}>先不要</button></div>
+      </div> : <button type="button" className="js-link" onClick={() => setConfirmRestart(true)}>開始新的一輪，換七張新牌</button> : null}
       <p className="privacy-note">筆記會保存在目前使用的手機或電腦瀏覽器中，重新開啟網站仍可繼續查看，不會公開顯示。</p>
     </> : round ? <>
       <textarea value={syncedText} readOnly={!editable} onChange={(event) => { const value = event.target.value; setDrafts((current) => ({ ...current, [key]: value })); setNotice(null); setResponseFor(null); }} aria-label={editable ? "寫下今天的陪跑筆記" : "這一天的陪跑筆記（唯讀）"} placeholder={editable ? "不用急著寫得完整，先記下第一個浮現的念頭……" : "這一天沒有寫下筆記。"} />

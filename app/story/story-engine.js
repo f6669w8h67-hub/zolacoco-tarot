@@ -946,40 +946,85 @@ export function mountStory(root, host) {
     TO(() => { if (!gotMotion) { OFF("devicemotion", onMotion); shakeOn = false; shakeBtn.classList.remove("on"); shakeBtn.textContent = "這個預覽畫面讀不到手機動作，正式網站上就能搖"; } }, 1500);
   });
 
-  /* ---------- client voices: a LINE-style thread that types itself out as it comes into view ---------- */
+  /* ---------- client voices: one LINE-style screen per client, swiped sideways; each types itself out when it comes into view ---------- */
   // Real messages from Zola's LINE (2026-11), names removed; each client must agree before this goes live.
-  const CHAT = [
-    { label: "4 週陪跑・第二週", who: "a" },
-    { who: "a", t: "老師我之後可以用完整版的陪跑方案嗎？" },
-    { label: "4 週陪跑・最後一週", who: "a" },
-    { who: "a", t: "老師真的很謝謝妳 這四週的陪跑報告 我不會被同事的反應牽著走 不然我這樣真的很累 會影響我的心情 老師好險有遇到妳 不然我現在還是待在原地不知道要怎麼辦 真的很感謝妳 有妳真好" },
-    { label: "收到牌陣解析那天", who: "b" },
-    { who: "b", t: "老師，我等等一次看完，天呀，您好用心，解釋的好清楚哦" },
-    { who: "b", t: "老師我看完了，您真的太厲害了" },
-    { who: "b", t: "謝謝老師的解惑，您真的幫我好大的忙，我內心平靜許多了，不然我天天哭。" },
+  const VOICES = [
+    { tag: "4 週陪跑", msgs: [
+      { label: "第二週" },
+      { t: "老師我之後可以用完整版的陪跑方案嗎？" },
+      { label: "最後一週" },
+      { t: "老師真的很謝謝妳 這四週的陪跑報告 我不會被同事的反應牽著走 不然我這樣真的很累 會影響我的心情 老師好險有遇到妳 不然我現在還是待在原地不知道要怎麼辦 真的很感謝妳 有妳真好" },
+    ] },
+    { tag: "牌陣解析", msgs: [
+      { label: "收到牌陣解析那天" },
+      { t: "老師，我等等一次看完，天呀，您好用心，解釋的好清楚哦" },
+      { t: "老師我看完了，您真的太厲害了" },
+      { t: "謝謝老師的解惑，您真的幫我好大的忙，我內心平靜許多了，不然我天天哭。" },
+    ] },
   ];
-  const chat = root.getElementById("chat");
+  const reel = root.getElementById("reel"), reelDots = root.getElementById("reelDots"), reelCtl = root.getElementById("reelCtl");
+  const reelPrev = root.getElementById("reelPrev"), reelNext = root.getElementById("reelNext");
   const bubble = (m, typing) => {
     if (m.label) { const day = document.createElement("p"); day.className = "chat-day"; day.textContent = m.label; return day; }
-    const row = document.createElement("div"); row.className = `msg ${m.who === "z" ? "me" : "them"} who-${m.who}`;
-    row.innerHTML = `<span class="ava" aria-hidden="true">${m.who === "z" ? "Z" : "客"}</span><p class="bub${typing ? " typing" : ""}">${typing ? "<i></i><i></i><i></i>" : esc(m.t)}</p>`;
-    if (!typing) row.querySelector(".bub").setAttribute("aria-label", `${m.who === "z" ? "Zola" : "客人"}：${m.t}`);
+    const row = document.createElement("div"); row.className = "msg them";
+    row.innerHTML = `<span class="ava" aria-hidden="true">客</span><p class="bub${typing ? " typing" : ""}">${typing ? "<i></i><i></i><i></i>" : esc(m.t)}</p>`;
+    if (!typing) row.querySelector(".bub").setAttribute("aria-label", `客人：${m.t}`);
     return row;
   };
-  function playChat() {
-    if (reduce) { CHAT.forEach(m => chat.appendChild(bubble(m))); return; }
+  const screens = VOICES.map((v, i) => {
+    const el = document.createElement("article"); el.className = "screen";
+    el.setAttribute("aria-label", `回饋 ${i + 1}／${VOICES.length}：${v.tag}`);
+    el.innerHTML = `<header class="screen-top"><span class="screen-ava" aria-hidden="true">客</span><span class="screen-name"><b>${esc(v.tag)}的客人</b><small>LINE・已隱去姓名</small></span></header><div class="screen-body"></div>`;
+    reel.appendChild(el);
+    const dot = document.createElement("button"); dot.type = "button"; dot.className = "reel-dot";
+    dot.setAttribute("aria-label", `第 ${i + 1} 則：${v.tag}`);
+    dot.addEventListener("click", () => goVoice(i));
+    reelDots.appendChild(dot);
+    return { el, body: el.querySelector(".screen-body"), v, played: false, dot };
+  });
+  function playVoice(sc) {
+    if (sc.played) return; sc.played = true;
+    if (reduce) { sc.v.msgs.forEach(m => sc.body.appendChild(bubble(m))); return; }
     let t = 0;
-    CHAT.forEach(m => {
-      if (m.label) { TO(() => chat.appendChild(bubble(m)), t); t += 450; return; }
-      const wait = m.who === "z" ? 600 : 900;
-      TO(() => { const dots = bubble(m, true); chat.appendChild(dots); TO(() => dots.replaceWith(bubble(m)), wait); }, t);
-      t += wait + 650;
+    sc.v.msgs.forEach(m => {
+      if (m.label) { TO(() => sc.body.appendChild(bubble(m)), t); t += 420; return; }
+      TO(() => {
+        const dots = bubble(m, true); sc.body.appendChild(dots); sc.body.scrollTop = sc.body.scrollHeight;
+        TO(() => { dots.replaceWith(bubble(m)); sc.body.scrollTop = sc.body.scrollHeight; }, 850);
+      }, t);
+      t += 1500;
     });
   }
+  let voiceAt = 0, reelSeen = false;
+  const inReel = new Set();
+  function markVoice(i) {
+    voiceAt = i;
+    screens.forEach((sc, k) => { sc.el.classList.toggle("on", k === i); sc.dot.setAttribute("aria-current", k === i ? "true" : "false"); });
+    reelPrev.disabled = i === 0; reelNext.disabled = i === screens.length - 1;
+  }
+  function goVoice(i) {
+    const sc = screens[Math.max(0, Math.min(screens.length - 1, i))];
+    reel.scrollTo({ left: sc.el.offsetLeft - (reel.clientWidth - sc.el.offsetWidth) / 2, behavior: reduce ? "auto" : "smooth" });
+  }
+  function fitReel() { reelCtl.hidden = reel.scrollWidth <= reel.clientWidth + 2; }
+  reelPrev.addEventListener("click", () => goVoice(voiceAt - 1));
+  reelNext.addEventListener("click", () => goVoice(voiceAt + 1));
+  reel.addEventListener("keydown", e => {
+    if (e.key === "ArrowRight") { e.preventDefault(); goVoice(voiceAt + 1); }
+    else if (e.key === "ArrowLeft") { e.preventDefault(); goVoice(voiceAt - 1); }
+  });
+  ON("resize", fitReel);
+  markVoice(0); fitReel();
   if ("IntersectionObserver" in window) {
-    const io2 = IO(es => { if (es.some(e => e.isIntersecting)) { io2.disconnect(); playChat(); } }, { threshold: 0.25 });
-    io2.observe(chat);
-  } else playChat();
+    // a screen plays once it is mostly inside the reel and the reel itself has come into view
+    const seenReel = IO(es => { if (es.some(e => e.isIntersecting)) { seenReel.disconnect(); reelSeen = true; fitReel(); inReel.forEach(playVoice); } }, { threshold: 0.25 });
+    seenReel.observe(reel);
+    const inside = IO(es => es.forEach(e => {
+      const sc = screens.find(x => x.el === e.target); if (!sc) return;
+      if (e.isIntersecting) { inReel.add(sc); markVoice(screens.indexOf(sc)); if (reelSeen) playVoice(sc); } else inReel.delete(sc);
+    }), { root: reel, threshold: 0.6 });
+    screens.forEach(sc => inside.observe(sc.el));
+  } else screens.forEach(playVoice);
 
   /* ---------- which way of working fits: three questions, then a plan and a LINE button ---------- */
   const LINE_URL = "https://lin.ee/tchILJk";

@@ -7,12 +7,14 @@ import "./rococo-membership.css";
 import "./styles/rococo-tokens.css";
 import "./styles/rococo-tarot.css";
 import "./styles/card-face.css";
+import "./styles/site-dock.css";
 import "./styles/serif-all.css";
 import MembershipGate, { UnconfiguredMembershipGate } from "./membership-gate";
 import { allowsMembershipPreview, isClerkConfigured } from "@/lib/membership-access";
 import { clerkLocalization } from "@/lib/clerk-localization";
 import { clerkPearlAppearance } from "@/lib/clerk-pearl-appearance";
 import SiteHeader from "./site-header";
+import SiteDock from "./site-dock";
 import PearlFonts from "./pearl-fonts";
 import { TrialProvider } from "./visitor-trial";
 
@@ -57,6 +59,7 @@ export default function RootLayout({
     ) : (
       <UnconfiguredMembershipGate>{children}</UnconfiguredMembershipGate>
     )}
+    <SiteDock />
   </>;
 
   return (

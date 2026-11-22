@@ -36,26 +36,9 @@ html body:has(main.pearl-page) .global-site-header {
 }
 html body:has(main.pearl-page) .global-brand { color: var(--pearl-title) !important; }
 html body:has(main.pearl-page) .global-brand span { color: var(--pearl-muted) !important; }
-html body:has(main.pearl-page) :is(.global-menu-trigger, .global-account-link) {
+html body:has(main.pearl-page) .global-account-link {
   border: 1px solid var(--pearl-chip-border) !important;
   background: var(--pearl-surface) !important;
   color: var(--pearl-ink) !important;
 }
-html body:has(main.pearl-page) .global-function-menu {
-  border: 1px solid var(--pearl-border) !important;
-  background: var(--pearl-surface) !important;
-  box-shadow: 0 18px 44px rgba(38, 52, 73, .1) !important;
-  color: var(--pearl-ink) !important;
-}
-html body:has(main.pearl-page) .global-menu-heading { border-bottom-color: var(--pearl-border) !important; }
-html body:has(main.pearl-page) .global-menu-heading small, html body:has(main.pearl-page) .global-menu-groups h3 { color: var(--pearl-muted) !important; }
-html body:has(main.pearl-page) .global-menu-heading h2 { color: var(--pearl-title) !important; }
-html body:has(main.pearl-page) .global-menu-groups a { border-color: var(--pearl-border) !important; color: var(--pearl-ink) !important; background: transparent !important; }
-html body:has(main.pearl-page) .global-menu-groups a b { color: var(--pearl-ink) !important; }
-html body:has(main.pearl-page) .global-menu-groups a small { color: var(--pearl-muted) !important; }
-html body:has(main.pearl-page) .global-menu-groups a i { color: var(--pearl-gold) !important; }
-html body:has(main.pearl-page) .global-menu-groups section { border-color: var(--pearl-border) !important; }
-html body:has(main.pearl-page) .global-account-panel { border-color: var(--pearl-border) !important; background: var(--pearl-blue) !important; }
-html body:has(main.pearl-page) .global-account-panel b, html body:has(main.pearl-page) .global-account-panel a, html body:has(main.pearl-page) .global-admin-link { color: var(--pearl-title) !important; }
-html body:has(main.pearl-page) .global-account-panel small { color: var(--pearl-muted) !important; }
 
