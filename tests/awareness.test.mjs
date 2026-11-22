@@ -61,7 +61,7 @@ test("share file name uses the Taiwan date", () => {
 test("page: public, shuffle then flip one card, no fan; the face shows the ACT line, not a name or number", async () => {
   const page = await read("app/awareness/page.tsx");
   const membership = await read("lib/membership-access.ts");
-  assert.match(membership, /\["\/account", "\/sign-in", "\/sign-up", "\/awareness"\]/);
+  assert.match(membership, /\["\/account", "\/sign-in", "\/sign-up", "\/awareness", "\/quizzes"\]/);
   assert.match(page, /洗牌，抽一張/);
   assert.doesNotMatch(page, /DrawFan|draw-fan/);
   assert.match(page, /const lines = breakLines\(card\.line, 12\);/);

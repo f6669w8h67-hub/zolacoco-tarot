@@ -4,6 +4,7 @@
 // are all set. Each email is claimed in member_email_log first (one row per member, kind and membership
 // period), so a retry, a double click or a second daily run never sends the same notice twice.
 import { ZOLA_LINE_URL } from "./contact";
+import { MEMBERSHIP_GIFT_DAYS } from "./membership-prices";
 import { gmailConfig, type GmailConfig } from "./mail-config";
 import type { MailMessage, MailResult } from "./mailer";
 
@@ -57,7 +58,21 @@ export function taipeiDate(value: string | Date) {
   return new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", year: "numeric", month: "long", day: "numeric" }).format(new Date(value));
 }
 
-export function memberEmail(kind: MemberEmailKind, member: Record<string, unknown>, origin: string) {
+const DAY = 86_400_000;
+// A first activation of 12 months is a yearly plan; 12 months is never under 365 days, the email goes out
+// seconds after Zola presses 立即開通, and 11 months is at most 337 days.
+const YEARLY_PLAN_DAYS = 360;
+
+/** Every yearly plan comes with one question read by Zola, used within 14 days of activation (Zola, 2026-11-22).
+ *  The activation email says so, with the last day; a shorter activation (a coaching client's months) does not. */
+export function giftReminder(member: Record<string, unknown>, now: Date) {
+  const expires = Date.parse(String(member.access_expires_at));
+  if (!Number.isFinite(expires) || expires - now.getTime() < YEARLY_PLAN_DAYS * DAY) return "";
+  const lastDay = taipeiDate(new Date(now.getTime() + MEMBERSHIP_GIFT_DAYS * DAY));
+  return `年費方案附贈一題 Zola 親自占卜：請在開通後 ${MEMBERSHIP_GIFT_DAYS} 天內（到 ${lastDay} 為止），到 LINE 官方帳號私訊我使用。\n\n`;
+}
+
+export function memberEmail(kind: MemberEmailKind, member: Record<string, unknown>, origin: string, now = new Date()) {
   const name = typeof member.full_name === "string" && member.full_name.trim() ? `${member.full_name.trim()} ` : "";
   const date = taipeiDate(String(member.access_expires_at));
   const links = `回到網站：${origin}/\n會員中心（查看期限）：${origin}/account`;
@@ -71,7 +86,7 @@ export function memberEmail(kind: MemberEmailKind, member: Record<string, unknow
   const extended = kind === "extended";
   return {
     subject: extended ? "Zolacoco Tarot｜妳的會員已延長" : "Zolacoco Tarot｜妳的會員已開通",
-    text: `${name}妳好：\n\n妳的 Zolacoco Tarot 會員已經${extended ? "延長" : "開通"}，${extended ? "現在" : ""}可以使用到 ${date}。\n\n${links}\n\n${sign}`,
+    text: `${name}妳好：\n\n妳的 Zolacoco Tarot 會員已經${extended ? "延長" : "開通"}，${extended ? "現在" : ""}可以使用到 ${date}。\n\n${extended ? "" : giftReminder(member, now)}${links}\n\n${sign}`,
   };
 }
 

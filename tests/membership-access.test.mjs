@@ -130,6 +130,7 @@ const uiMocks = (pathname) => ({
   "next/link": { default: ({ children, ...props }) => React.createElement("a", props, children) },
   "./styles/pearl-page.css": {},
   "./visitor-trial": { TrialProvider: ({ children }) => children },
+  "./member-prices": { default: () => React.createElement("div", { className: "member-prices", "data-mock": "member-prices" }) },
 });
 
 test("unconfigured layout fallback hides VIP children but renders public pages without Clerk hooks", async () => {

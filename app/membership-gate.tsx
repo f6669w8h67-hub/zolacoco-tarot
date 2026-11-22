@@ -10,6 +10,7 @@ import { ZOLA_LINE_URL, lineMessageUrl } from "@/lib/contact";
 import { MEMBERSHIP_KEYWORD, TRIAL_LIMIT, isVisitorTrialPage } from "@/lib/visitor-trial";
 import { TrialProvider } from "./visitor-trial";
 import "./styles/pearl-page.css";
+import MemberPrices from "./member-prices";
 
 type AccessState = {
   status: "loading" | "allowed" | "pending" | "suspended" | "expired" | "error";
@@ -78,7 +79,7 @@ export default function MembershipGate({ children }: { children: React.ReactNode
     : ["會員權限尚未開放", "請聯絡 Zola 協助確認。"];
 
   if (access.status === "pending") {
-    return <AccessScreen tone="pending" eyebrow="member access" title={copy[0]} message={copy[1]}>
+    return <AccessScreen tone="pending" eyebrow="member access" title={copy[0]} message={copy[1]} details={<MemberPrices />}>
       <Link className="gate-primary" href="/#trial">先免費體驗 {TRIAL_LIMIT} 次</Link>
       <a className="gate-secondary" href={lineMessageUrl(MEMBERSHIP_KEYWORD)} target="_blank" rel="noreferrer">申請成為會員</a>
       <Link className="gate-secondary" href="/account">查看會員資料</Link>
@@ -91,11 +92,12 @@ export default function MembershipGate({ children }: { children: React.ReactNode
 }
 
 // Pearl entry card (ChatGPT step-5 spec). `tone` only picks the look; who may pass is decided above.
-export function AccessScreen({ tone, eyebrow, title, message, children }: { tone: string; eyebrow: string; title: string; message: string; children?: React.ReactNode }) {
+export function AccessScreen({ tone, eyebrow, title, message, details, children }: { tone: string; eyebrow: string; title: string; message: string; details?: React.ReactNode; children?: React.ReactNode }) {
   return <main className={`membership-gate pearl-page gate-${tone}`} aria-busy={tone === "loading" || undefined}><section>
     <span className="membership-gate-mark" aria-hidden="true"><svg viewBox="0 0 64 48"><path d="M32 42 9 21c5-9 14-14 23-14s18 5 23 14Z" /><path d="M32 42 18 14M32 42V8M32 42l14-28M32 42 12 25M32 42l20-17" /><circle cx="32" cy="44" r="2.4" /></svg></span>
     <p className="eyebrow">{eyebrow}</p>
     <h1>{title}</h1><p>{message}</p>
+    {details}
     {tone === "loading" ? <span className="pearl-loading" aria-hidden="true"><i /><i /><i /></span> : null}
     {children ? <div className="membership-gate-actions">{children}</div> : null}
   </section></main>;

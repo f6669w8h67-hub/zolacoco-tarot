@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useId, useState } fr
 
 import { lineMessageUrl } from "@/lib/contact";
 import { MEMBERSHIP_KEYWORD, TRIAL_LIMIT, type TrialFeature } from "@/lib/visitor-trial";
+import MemberPrices from "./member-prices";
 import "./styles/visitor-trial.css";
 
 // 免費體驗 (lib/visitor-trial.ts). Members never see any of this: without a TrialProvider above it,
@@ -140,6 +141,7 @@ export function TrialLimitCard({ className = "" }: { className?: string }) {
     <p>{trial.failed
       ? "請重新整理頁面再試一次；如果一直出現，可以到 LINE 告訴 Zola。"
       : "喜歡這樣的陪伴，就申請成為 Zolacoco 會員：抽牌、靈擺、星骰不再限制次數，也能保存紀錄；還有星盤探索、療癒室、直覺練習和七日內在筆記。"}</p>
+    {trial.failed ? null : <MemberPrices />}
     <a className="trial-apply" href={membershipApplyUrl} target="_blank" rel="noreferrer">申請成為會員</a>
     <small>會打開 Zola 的官方 LINE，送出「{MEMBERSHIP_KEYWORD}」就會收到申請方式。</small>
     <Link className="trial-sign-in" href="/account">查看我的會員資料</Link>
