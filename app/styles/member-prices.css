@@ -1,0 +1,56 @@
+/* 會員年費 (app/member-prices.tsx). The same small price list sits in three hosts that style p and small
+   differently — the trial card (visitor-trial.css, with !important), the member gate and 會員中心 — so every
+   rule carries its own colours, the html body prefix and, where a host forces a value, !important.
+   Sizes: the site's 閱讀字級 setting sizes every p and li inside main (globals.css, html[data-font-tier]), so
+   the text inside them is sized in em and grows or shrinks with her choice. The font is the site's serif. */
+html body .member-prices {
+  --mpr-ink: #263449; --mpr-muted: #4a5873; --mpr-title: #843450; --mpr-gold: #c5a46f;
+  --mpr-gold-line: #e6d8bb; --mpr-blush: #fceaf3;
+  box-sizing: border-box; width: min(100%, 400px); margin: 20px auto 6px !important; padding: 16px 18px 14px !important;
+  border: 1px solid var(--mpr-gold-line); border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #fff8fb 100%);
+  box-shadow: inset 0 0 0 4px #ffffff, inset 0 0 0 5px rgba(197, 164, 111, .26), 0 10px 24px rgba(132, 52, 80, .06);
+  color: var(--mpr-ink); text-align: left;
+}
+/* without a reading-size setting these are the sizes; the setting overrides p and li */
+html body .member-prices :is(p, li) { font-size: 16px; }
+
+html body .member-prices p.member-prices-title {
+  display: flex; align-items: center; justify-content: center; gap: .6em;
+  margin: 0 0 6px !important; color: var(--mpr-title) !important;
+  font-weight: 700; line-height: 1.5 !important; letter-spacing: .18em; text-align: center;
+}
+html body .member-prices p.member-prices-title span { color: var(--mpr-gold); font-size: .7em; letter-spacing: 0; }
+
+html body .member-prices ol.member-prices-tiers { list-style: none; margin: 0 !important; padding: 0 !important; }
+html body .member-prices .member-prices-tiers li {
+  /* name and limit on the left, price on the right; with large text on a small phone the price drops under */
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px 12px;
+  margin: 0; padding: .6em 2px; line-height: 1.45; border-top: 1px dashed var(--mpr-gold-line);
+}
+html body .member-prices .member-prices-tiers li:first-child { border-top: 0; }
+html body .member-prices .member-prices-tier { display: grid; }
+html body .member-prices .member-prices-name { color: var(--mpr-title); font-size: .94em; font-weight: 700; letter-spacing: .08em; white-space: nowrap; }
+html body .member-prices .member-prices-limit { color: var(--mpr-muted); font-size: max(12px, .8em); font-weight: 500; letter-spacing: .04em; white-space: nowrap; }
+html body .member-prices .member-prices-price {
+  margin-left: auto; white-space: nowrap; color: var(--mpr-ink);
+  font-size: 1.25em; font-weight: 700; line-height: 1.2; font-variant-numeric: lining-nums tabular-nums; letter-spacing: .01em;
+}
+html body .member-prices .member-prices-price small {
+  margin-left: 2px; color: var(--mpr-muted) !important; font-size: max(11px, .6em) !important; font-weight: 500; line-height: 1 !important; letter-spacing: .04em;
+}
+
+html body .member-prices p.member-prices-gift {
+  display: grid; gap: 2px; margin: 10px 0 0 !important; padding: 10px 14px !important;
+  border: 1px solid #f0d6e2; border-radius: 14px; background: var(--mpr-blush); text-align: center; line-height: 1.6 !important; word-break: keep-all;
+}
+html body .member-prices p.member-prices-gift b { color: var(--mpr-title) !important; font-size: .9em; font-weight: 700; letter-spacing: .04em; }
+html body .member-prices p.member-prices-gift span { color: var(--mpr-muted); font-size: max(12px, .8em); font-weight: 500; }
+html body .member-prices p.member-prices-note { margin: 8px 0 0 !important; text-align: center; line-height: 1.6 !important; word-break: keep-all; }
+html body .member-prices p.member-prices-note small {
+  color: var(--mpr-muted) !important; font-size: max(12px, .76em) !important; line-height: 1.6 !important; letter-spacing: .03em;
+}
+
+@media (max-width: 359px) {
+  html body .member-prices { padding: 14px 12px 12px !important; }
+}

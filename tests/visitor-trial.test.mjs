@@ -126,6 +126,7 @@ const gateMocks = (pathname, auth) => ({
   "next/link": { default: ({ children, ...props }) => React.createElement("a", props, children) },
   "./styles/pearl-page.css": {},
   "./visitor-trial": { TrialProvider: ({ mode, children }) => React.createElement("div", { "data-trial": mode }, children) },
+  "./member-prices": { default: () => React.createElement("div", { className: "member-prices", "data-mock": "member-prices" }) },
 });
 
 test("page gate: signed out on a trial page shows it (to register); an unactivated account plays there", async () => {
@@ -158,6 +159,7 @@ const componentMocks = {
   "react": React,
   "next/link": { default: ({ children, ...props }) => React.createElement("a", props, children) },
   "./styles/visitor-trial.css": {},
+  "./member-prices": { default: () => React.createElement("div", { className: "member-prices", "data-mock": "member-prices" }) },
 };
 
 test("members see nothing; signed out sees 免費註冊; the account's count comes from /api/trial", async () => {

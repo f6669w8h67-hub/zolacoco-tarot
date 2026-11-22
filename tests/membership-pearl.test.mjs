@@ -23,6 +23,7 @@ const view = await loadTypescript("app/account/account-view.tsx", {
     react: React,
     "react/jsx-runtime": jsxRuntime,
     "next/link": { default: ({ href, children, ...rest }) => jsxRuntime.jsx("a", { href, ...rest, children }) },
+    "../member-prices": { default: () => jsxRuntime.jsx("div", { className: "member-prices", "data-mock": "member-prices" }) },
   },
 });
 const now = Date.parse("2026-11-14T10:00:00+08:00");
@@ -152,6 +153,7 @@ test("the gate card renders as a pearl arch with a shell, title, words and two c
     "next/link": { default: ({ href, children, ...rest }) => jsxRuntime.jsx("a", { href, ...rest, children }) },
     "./styles/pearl-page.css": {},
     "./visitor-trial": { TrialProvider: ({ children }) => children },
+    "./member-prices": { default: () => jsxRuntime.jsx("div", { className: "member-prices", "data-mock": "member-prices" }) },
   } });
   const html = renderToStaticMarkup(jsxRuntime.jsx(mod.default, { children: "VIP_SENTINEL" }));
   assert.equal(html.includes("VIP_SENTINEL"), false, "signed out: the room stays closed");
