@@ -35,6 +35,7 @@ test("the price list shows every price, the gift and its 14 days, and never a pl
   }
   assert.ok(html.indexOf("NT$1,800") < html.indexOf("NT$2,800") && html.indexOf("NT$2,800") < html.indexOf("NT$3,820"), "cheapest first");
   assert.doesNotMatch(html, /剩|還有\s*\d+\s*名|已售|售完/, "how many places are left is not shown");
+  assert.ok(html.includes("實際價格以\u00a0Zola\u00a0確認為準"), "which tier applies is confirmed by Zola (ChatGPT review of #57)");
   assert.match(html, /role="group" aria-labelledby="([^"]+)"[\s\S]*id="\1"/, "the list is named by its title");
   assert.equal((html.match(/<li>/g) ?? []).length, 3);
 });

@@ -23,6 +23,6 @@ export default function MemberPrices({ className = "" }: { className?: string })
       <b>三種方案都送<wbr />一題&nbsp;Zola&nbsp;親自占卜</b>
       <span>開通後&nbsp;{MEMBERSHIP_GIFT_DAYS}&nbsp;天內，<wbr />私訊&nbsp;Zola&nbsp;使用</span>
     </p>
-    <p className="member-prices-note"><small>名額依開通順序，<wbr />額滿就進入下一階。</small></p>
+    <p className="member-prices-note"><small>名額依開通順序，<wbr />額滿就進入下一階；<wbr />實際價格以&nbsp;Zola&nbsp;確認為準。</small></p>
   </div>;
 }
