@@ -1,9 +1,10 @@
-// The site's nine features, shared by the bottom dock and its 全部功能 tray (Zola picked the G layout, 2026-11-22).
+// The site's features, shared by the bottom dock and its 全部功能 tray (Zola picked the G layout, 2026-11-22):
+// the nine she kept, plus 心理測驗 (2026-11-23), first in 內在探索 as it is in the old menu.
 // Icons are single stroke paths on a 24×24 grid, drawn in currentColor.
 
 export type FeatureId =
   | "tarot" | "pendulum" | "dice"
-  | "aware" | "intuition" | "journal"
+  | "quizzes" | "aware" | "intuition" | "journal"
   | "healing" | "chart" | "zola";
 
 export type Feature = { id: FeatureId; href: string; title: string; note: string; icon: string };
@@ -18,6 +19,7 @@ export const FEATURE_ICONS = {
   book: "M5.5 5.5A2 2 0 0 1 7.5 3.5h11v14h-11a2 2 0 0 0-2 2Z M5.5 19.5a2 2 0 0 0 2 2h11v-4 M9.5 8h5",
   moon: "M19 14.6A7.6 7.6 0 0 1 9.4 5a7.6 7.6 0 1 0 9.6 9.6Z",
   wheel: "M12 3.5a8.5 8.5 0 1 1 0 17 8.5 8.5 0 0 1 0-17Z M12 8.6a3.4 3.4 0 1 1 0 6.8 3.4 3.4 0 0 1 0-6.8Z M12 3.5v5.1 M12 15.4v5.1 M3.5 12h5.1 M15.4 12h5.1",
+  quiz: "M7 3.5h10a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H7A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5Z M9.8 9.4a2.2 2.2 0 1 1 3.1 2c-.6.3-.9.8-.9 1.5v.4 M12 16.2h.01",
   chat: "M5 5h14a1.5 1.5 0 0 1 1.5 1.5v8.5a1.5 1.5 0 0 1-1.5 1.5h-7l-4.2 3.5v-3.5H5A1.5 1.5 0 0 1 3.5 15V6.5A1.5 1.5 0 0 1 5 5Z M8 10.5h.01 M12 10.5h.01 M16 10.5h.01",
   plus: "M12 5v14 M5 12h14",
 } as const;
@@ -29,6 +31,7 @@ export const FEATURE_GROUPS: FeatureGroup[] = [
     { id: "dice", href: "/astro-dice", title: "星骰指引", note: "行星 × 星座 × 宮位", icon: FEATURE_ICONS.dice },
   ] },
   { key: "inner", label: "內在探索", icon: FEATURE_ICONS.eye, items: [
+    { id: "quizzes", href: "/quizzes", title: "心理測驗", note: "新測驗限時 24 小時免費", icon: FEATURE_ICONS.quiz },
     { id: "aware", href: "/awareness", title: "Zolacoco 覺察卡", note: "抽一張此刻的覺察卡", icon: FEATURE_ICONS.eye },
     { id: "intuition", href: "/?tool=intuition#explore", title: "直覺練習", note: "從牌面練習解讀", icon: FEATURE_ICONS.spark },
     { id: "journal", href: "/?tool=journal#explore", title: "七日塔羅筆記", note: "每天整理一個內在提問", icon: FEATURE_ICONS.book },

@@ -4,17 +4,17 @@ import test from "node:test";
 import { loadTypescript } from "./helpers/load-typescript.mjs";
 
 // The bottom dock + 全部功能 tray (Zola picked the G layout on 2026-11-22: 放大 Dock + 玻璃分頁,
-// dock = 抽牌・靈擺・星骰・問 Zola, phone and desktop alike, all nine features kept).
+// dock = 抽牌・靈擺・星骰・問 Zola, phone and desktop alike, all nine features kept; 心理測驗 added 2026-11-23).
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const features = await loadTypescript("lib/site-features.ts");
 const plain = (value) => JSON.parse(JSON.stringify(value));
 
-test("all nine features keep their pages, in three groups", () => {
+test("all nine features keep their pages, in three groups, with 心理測驗 first in 內在探索", () => {
   const groups = plain(features.FEATURE_GROUPS);
   assert.deepEqual(groups.map((group) => group.label), ["占卜工具", "內在探索", "療癒空間"]);
   assert.deepEqual(groups.flatMap((group) => group.items.map((item) => [item.title, item.href])), [
     ["塔羅抽牌", "/#draw"], ["靈擺占卜", "/pendulum"], ["星骰指引", "/astro-dice"],
-    ["Zolacoco 覺察卡", "/awareness"], ["直覺練習", "/?tool=intuition#explore"], ["七日塔羅筆記", "/?tool=journal#explore"],
+    ["心理測驗", "/quizzes"], ["Zolacoco 覺察卡", "/awareness"], ["直覺練習", "/?tool=intuition#explore"], ["七日塔羅筆記", "/?tool=journal#explore"],
     ["療癒小房間", "/healing-room"], ["探索妳的星盤", "/astrology-exploration"], ["問問 Zola", "/#consult"],
   ]);
 });
