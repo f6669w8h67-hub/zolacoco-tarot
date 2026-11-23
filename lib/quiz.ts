@@ -236,8 +236,18 @@ export function firstSightFromState(state: Record<string, unknown>, ratio: unkno
 
 // Zola 2026-11-22: 「傳給我的話應該是題目（完整題目）選到什麼（內容）」. So the message carries the whole title,
 // what she picked and what it said, plus the code, so Zola can answer without looking the quiz up.
-const HOOK_LINE = /想知道|困擾|年齡|留言告訴我|直接回覆我|最後想跟妳說/;
+const HOOK_LINE = /想知道|困擾|年齡|(?:留言|私訊)告訴我|直接回覆我|最後想跟妳說/;
 const MESSAGE_CONTENT_MAX = 180;
+
+// Zola 2026-11-23: IG asks for a comment (「歡迎留言告訴我妳的困擾和年齡」), but the site has no comment box and its
+// button is 「私訊 Zola」, so the page says 私訊. Only what the page shows changes: the stored text stays the IG copy,
+// so every quiz pasted in from the generator reads right without editing. 「留言區」「留言我傳解析」 are left alone.
+const COMMENT_ASK = /留言(?=告訴我|跟我說|給我)/g;
+
+/** A reading or hook as the site shows it: the ask to leave a comment becomes an ask to message Zola. */
+export function siteWording(text: string) {
+  return text.replace(COMMENT_ASK, "私訊");
+}
 
 /** The reading she got, as one short block: without the closing hook that speaks to her (想知道…留言告訴我妳的
  *  困擾和年齡), and cut at a sentence end if it is long. Counts characters, so an emoji is never split. */
