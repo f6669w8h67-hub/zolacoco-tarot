@@ -269,7 +269,29 @@ h2 { margin: 0 0 10px; font-size: clamp(25px, 6.4vw, 38px); line-height: 1.35; f
 /* ---------- after the finale: client voices and the plan finder ---------- */
 .chapter.after { min-height: 0; padding-top: 16svh; padding-bottom: 6svh; }
 .draft-note { display: inline-block; margin: 4px 0 0 !important; padding: 4px 12px; border-radius: 999px; border: 1px dashed rgba(196, 164, 108, .8); font: 500 12.5px/1.5 var(--font-display) !important; letter-spacing: .06em; color: var(--gold-text) !important; }
-.chat { width: min(100%, 420px); display: grid; gap: 12px; min-height: 360px; align-content: start; }
+.reel-wrap { width: calc(100% + 52px); margin-inline: -26px; display: grid; gap: 12px; justify-items: center; }
+.reel { width: 100%; display: flex; gap: 14px; overflow-x: auto; overscroll-behavior-x: contain; scroll-snap-type: x mandatory; padding: 10px calc(50% - min(150px, 39vw)) 24px; scrollbar-width: none; outline: none; }
+.reel::-webkit-scrollbar { display: none; }
+.reel:focus-visible { box-shadow: inset 0 0 0 2px rgba(196, 164, 108, .8); border-radius: 18px; }
+.screen { flex: none; width: min(300px, 78vw); height: 470px; scroll-snap-align: center; display: grid; grid-template-rows: auto minmax(0, 1fr); border-radius: 28px; overflow: hidden; background: linear-gradient(180deg, #fdf4f7, #f6e6ed); border: 1px solid rgba(196, 164, 108, .6); box-shadow: 0 18px 36px rgba(132, 52, 80, .12), inset 0 0 0 5px rgba(255, 253, 251, .55); transition: transform .45s cubic-bezier(.2, .8, .2, 1), opacity .45s; }
+.screen:not(.on) { opacity: .7; transform: scale(.95); }
+.screen-top { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: rgba(255, 253, 251, .94); border-bottom: 1px solid rgba(196, 164, 108, .35); text-align: left; }
+.screen-ava { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font: 600 14px/1 var(--font-display); border: 1px solid rgba(196, 164, 108, .8); background: #f6e9ee; color: var(--rose); }
+.screen-name b { display: block; font: 600 14px/1.35 var(--font-display); letter-spacing: .06em; color: var(--ink); }
+.screen-name small { display: block; margin-top: 1px; font-size: 11.5px; letter-spacing: .06em; color: var(--muted); }
+.screen-body { display: flex; flex-direction: column; gap: 10px; padding: 14px 12px 18px; overflow-y: auto; scrollbar-width: none; }
+.screen-body::-webkit-scrollbar { display: none; }
+.screen-body .chat-day { align-self: center; }
+.screen .bub { max-width: 84%; font-size: 14.5px; }
+.reel-ctl { display: flex; align-items: center; gap: 12px; }
+.reel-ctl[hidden] { display: none; }
+.reel-btn { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(196, 164, 108, .75); background: rgba(255, 253, 251, .85); color: var(--rose); cursor: pointer; transition: opacity .2s, background .2s; -webkit-tap-highlight-color: transparent; }
+.reel-btn:hover:not(:disabled) { background: #fbe6ee; }
+.reel-btn:disabled { opacity: .35; cursor: default; }
+.reel-dots { display: flex; gap: 0; }
+.reel-dot { width: 36px; height: 44px; display: grid; place-items: center; border: 0; padding: 0; background: none; cursor: pointer; }
+.reel-dot::before { content: ""; width: 8px; height: 8px; transform: rotate(45deg); border: 1px solid var(--gold); transition: background .25s, border-color .25s; }
+.reel-dot[aria-current="true"]::before { background: var(--rose); border-color: var(--rose); }
 .msg { display: flex; align-items: flex-end; gap: 8px; animation: pop .45s cubic-bezier(.2, .8, .2, 1) both; }
 .msg.me { flex-direction: row-reverse; }
 @keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.96); } }
@@ -324,13 +346,17 @@ h2 { margin: 0 0 10px; font-size: clamp(25px, 6.4vw, 38px); line-height: 1.35; f
   .chapter.finale { padding-top: 16svh; justify-items: center; grid-template-columns: minmax(0, 980px); align-content: start; }
   .finale .copy, .reading { justify-self: center; }
   .chapter.after { justify-items: center; grid-template-columns: minmax(0, 980px); padding-top: 12svh; }
-  .after .copy, .chat, .quiz { justify-self: center; }
+  .after .copy, .reel-wrap, .quiz { justify-self: center; }
+  .reel-wrap { width: 100%; margin-inline: 0; }
+  .reel { padding: 10px 24px 24px; }
+  .screen:first-child { margin-left: auto; } .screen:last-child { margin-right: auto; }
+  .screen:not(.on) { opacity: 1; transform: none; }
   .stage { height: 640px; }
   .fan-card { --w: 100px; --h: 160px; }
   .drawn { width: 220px; height: 352px; margin-left: -110px; top: 22px; }
 }
 @media (max-width: 899px) {
-  .chapters-nav { top: auto; bottom: 16px; right: auto; left: calc(var(--frame) + 10px); transform: none; grid-auto-flow: column; gap: 2px; padding: 0 8px; border-radius: 999px; background: rgba(255, 253, 251, .75); }
+  .chapters-nav { top: auto; bottom: calc(112px + env(safe-area-inset-bottom)); right: auto; left: calc(var(--frame) + 10px); transform: none; grid-auto-flow: column; gap: 2px; padding: 0 8px; border-radius: 999px; background: rgba(255, 253, 251, .75); }
   .chapters-nav a { width: 24px; height: 24px; }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -502,7 +528,14 @@ export const STORY_HTML = `<canvas id="dust" aria-hidden="true"></canvas>
       <h2 id="voicesTitle">客人怎麼說</h2>
       <p class="draft-note">來自 LINE 的真實回饋・已隱去姓名</p>
     </div>
-    <div class="chat" id="chat" aria-label="客人回饋對話"></div>
+    <div class="reel-wrap">
+      <div class="reel" id="reel" role="region" aria-roledescription="輪播" aria-label="客人回饋，左右滑動看下一則" tabindex="0"></div>
+      <div class="reel-ctl" id="reelCtl">
+        <button class="reel-btn" type="button" id="reelPrev" aria-label="上一則"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+        <div class="reel-dots" id="reelDots"></div>
+        <button class="reel-btn" type="button" id="reelNext" aria-label="下一則"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
+    </div>
   </section>
 
   <section class="chapter after" id="plans" aria-labelledby="plansTitle">

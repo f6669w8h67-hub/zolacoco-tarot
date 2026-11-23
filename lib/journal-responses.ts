@@ -79,8 +79,10 @@ function pick(note: string) {
 /**
  * day is 1–7. written[i] says whether day i+1 has a saved note (this one included).
  * next is the first unwritten day after this one (wrapping round), or null when all seven are written.
+ * originalCard: the round drew this day's original card. Since rounds draw their own cards (2026-11-22)
+ * the first reply, which names the original card, is used only then; otherwise the second one always.
  */
-export function journalResponse(day: number, note: string, written: readonly boolean[], version = JOURNAL_PROMPT_VERSION) {
+export function journalResponse(day: number, note: string, written: readonly boolean[], version = JOURNAL_PROMPT_VERSION, originalCard = true) {
   const response = JOURNAL_RESPONSES[day - 1];
   if (!response || !note.trim()) return null;
   let next: { day: number; prompt: string } | null = null;
@@ -88,5 +90,5 @@ export function journalResponse(day: number, note: string, written: readonly boo
     const candidate = ((day - 1 + step) % JOURNAL_DAYS) + 1;
     if (!written[candidate - 1]) { next = { day: candidate, prompt: journalPromptFor(version, candidate) }; break; }
   }
-  return { echo: echoOf(note), reply: response.replies[pick(note.trim())], practice: response.practice, next };
+  return { echo: echoOf(note), reply: response.replies[originalCard ? pick(note.trim()) : 1], practice: response.practice, next };
 }

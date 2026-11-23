@@ -30,13 +30,15 @@ test("the maintenance notice is gone (Zola, 2026-11-14): no banner, no leftover 
   for (const file of ["app/styles/rococo-tarot.css", "app/styles/pearl-page.css"]) assert.doesNotMatch(await read(file), /site-notice/, file);
 });
 
-test("header brand, menu links and the small links found in the check are 44px; menu text is readable", async () => {
+test("header brand, dock controls and the small links found in the check are 44px; tray text is readable", async () => {
   const globals = await read("app/globals.css");
   assert.match(globals, /\.global-brand\{min-height:44px;display:inline-flex;flex-direction:column;justify-content:center\}/);
-  const tail = globals.slice(globals.lastIndexOf("/* Step 6 (iPhone check): menu text readable"));
-  assert.match(tail, /\.global-menu-groups a small\{font-size:13px\}/);
-  assert.match(tail, /\.global-function-menu \.global-menu-groups h3\{font-size:13px/);
-  assert.match(tail, /\.global-function-menu \.global-account-panel a,\.global-function-menu \.global-admin-link\{min-height:44px/);
+  // since 2026-11-22 the features live in the bottom dock; its controls keep the 44px rule
+  const dock = await read("app/styles/site-dock.css");
+  assert.match(dock, /\.dock-tab \{[^}]*min-height: 44px;/);
+  assert.match(dock, /\.dock-font button \{ width: 44px; height: 44px;/);
+  assert.match(dock, /\.dock-account \{[^}]*min-height: 44px;/);
+  assert.match(dock, /\.dock-card small \{[^}]*font-size: 11\.5px;/);
   assert.match(await read("app/pendulum/pendulum-v1.css"), /\.pendulum-page > footer a \{ min-height: 44px;/);
   assert.match(await read("app/styles/rococo-tarot.css"), /\.admin-page \.admin-empty a \{ min-height: 44px;/);
   const home = await read("app/styles/home-pearl.css");

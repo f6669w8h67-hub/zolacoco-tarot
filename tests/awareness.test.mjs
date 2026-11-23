@@ -102,8 +102,8 @@ test("share image: 1080×1920 with the brand handle; 我的存檔 lists 覺察�
   assert.match(admin, /const archiveReady = ready && awarenessReady;/);
   assert.match(admin, /function exportBackup\(\) \{\n    if \(!archiveReady\) return;/);
   assert.match(admin, /disabled=\{!archiveReady\}/);
-  const header = await read("app/site-header.tsx");
-  assert.match(header, /\{ href: "\/awareness", title: "Zolacoco 覺察卡"/);
+  const features = await read("lib/site-features.ts");
+  assert.match(features, /\{ id: "aware", href: "\/awareness", title: "Zolacoco 覺察卡"/);
 });
 
 test("覺察卡 page colours stay pearl: only the site palette, no browns or dark grounds", async () => {

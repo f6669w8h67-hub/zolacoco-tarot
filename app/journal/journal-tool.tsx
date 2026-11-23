@@ -16,12 +16,13 @@ import { lineMessageUrl } from "@/lib/contact";
 import { PracticeCard } from "@/app/practice-card";
 import { tarotCards } from "@/app/tarot-data";
 import type { PublicCycle, PublicEntry } from "@/lib/coaching-input";
-import { JOURNAL_DAYS, JOURNAL_PROMPT_VERSION, journalCardIds, journalPromptFor } from "@/lib/journal-prompts";
+import { JOURNAL_DAYS, JOURNAL_PROMPT_VERSION, journalPromptFor } from "@/lib/journal-prompts";
+import { JOURNAL_NOTES_KEY, ORIGINAL_DECK, deviceDeckSeed, drawJournalCards, isOriginalCard, newDeviceDeckSeed, notesKeyFor, restartDeviceRound, reviewSlotFor, roundDeckSeed } from "@/lib/journal-cards";
 import { journalResponse } from "@/lib/journal-responses";
 import { JOURNAL_REVIEW_KEY, REVIEW_TEXT_LIMIT, defaultHighlights, isSevenDaysWritten, reviewMessage, type ReviewNotes } from "@/lib/journal-review";
 import "./journal-sync.css";
 
-export const JOURNAL_STORAGE_KEY = "zolacoco-journal-notes-v1";
+export const JOURNAL_STORAGE_KEY = JOURNAL_NOTES_KEY;
 
 type Place = "home" | "page";
 type Mode = "local" | "synced";
@@ -29,14 +30,22 @@ type Journal = { canWrite: boolean; cycles: PublicCycle[]; entries: PublicEntry[
 type Remote = { state: "loading" } | { state: "signed-out" } | { state: "closed" } | { state: "error" } | ({ state: "ready" } & Journal);
 type Notice = { tone: "ok" | "error"; text: string } | null;
 
-function readLocalNotes(): Record<number, string> {
+function readLocalNotes(seed: string): Record<number, string> {
   if (typeof window === "undefined") return {};
   try {
-    const value = JSON.parse(localStorage.getItem(JOURNAL_STORAGE_KEY) ?? "{}");
+    const value = JSON.parse(localStorage.getItem(notesKeyFor(seed)) ?? "{}");
     return value && typeof value === "object" && !Array.isArray(value) ? value as Record<number, string> : {};
   } catch {
     return {};
   }
+}
+
+const ALL_CARD_IDS = tarotCards.map((item) => item.id);
+
+/** This device's round of cards (see deviceDeckSeed). Someone already part-way through keeps the original seven. */
+function readDeckSeed(): string {
+  if (typeof window === "undefined") return ORIGINAL_DECK;
+  try { return deviceDeckSeed(localStorage); } catch { return ORIGINAL_DECK; }
 }
 
 async function postJson(url: string, body: unknown) {
@@ -67,9 +76,12 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
   const [freshReplies, setFreshReplies] = useState<ReadonlySet<string>>(() => new Set());
   const [chosenMode, setChosenMode] = useState<Mode | null>(null);
   const [day, setDay] = useState(0);
-  const [localNotes, setLocalNotes] = useState(readLocalNotes);
+  const [deviceSeed, setDeviceSeed] = useState(readDeckSeed);
+  const [localNotes, setLocalNotes] = useState(() => readLocalNotes(deviceSeed));
+  const [confirmRestart, setConfirmRestart] = useState(false);
+  const [restartFailed, setRestartFailed] = useState(false);
   // What is saved on this device (the box can hold unsaved words); 七日回顧 reads only saved notes.
-  const [savedLocal, setSavedLocal] = useState(readLocalNotes);
+  const [savedLocal, setSavedLocal] = useState(() => readLocalNotes(deviceSeed));
   const [view, setView] = useState<"write" | "review">("write");
   const [localSave, setLocalSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [roundId, setRoundId] = useState<string | null>(null);
@@ -113,7 +125,8 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
   const editable = Boolean(ready?.canWrite && round?.shared);
   const syncedText = drafts[key] ?? entry?.content ?? "";
   const showConsent = mode === "synced" && Boolean(ready?.canWrite) && !openRound;
-  const card = tarotCards.find((item) => item.id === journalCardIds[day]) ?? tarotCards[day];
+  const deck = drawJournalCards(mode === "synced" ? round ? roundDeckSeed(round) : ORIGINAL_DECK : deviceSeed, ALL_CARD_IDS);
+  const card = tarotCards.find((item) => item.id === deck[day]) ?? tarotCards[day];
   const prompt = journalPromptFor(mode === "synced" && entry ? entry.promptVersion : JOURNAL_PROMPT_VERSION, day + 1);
 
   // Reading a reply marks it read (only the owner can; the server checks). The mark stays for now.
@@ -154,12 +167,23 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
     setLocalSave("saving");
     try {
       const next = { ...localNotes, [day]: content };
-      localStorage.setItem(JOURNAL_STORAGE_KEY, JSON.stringify(next));
+      localStorage.setItem(notesKeyFor(deviceSeed), JSON.stringify(next));
       setLocalNotes(next);
       setSavedLocal(next);
       setLocalSave("saved");
       setResponseFor(day);
     } catch { setLocalSave("error"); }
+  }
+
+  // A new round on this device: the seven notes and the 七日回顧 boxes are cleared and seven new cards drawn.
+  // Nothing changes on screen unless the device really kept the new round (see restartDeviceRound).
+  function restartLocal() {
+    const seed = newDeviceDeckSeed();
+    let kept = false;
+    try { kept = restartDeviceRound(localStorage, deviceSeed, seed, JOURNAL_REVIEW_KEY); } catch { kept = false; }
+    if (!kept) { setRestartFailed(true); return; }
+    setLocalNotes({}); setSavedLocal({}); setDeviceSeed(seed); setRestartFailed(false);
+    setConfirmRestart(false); setView("write"); setResponseFor(null); setLocalSave("idle"); setDay(0);
   }
 
   async function startRound() {
@@ -264,7 +288,7 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
   const complete = (!synced || Boolean(round)) && isSevenDaysWritten(reviewDays.map((item) => item.answer));
   const savedNote = synced ? entry?.content ?? "" : savedLocal[day] ?? "";
   const unsaved = synced ? drafts[key] !== undefined && drafts[key].trim() !== savedNote : (localNotes[day] ?? "").trim() !== savedNote;
-  const dayResponse = savedNote.trim() && !unsaved ? journalResponse(day + 1, savedNote, reviewDays.map((item) => Boolean(item.answer.trim()))) : null;
+  const dayResponse = savedNote.trim() && !unsaved ? journalResponse(day + 1, savedNote, reviewDays.map((item) => Boolean(item.answer.trim())), JOURNAL_PROMPT_VERSION, isOriginalCard(day + 1, deck[day])) : null;
   const responseBlock = dayResponse ? responseFor === day
     ? <DayResponseCard day={day + 1} response={dayResponse} onNext={(next) => pickDay(next - 1)} />
     : <button type="button" className="js-link js-response-open" onClick={() => setResponseFor(day)}>看這一天的回應</button>
@@ -295,7 +319,7 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
       <button type="button" className="tool-primary" disabled={!consent || Boolean(busy)} onClick={() => void startRound()}>{busy === "start" ? "開始中…" : "開始同步這一輪"}</button>
     </div> : null}
 
-    {reviewing ? <SevenDayReview key={synced && round ? round.id : "local"} days={reviewDays} storeKey={synced && round ? round.id : "local"} coaching={synced && Boolean(ready?.canWrite)} onClose={() => setView("write")} /> : null}
+    {reviewing ? <SevenDayReview key={synced && round ? round.id : reviewSlotFor(deviceSeed)} days={reviewDays} storeKey={synced && round ? round.id : reviewSlotFor(deviceSeed)} coaching={synced && Boolean(ready?.canWrite)} onClose={() => setView("write")} /> : null}
 
     {!reviewing && (!synced || round) ? <>
       <div className="journal-card-row"><PracticeCard card={card} /><div className="journal-date"><i>{day + 1}</i><span>今天的內在提問</span></div></div>
@@ -309,6 +333,11 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
       <button className="tool-primary journal-save" disabled={localSave === "saving" || !(localNotes[day] ?? "").trim()} onClick={saveLocal}>{localSave === "saving" ? "儲存中…" : localSave === "saved" ? "已儲存 ✓" : localSave === "error" ? "存檔失敗，請再試一次" : "儲存今天的筆記"}</button>
       {responseBlock}
       {complete ? <CompleteBanner onOpen={() => setView("review")} /> : null}
+      {complete ? confirmRestart ? <div className="js-stop">
+        <p>這台裝置上的七天筆記和七日回顧會清空，換七張新的牌重新開始。確定嗎？</p>
+        {restartFailed ? <p className="js-error" role="alert">無法開始新的一輪，原有的筆記和牌都沒有變更。請稍後再試。</p> : null}
+        <div><button type="button" className="js-danger" onClick={restartLocal}>清空並開始新的一輪</button><button type="button" className="js-link" onClick={() => { setConfirmRestart(false); setRestartFailed(false); }}>先不要</button></div>
+      </div> : <button type="button" className="js-link" onClick={() => setConfirmRestart(true)}>開始新的一輪，換七張新牌</button> : null}
       <p className="privacy-note">筆記會保存在目前使用的手機或電腦瀏覽器中，重新開啟網站仍可繼續查看，不會公開顯示。</p>
     </> : round ? <>
       <textarea value={syncedText} readOnly={!editable} onChange={(event) => { const value = event.target.value; setDrafts((current) => ({ ...current, [key]: value })); setNotice(null); setResponseFor(null); }} aria-label={editable ? "寫下今天的陪跑筆記" : "這一天的陪跑筆記（唯讀）"} placeholder={editable ? "不用急著寫得完整，先記下第一個浮現的念頭……" : "這一天沒有寫下筆記。"} />

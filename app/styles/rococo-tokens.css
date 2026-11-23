@@ -181,7 +181,6 @@ main [id] { scroll-margin-top: calc(var(--rococo-header-h) + 8px); }
 }
 .global-brand { color: var(--rococo-text); font-family: var(--rococo-font-latin); }
 .global-brand span { color: var(--rococo-gold-text); }
-.global-menu-trigger,
 .global-account-link {
   min-height: 44px;
   border: 1px solid var(--rococo-btn-secondary-border);
@@ -191,52 +190,10 @@ main [id] { scroll-margin-top: calc(var(--rococo-header-h) + 8px); }
   font-family: var(--rococo-font-body);
   font-weight: 500;
 }
-.global-menu-trigger:hover,
 .global-account-link:hover { background: var(--rococo-surface-muted); }
-.global-function-menu {
-  border: 1px solid var(--rococo-border);
-  background: var(--rococo-surface);
-  box-shadow: 0 24px 60px rgba(73, 52, 59, .16);
-}
-.global-menu-heading { border-bottom-color: var(--rococo-border); }
-.global-menu-heading small { color: var(--rococo-gold-text); font-size: 11px; }
-.global-menu-heading h2 { color: var(--rococo-text); }
-.global-menu-heading > button {
-  width: 44px;
-  height: 44px;
-  border-color: var(--rococo-btn-secondary-border);
-  background: var(--rococo-btn-secondary-bg);
-  color: var(--rococo-btn-secondary-text);
-}
-.global-menu-groups h3 { color: var(--rococo-gold-text); font-size: 11px; }
-.global-menu-groups a { min-height: 56px; color: var(--rococo-text); border-bottom-color: rgba(216, 190, 150, .45); }
-.global-menu-groups a small { color: var(--rococo-text-muted); }
-.global-menu-groups a:hover,
-.global-menu-groups a:focus-visible { background: var(--rococo-surface-muted); transform: none; }
-.font-tier-row,
-.global-account-panel { border-color: var(--rococo-border); background: var(--rococo-bg); }
-.font-tier-row > span small,
-.global-account-panel small { color: var(--rococo-text-muted); font-size: 12px; }
-.font-tier-row > button {
-  min-width: 44px;
-  height: 44px;
-  border-color: var(--rococo-btn-secondary-border);
-  background: var(--rococo-btn-secondary-bg);
-  color: var(--rococo-btn-secondary-text);
-}
-.font-tier-row > button.active {
-  border-color: var(--rococo-btn-primary-border);
-  background: var(--rococo-btn-primary-bg);
-  color: var(--rococo-btn-primary-text);
-  font-weight: 600;
-}
-.global-account-panel a,
-.global-admin-link { color: var(--rococo-btn-secondary-text); }
-.global-admin-link { min-height: 32px; display: flex; align-items: center; justify-content: flex-end; font-size: 13px; }
 @media (max-width: 760px) {
   .global-site-header { padding: 0 12px; }
-  .global-menu-trigger, .global-account-link { min-height: 44px; }
-  .global-admin-link { justify-content: flex-start; }
+  .global-account-link { min-height: 44px; }
 }
 @media (max-width: 359px) {
   .global-account-link { width: 44px; }
