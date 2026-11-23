@@ -5,12 +5,12 @@
 // quiz keeps its own look: its painting blurred behind the page, and its paper (信紙拼貼／淺色／深色).
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { FIRST_SIGHT_THEMES, type FirstSightObject, type FirstSightQuiz, lens, quizLineLink, quizMessage } from "@/lib/quiz";
+import { FIRST_SIGHT_THEMES, type FirstSightObject, type FirstSightQuiz, lens, quizLineLink, quizMessage, siteWording } from "@/lib/quiz";
 import QuizLineCta from "./quiz-line-cta";
 
 /** "🌙 這代表\n本文\n\n📌 12 月的提醒\n本文" → titled parts; a part without a short first line stays plain. */
 function sections(text: string) {
-  return text.split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean).map((part) => {
+  return siteWording(text).split(/\n\s*\n/).map((part) => part.trim()).filter(Boolean).map((part) => {
     const [first, ...rest] = part.split("\n");
     return rest.length && first.length <= 16 ? { heading: first.trim(), body: rest.join("\n").trim() } : { heading: "", body: part };
   });

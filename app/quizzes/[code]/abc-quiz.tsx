@@ -4,13 +4,13 @@
 // and 「私訊 Zola」 (ChatGPT design v1.0, 2026-11-22).
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { type AbcQuiz, CHOICES, type Choice, QUIZ_COLORS, quizLineLink, quizMessage } from "@/lib/quiz";
+import { type AbcQuiz, CHOICES, type Choice, QUIZ_COLORS, quizLineLink, quizMessage, siteWording } from "@/lib/quiz";
 import QuizLineCta from "./quiz-line-cta";
 
 const CARD_NAMES = ["封面", "共鳴", "共鳴", "選一張牌", "留言"];
 
 function paragraphs(text: string) {
-  return text.split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
+  return siteWording(text).split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean);
 }
 
 export default function AbcQuizView({ quiz }: { quiz: AbcQuiz }) {

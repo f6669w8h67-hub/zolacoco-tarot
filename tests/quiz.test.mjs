@@ -128,6 +128,27 @@ test("after reading: the LINE message carries the whole title, the pick and what
   assert.doesNotMatch(moons, /[\uD800-\uDBFF](?![\uDC00-\uDFFF])/, "no emoji is cut in half");
 });
 
+test("on the site the hook asks her to message Zola, not to comment (Zola 2026-11-23); the stored IG text is untouched", async () => {
+  const hook = "想知道他接下來會不會鼓起勇氣，歡迎留言告訴我妳的困擾和年齡，我會再針對妳的狀況補充給妳看。";
+  assert.equal(quiz.siteWording(hook), "想知道他接下來會不會鼓起勇氣，歡迎私訊告訴我妳的困擾和年齡，我會再針對妳的狀況補充給妳看。");
+  assert.equal(quiz.siteWording("留言跟我說，也可以留言給我。\n再留言告訴我一次"), "私訊跟我說，也可以私訊給我。\n再私訊告訴我一次", "every ask on the page");
+  assert.equal(quiz.siteWording("👉 直覺選一組\n留言我傳解析給你！"), "👉 直覺選一組\n留言我傳解析給你！", "other uses of 留言 stay as written");
+  assert.equal(quiz.siteWording("在留言區告訴我"), "在留言區告訴我");
+  assert.equal(quiz.siteWording(""), "");
+
+  // the LINE message still leaves the hook out, whichever way it is worded
+  const reading = "他刪掉的訊息，可能是想約妳出來。\n說開的話，才不會一直卡在心裡。\n想知道他什麼時候會真的約妳，歡迎私訊告訴我妳的困擾和年齡，我會再針對妳的狀況補充給妳看。";
+  assert.equal(quiz.messageContent(reading), "他刪掉的訊息，可能是想約妳出來。\n說開的話，才不會一直卡在心裡。");
+
+  // where the page shows the reading and the hook, it goes through siteWording
+  const abc = await read("app/quizzes/[code]/abc-quiz.tsx");
+  assert.match(abc, /function paragraphs\(text: string\) \{\n\s*return siteWording\(text\)/);
+  const sight = await read("app/quizzes/[code]/first-sight-quiz.tsx");
+  assert.match(sight, /function sections\(text: string\) \{\n\s*return siteWording\(text\)/);
+  const cta = await read("app/quizzes/[code]/quiz-line-cta.tsx");
+  assert.match(cta, /<p className="qz-cta-hook">\{siteWording\(hook\)\}<\/p>/);
+});
+
 test("after reading: every link to Zola's own LINE opens with the message typed in; another LINE opens as it is", async () => {
   const message = "我剛剛在網站完成心理測驗 2026112201";
   const typedIn = { href: `https://line.me/R/oaMessage/@903ijdgr/?${encodeURIComponent(message)}`, prefilled: true, open: "https://lin.ee/tchILJk" };
