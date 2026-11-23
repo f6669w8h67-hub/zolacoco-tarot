@@ -208,4 +208,5 @@
 .qz-locked-actions { display: grid; justify-items: center; gap: 4px; margin-top: 4px; }
 .qz-locked-login { display: inline-flex; align-items: center; min-height: 44px; color: var(--quiz-rose); font-size: 14px; }
 .qz-locked-free a { display: inline-flex; align-items: center; min-height: 44px; color: var(--quiz-muted); font-size: 13px; }
-.qz-tile-lock { position: absolute; left: 6px; bottom: 6px; padding: 3px 8px; border-radius: 999px; background: rgba(63, 52, 64, .72); color: #fff; font-size: 11px; letter-spacing: .04em; }
+/* top-left: the bottom of an IG cover holds its title and the top-right its own #文末有心理測驗 pill */
+.qz-tile-lock { position: absolute; left: 6px; top: 6px; padding: 3px 8px; border-radius: 999px; background: rgba(255, 251, 253, .92); color: var(--quiz-title); box-shadow: 0 2px 8px rgba(63, 52, 64, .16); font-size: 11px; letter-spacing: .04em; }
