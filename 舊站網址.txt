@@ -1,0 +1,36 @@
+網址	狀態碼	轉到	標題
+/	200		Zolacoco Tarot｜抽一張屬於妳的牌
+/account	200		會員中心｜Zolacoco Tarot
+/admin	307	/sign-in?redirect_url=https%3A%2F%2Fzolacoco-tarot.vercel.app%2Fadmin	
+/astro-dice	200		星骰此刻指引｜Zolacoco Tarot
+/astrology-exploration	307	/sign-in?redirect_url=https%3A%2F%2Fzolacoco-tarot.vercel.app%2Fastrology-explor	
+/awareness	200		Zolacoco 覺察卡｜Zolacoco Tarot
+/healing-room	307	/sign-in?redirect_url=https%3A%2F%2Fzolacoco-tarot.vercel.app%2Fhealing-room	
+/healing-room/yuanchen	307	/sign-in?redirect_url=https%3A%2F%2Fzolacoco-tarot.vercel.app%2Fhealing-room%2Fy	
+/journal	200		七日陪跑筆記｜Zolacoco Tarot
+/pendulum	200		靈擺直覺問答｜Zolacoco Tarot
+/practice	200		學員練習室｜Zolacoco Tarot
+/quizzes	200		心理測驗｜Zolacoco Tarot
+/sign-in	200		登入｜Zolacoco Tarot
+/sign-up	200		註冊｜Zolacoco Tarot
+/zola-admin	307	/sign-in?redirect_url=https%3A%2F%2Fzolacoco-tarot.vercel.app%2Fzola-admin	
+/zola-admin/coaching	307	/sign-in?redirect_url=https%3A%2F%2Fzolacoco-tarot.vercel.app%2Fzola-admin%2Fcoa	
+/zola-admin/practice	307	/sign-in?redirect_url=https%3A%2F%2Fzolacoco-tarot.vercel.app%2Fzola-admin%2Fpra	
+/zola-admin/quizzes	307	/sign-in?redirect_url=https%3A%2F%2Fzolacoco-tarot.vercel.app%2Fzola-admin%2Fqui	
+/story	307	/sign-in?redirect_url=https%3A%2F%2Fzolacoco-tarot.vercel.app%2Fstory	
+/tarot-readings	307	/sign-in?redirect_url=https%3A%2F%2Fzolacoco-tarot.vercel.app%2Ftarot-readings	
+/favicon.svg	200		
+/robots.txt	307	/sign-in?redirect_url=https%3A%2F%2Fzolacoco-tarot.vercel.app%2Frobots.txt	
+/sitemap.xml	307	/sign-in?redirect_url=https%3A%2F%2Fzolacoco-tarot.vercel.app%2Fsitemap.xml	
+/this-page-does-not-exist-test	307	/sign-in?redirect_url=https%3A%2F%2Fzolacoco-tarot.vercel.app%2Fthis-page-does-n	
+/quizzes/2026112402	200		直覺選一張 🃏 看他分開後最放不下的是什麼 🩵｜心理測驗｜Zolacoco Tarot
+/quizzes/2026112401	200		滑到這篇代表 🎐 他正在偷偷計畫一個驚喜 🎁｜心理測驗｜Zolacoco Tarot
+/quizzes/2026112303	200		今晚睡前 🌙 他會想起妳說過的一句話 💭｜心理測驗｜Zolacoco Tarot
+/quizzes/2026112302	200		直覺選一張 🃏 看他不敢更進一步的原因 🌱｜心理測驗｜Zolacoco Tarot
+/quizzes/2026112301	200		滑到這篇代表 🍃 有人把妳的照片存了下來 📸｜心理測驗｜Zolacoco Tarot
+/quizzes/2026112203	200		十二月前 🌤️ 他會重新思考你們的關係 💛｜心理測驗｜Zolacoco Tarot
+/quizzes/2026112202	200		直覺選一張 🃏 看他最想跟妳一起完成的事 ✨｜心理測驗｜Zolacoco Tarot
+/quizzes/2026112201	200		滑到這篇代表 🌻 他還留著你們之間的某樣東西 🎁｜心理測驗｜Zolacoco Tarot
+/quizzes/2026112103	200		週末前 🌼 有人會找藉口跟妳多聊幾句 💬｜心理測驗｜Zolacoco Tarot
+/quizzes/2026112102	200		直覺選一張 🃏 看他心裡怎麼定位妳 🧡｜心理測驗｜Zolacoco Tarot
+/quizzes/2026112101	200		滑到這篇代表 🍑 他最近把妳的訊息看了好幾遍 💬｜心理測驗｜Zolacoco Tarot

@@ -8,7 +8,7 @@ import { loadTypescript } from "./helpers/load-typescript.mjs";
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const plain = (value) => JSON.parse(JSON.stringify(value));
 const emails = await loadTypescript("lib/member-emails.ts");
-const ENV = { MEMBERSHIP_EMAIL_ENABLED: "true", GMAIL_USER: "zola@gmail.example", GMAIL_APP_PASSWORD: "abcd efgh ijkl mnop", MEMBERSHIP_ADMIN_ORIGIN: "https://zolacoco-tarot.vercel.app" };
+const ENV = { MEMBERSHIP_EMAIL_ENABLED: "true", GMAIL_USER: "zola@gmail.example", GMAIL_APP_PASSWORD: "abcd efgh ijkl mnop", MEMBERSHIP_ADMIN_ORIGIN: "https://zolacoco.com" };
 
 function fakeSql(responses) {
   const calls = [];
@@ -26,13 +26,13 @@ test("settings: nothing is sent unless enabled, with Gmail and an https site ori
   assert.equal(emails.memberEmailSettings({}), null);
   assert.equal(emails.memberEmailSettings({ ...ENV, MEMBERSHIP_EMAIL_ENABLED: "false" }), null);
   assert.equal(emails.memberEmailSettings({ ...ENV, GMAIL_APP_PASSWORD: " " }), null);
-  assert.equal(emails.memberEmailSettings({ ...ENV, MEMBERSHIP_ADMIN_ORIGIN: "http://zolacoco-tarot.vercel.app" }), null);
-  assert.equal(emails.memberEmailSettings({ ...ENV, MEMBERSHIP_ADMIN_ORIGIN: "https://zolacoco-tarot.vercel.app/account" }), null);
-  assert.deepEqual(plain(emails.memberEmailSettings(ENV)), { gmail: { user: "zola@gmail.example", pass: "abcdefghijklmnop" }, origin: "https://zolacoco-tarot.vercel.app" });
+  assert.equal(emails.memberEmailSettings({ ...ENV, MEMBERSHIP_ADMIN_ORIGIN: "http://zolacoco.com" }), null);
+  assert.equal(emails.memberEmailSettings({ ...ENV, MEMBERSHIP_ADMIN_ORIGIN: "https://zolacoco.com/account" }), null);
+  assert.deepEqual(plain(emails.memberEmailSettings(ENV)), { gmail: { user: "zola@gmail.example", pass: "abcdefghijklmnop" }, origin: "https://zolacoco.com" });
 });
 
 test("a first yearly activation reminds her of the gift question and its last day; nothing else does (Zola 2026-11-22)", () => {
-  const origin = "https://zolacoco-tarot.vercel.app";
+  const origin = "https://zolacoco.com";
   const now = new Date("2026-11-22T06:00:00Z");
   const year = { full_name: "小美", access_expires_at: "2027-11-22T06:00:00Z" };
   const activated = emails.memberEmail("activated", year, origin, now);
@@ -48,7 +48,7 @@ test("a first yearly activation reminds her of the gift question and its last da
 
 test("email texts: Taiwan date, links to the site and 會員中心, LINE, signed Zola, always 妳", () => {
   const member = { full_name: "小美", access_expires_at: "2026-12-14T16:30:00Z" };
-  const origin = "https://zolacoco-tarot.vercel.app";
+  const origin = "https://zolacoco.com";
   assert.equal(emails.taipeiDate("2026-12-14T16:30:00Z"), "2026年12月15日", "16:30 UTC is already the 15th in Taipei");
   const activated = emails.memberEmail("activated", member, origin);
   assert.equal(activated.subject, "Zolacoco Tarot｜妳的會員已開通");
@@ -62,7 +62,7 @@ test("email texts: Taiwan date, links to the site and 會員中心, LINE, signed
   assert.match(reminder.text, /^妳好：/, "no name, no stray space");
   assert.match(reminder.text, /妳存下的紀錄不會因為到期而刪除。/);
   for (const mail of [activated, extended, reminder]) {
-    assert.match(mail.text, /https:\/\/zolacoco-tarot\.vercel\.app\/account/);
+    assert.match(mail.text, /https:\/\/zolacoco\.com\/account/);
     assert.match(mail.text, /https:\/\/lin\.ee\/tchILJk/);
     assert.match(mail.text, /\nZola$/);
     assert.doesNotMatch(mail.text + mail.subject, /你/);
@@ -272,7 +272,7 @@ test("admin page: search over name, Email, LINE ID and note; sort by status, exp
 });
 
 test("new-member notices to Zola go through Gmail when it is set up", async (t) => {
-  const env = { MEMBERSHIP_EMAIL_ENABLED: "true", GMAIL_USER: "zola@gmail.example", GMAIL_APP_PASSWORD: "abcd", MEMBERSHIP_EMAIL_TO: "zola@gmail.example", MEMBERSHIP_ADMIN_ORIGIN: "https://zolacoco-tarot.vercel.app" };
+  const env = { MEMBERSHIP_EMAIL_ENABLED: "true", GMAIL_USER: "zola@gmail.example", GMAIL_APP_PASSWORD: "abcd", MEMBERSHIP_EMAIL_TO: "zola@gmail.example", MEMBERSHIP_ADMIN_ORIGIN: "https://zolacoco.com" };
   const gmailSent = [];
   const activation = await loadTypescript("lib/member-activation-email.ts", { env });
   const fakeMailer = async () => ({ gmailConfig: () => ({ user: "zola@gmail.example", pass: "abcd" }), sendGmail: async (config, message) => { gmailSent.push(plain(message)); return "sent"; } });

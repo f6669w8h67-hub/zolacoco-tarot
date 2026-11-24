@@ -631,7 +631,7 @@ export function mountStory(root, host) {
     const fy = Math.max(y + 40, 1640);
     g.strokeStyle = "rgba(196,164,108,.7)"; g.lineWidth = 1.5; g.beginPath(); g.moveTo(400, fy - 52); g.lineTo(680, fy - 52); g.stroke();
     g.font = `500 28px ${SERIF}`; g.fillStyle = "#7a5a33"; g.fillText("IG @zolacoco_tarot　·　LINE @903ijdgr", 540, fy);
-    g.font = `italic 600 26px ${LATIN}`; g.fillStyle = "#8a7480"; g.fillText("zolacoco-tarot.vercel.app", 540, fy + 44);
+    g.font = `italic 600 26px ${LATIN}`; g.fillStyle = "#8a7480"; g.fillText("zolacoco.com", 540, fy + 44);
     return new Promise(res => cv.toBlob(res, "image/png"));
   }
   let inerted = [];

@@ -11,7 +11,7 @@
   "preview_urls": false,
   // 原本 vercel.json 的 crons：每天 01:00 UTC（台灣 09:00）寄會員到期提醒
   "triggers": { "crons": ["0 1 * * *"] },
-  "observability": { "enabled": true }
-  // 步驟 6 才打開：
-  // "routes": [{ "pattern": "zolacoco.com", "custom_domain": true }]
+  "observability": { "enabled": true },
+  // 步驟 6（2026-11-24）：正式網址。www 由另一個 Worker（zolacoco-tarot-www）301 轉過來。
+  "routes": [{ "pattern": "zolacoco.com", "custom_domain": true }]
 }
