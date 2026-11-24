@@ -1,0 +1,17 @@
+// Cloudflare Worker 設定：zolacoco.com 正式站
+// 密鑰（資料庫、Clerk、Gmail、Blob、CRON_SECRET）不寫在這裡，由 Zola 自己用 `npx wrangler@4 secret put <名稱>` 放進 Cloudflare。
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "zolacoco-tarot",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-05-15",
+  "compatibility_flags": ["nodejs_compat"],
+  // 搬家期間先開著 workers.dev 測試網址；驗收全過後改成 false
+  "workers_dev": true,
+  "preview_urls": false,
+  // 原本 vercel.json 的 crons：每天 01:00 UTC（台灣 09:00）寄會員到期提醒
+  "triggers": { "crons": ["0 1 * * *"] },
+  "observability": { "enabled": true }
+  // 步驟 6 才打開：
+  // "routes": [{ "pattern": "zolacoco.com", "custom_domain": true }]
+}

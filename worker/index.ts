@@ -4,6 +4,7 @@ import handler from "vinext/server/app-router-entry";
 
 interface Env {
   ASSETS: Fetcher;
+  CRON_SECRET?: string;
   DB: D1Database;
   IMAGES: {
     input(stream: ReadableStream): {
@@ -41,6 +42,20 @@ const worker = {
     }
 
     return handler.fetch(request, env, ctx);
+  },
+
+  // 取代 vercel.json 的 crons：每天呼叫一次會員到期提醒（排程時間在 wrangler.jsonc 的 triggers）。
+  async scheduled(_event: unknown, env: Env, ctx: ExecutionContext): Promise<void> {
+    const secret = env.CRON_SECRET?.trim();
+    if (!secret) {
+      console.error("membership_reminders_skipped", { reason: "CRON_SECRET missing" });
+      return;
+    }
+    const request = new Request("https://zolacoco.com/api/cron/membership-reminders", {
+      headers: { authorization: `Bearer ${secret}` },
+    });
+    const response = await worker.fetch(request, env, ctx);
+    console.log("membership_reminders", { status: response.status });
   },
 };
 

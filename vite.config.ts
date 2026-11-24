@@ -11,9 +11,8 @@ const { d1, r2 } = hostingConfig;
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 
+// 正式設定在 wrangler.jsonc；這裡只補本機模擬用的 D1／R2（網站目前沒用到，hosting.json 沒宣告時就不加）。
 const localBindingConfig = {
-  main: "./worker/index.ts",
-  compatibility_flags: ["nodejs_compat"],
   d1_databases: d1
     ? [
         {
