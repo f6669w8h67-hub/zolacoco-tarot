@@ -6,8 +6,8 @@
   "main": "./worker/index.ts",
   "compatibility_date": "2026-05-15",
   "compatibility_flags": ["nodejs_compat"],
-  // 搬家期間先開著 workers.dev 測試網址；驗收全過後改成 false
-  "workers_dev": true,
+  // 驗收全過（2026-11-24），關掉 workers.dev 測試網址，只留 zolacoco.com
+  "workers_dev": false,
   "preview_urls": false,
   // 原本 vercel.json 的 crons：每天 01:00 UTC（台灣 09:00）寄會員到期提醒
   "triggers": { "crons": ["0 1 * * *"] },
