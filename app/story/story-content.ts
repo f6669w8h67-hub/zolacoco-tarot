@@ -321,9 +321,11 @@ h2 { margin: 0 0 10px; font-size: clamp(25px, 6.4vw, 38px); line-height: 1.35; f
   .card-world { height: min(80vh, 700px); }
   .holo-wrap { width: 300px; }
   .chapter.hero { padding-top: 14svh; min-height: 100svh; }
-  .chapter.finale { padding-top: 16svh; justify-items: center; grid-template-columns: minmax(0, 980px); align-content: start; }
+  /* the finale and the chapters after it are centred: the 980px column itself sits in the middle (justify-content),
+     not only what is inside it, or on a screen wider than ~1170px everything, the stage too, slides to the left */
+  .chapter.finale { padding-top: 16svh; justify-items: center; justify-content: center; grid-template-columns: minmax(0, 980px); align-content: start; }
   .finale .copy, .reading { justify-self: center; }
-  .chapter.after { justify-items: center; grid-template-columns: minmax(0, 980px); padding-top: 12svh; }
+  .chapter.after { justify-items: center; justify-content: center; grid-template-columns: minmax(0, 980px); padding-top: 12svh; }
   .after .copy, .chat, .quiz { justify-self: center; }
   .stage { height: 640px; }
   .fan-card { --w: 100px; --h: 160px; }

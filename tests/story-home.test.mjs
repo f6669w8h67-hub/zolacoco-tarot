@@ -74,3 +74,16 @@ test("plans are written as 體驗／單次正式／4 週／8 週, with no prices
   for (const name of ["體驗諮詢", "單次正式諮詢", "4 週陪跑", "8 週陪跑"]) assert.ok(engine.includes(`name: "${name}"`), name);
   assert.equal(/NT\$|元/.test(engine.split("const PLANS")[1].split("const QS")[0]), false);
 });
+
+test("on a wide screen the draw, the voices and the plan finder sit in the middle of the page (Zola 2026-11-24: 「歪掉」)", async () => {
+  const css = (await read("app/story/story-content.ts")).split("export const STORY_HTML")[0];
+  const wide = css.split("@media (min-width: 900px) {")[1].split("\n}\n")[0];
+  // a 980px column placed at the start of a wider chapter pushed everything ~115px left at 1440px wide
+  for (const chapter of ["finale", "after"]) {
+    const rule = new RegExp(`\\.chapter\\.${chapter} \\{[^}]*\\}`).exec(wide)?.[0] ?? "";
+    assert.match(rule, /grid-template-columns: minmax\(0, 980px\)/, chapter);
+    assert.match(rule, /justify-content: center/, `${chapter}: the column itself is centred`);
+  }
+  // the stage still reaches both edges of the screen from the middle of its column
+  assert.match(css, /\.stage \{\n\s*position: relative; width: 100vw; margin-inline: calc\(50% - 50vw\);/);
+});
