@@ -6,7 +6,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { FIRST_SIGHT_THEMES, type FirstSightObject, type FirstSightQuiz, lens, quizLineLink, quizMessage, siteWording } from "@/lib/quiz";
-import { countOnce } from "./quiz-count";
+import { countOnce, retryWaiting } from "./quiz-count";
 import QuizLineCta from "./quiz-line-cta";
 
 /** "🌙 這代表\n本文\n\n📌 12 月的提醒\n本文" → titled parts; a part without a short first line stays plain. */
@@ -27,6 +27,9 @@ export default function FirstSightView({ quiz }: { quiz: FirstSightQuiz }) {
   const result = useRef<HTMLElement>(null);
   const theme = FIRST_SIGHT_THEMES[quiz.tone];
   const objects = quiz.data.objects;
+
+  // 心理測驗統計: a count that did not get through last time is sent again (same id, counted once)
+  useEffect(() => retryWaiting(quiz.code), [quiz.code]);
 
   // a few seconds to simply look; then the four things are marked (she can tap the painting any time)
   useEffect(() => {

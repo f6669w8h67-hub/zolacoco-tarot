@@ -219,12 +219,16 @@ const hoursAgo = (hours) => new Date(Date.now() - hours * 3600e3).toISOString();
 const abcQuiz = (publishAt) => ({ code: "2026112601", kind: "abc", title: "t", tone: "purple", publishAt, status: "scheduled", data: {} });
 const sightQuiz = (publishAt) => ({ code: "F2026120201", kind: "first-sight", title: "t", tone: "letter", publishAt, status: "scheduled",
   data: { objects: ["月亮", "花", "鑰匙", "貓"].map((name) => ({ name })) } });
+const ID = "3f2c8f0e-5b1a-4c3d-9e8f-0a1b2c3d4e5f";
+const ID2 = "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d";
 
-test("統計: only a known quiz, a known kind of count and one of its picks get through; totals add up by quiz and pick", () => {
-  assert.deepEqual(plain(quiz.parseQuizCount({ code: "2026112601", event: "read", choice: "B" })), { code: "2026112601", event: "read", choice: "B" });
-  assert.deepEqual(plain(quiz.parseQuizCount({ code: "F2026120201", event: "line", choice: "月亮" })), { code: "F2026120201", event: "line", choice: "月亮" });
-  for (const bad of [null, "x", {}, { code: "20261126", event: "read", choice: "A" }, { code: "2026112601", event: "view", choice: "A" },
-    { code: "2026112601", event: "read", choice: "" }, { code: "2026112601", event: "read", choice: "x".repeat(41) }, { code: "2026112601", event: "read", choice: 1 }]) {
+test("統計: only a known quiz, a known kind of count, one of its picks and a random count id get through; totals add up", () => {
+  assert.deepEqual(plain(quiz.parseQuizCount({ code: "2026112601", event: "read", choice: "B", id: ID })), { code: "2026112601", event: "read", choice: "B", id: ID });
+  assert.deepEqual(plain(quiz.parseQuizCount({ code: "F2026120201", event: "line", choice: "月亮", id: ID2 })), { code: "F2026120201", event: "line", choice: "月亮", id: ID2 });
+  for (const bad of [null, "x", {}, { code: "20261126", event: "read", choice: "A", id: ID }, { code: "2026112601", event: "view", choice: "A", id: ID },
+    { code: "2026112601", event: "read", choice: "", id: ID }, { code: "2026112601", event: "read", choice: "x".repeat(41), id: ID },
+    { code: "2026112601", event: "read", choice: 1, id: ID }, { code: "2026112601", event: "read", choice: "A" },
+    { code: "2026112601", event: "read", choice: "A", id: "not-an-id" }, { code: "2026112601", event: "read", choice: "A", id: ID.toUpperCase() + "0" }]) {
     assert.equal(quiz.parseQuizCount(bad), null, JSON.stringify(bad));
   }
   assert.deepEqual(plain(quiz.quizChoiceKeys(abcQuiz(hoursAgo(1)))), ["A", "B", "C"]);
@@ -238,111 +242,188 @@ test("統計: only a known quiz, a known kind of count and one of its picks get 
     { code: "2026112601", event: "other", choice: "A", n: 9 },
     { code: "2026112601", event: "read", choice: "C", n: 0 },
   ]));
-  assert.equal(stats.since, "2026-11-26T02:00:00.000Z", "since the first count");
+  assert.equal(stats.since, "2026-11-26T02:00:00.000Z", "the earliest count kept");
   assert.deepEqual(stats.quizzes["2026112601"], { read: 9, line: 2, reads: { A: 5, B: 4 }, lines: { B: 2 } });
   assert.deepEqual(stats.quizzes.F2026120201, { read: 1, line: 0, reads: { 貓: 1 }, lines: {} });
   assert.deepEqual(plain(quiz.tallyQuizCounts([])), { since: null, quizzes: {} });
 });
 
-async function countRoute({ quiz: found = abcQuiz(hoursAgo(2)), userId = null, role = "member", clerk = true, fail = false } = {}) {
+async function countRoute({ quiz: found = abcQuiz(hoursAgo(2)), userId = null, role = "member", roleFails = false, clerk = true, result = "counted", fail = false } = {}) {
   const counted = [];
   const route = await loadTypescript("app/api/quizzes/count/route.ts", { mocks: {
     "@clerk/nextjs/server": { auth: async () => ({ userId }) },
     "@/lib/quiz-store": {
       getPublishedQuiz: async (code) => (found && found.code === code ? found : null),
-      countQuizEvent: async (count) => { if (fail) throw new Error("db down"); counted.push(plain(count)); },
+      countQuizEvent: async (count, sender) => { if (fail) throw new Error("db down"); counted.push({ ...plain(count), sender }); return result; },
     },
-    "@/lib/membership": { getSql: () => async () => [{ role }] },
+    "@/lib/membership": { getSql: () => async () => { if (roleFails) throw new Error("neon hiccup"); return [{ role }]; } },
     "@/lib/membership-access": { isClerkConfigured: () => clerk },
   } });
   return { route, counted };
 }
-const send = (body) => ({ text: async () => (typeof body === "string" ? body : JSON.stringify(body)) });
+const send = (body, headers = { "x-real-ip": "203.0.113.7" }) => ({ text: async () => (typeof body === "string" ? body : JSON.stringify(body)), headers: new Headers(headers) });
+const reading = (choice = "B", id = ID) => ({ code: "2026112601", event: "read", choice, id });
 
 test("統計 /api/quizzes/count: a visitor's reading or LINE tap adds one; nothing else does", async () => {
   let { route, counted } = await countRoute();
-  let response = await route.POST(send({ code: "2026112601", event: "read", choice: "B" }));
+  let response = await route.POST(send(reading()));
   assert.equal(response.status, 200);
   assert.deepEqual(plain(await response.json()), { counted: true });
   assert.equal(response.headers.get("Cache-Control"), "no-store");
-  assert.equal((await route.POST(send({ code: "2026112601", event: "line", choice: "B" }))).status, 200);
-  assert.deepEqual(counted, [{ code: "2026112601", event: "read", choice: "B" }, { code: "2026112601", event: "line", choice: "B" }]);
+  assert.equal((await route.POST(send({ ...reading(), event: "line", id: ID2 }, { "x-forwarded-for": "198.51.100.4, 10.0.0.1" }))).status, 200);
+  assert.deepEqual(counted, [
+    { code: "2026112601", event: "read", choice: "B", id: ID, sender: "203.0.113.7" },
+    { code: "2026112601", event: "line", choice: "B", id: ID2, sender: "198.51.100.4" },
+  ], "the sender's address goes to the store only to be hashed for the hourly allowance");
 
   for (const [body, status] of [
-    [{ code: "2026112601", event: "read", choice: "D" }, 400],
-    [{ code: "2026112602", event: "read", choice: "A" }, 404],
-    [{ code: "2026112601", event: "view", choice: "A" }, 400],
+    [reading("D"), 400],
+    [{ ...reading(), code: "2026112602" }, 404],
+    [{ ...reading(), event: "view" }, 400],
+    [{ code: "2026112601", event: "read", choice: "A" }, 400],
     ["not json", 400],
     ["", 400],
-    [JSON.stringify({ code: "2026112601", event: "read", choice: "A", pad: "x".repeat(700) }), 400],
+    [JSON.stringify({ ...reading(), pad: "x".repeat(700) }), 400],
   ]) {
     ({ route, counted } = await countRoute());
-    assert.equal((await route.POST(send(body))).status, status, String(body).slice(0, 60));
+    assert.equal((await route.POST(send(body))).status, status, String(JSON.stringify(body)).slice(0, 60));
     assert.equal(counted.length, 0, "turned away before the database");
   }
 
   // an older quiz: a visitor could not have opened it, someone signed in could
   ({ route, counted } = await countRoute({ quiz: abcQuiz(hoursAgo(30)) }));
-  assert.equal((await route.POST(send({ code: "2026112601", event: "read", choice: "A" }))).status, 403);
+  assert.equal((await route.POST(send(reading("A")))).status, 403);
   assert.equal(counted.length, 0);
   ({ route, counted } = await countRoute({ quiz: abcQuiz(hoursAgo(30)), userId: "user_1" }));
-  assert.equal((await route.POST(send({ code: "2026112601", event: "read", choice: "A" }))).status, 200);
+  assert.equal((await route.POST(send(reading("A")))).status, 200);
   assert.equal(counted.length, 1);
 
-  // Zola's own visits are not counted
+  // Zola's own visits are not counted, and if the database cannot say who is signed in, nothing is (review #63)
   ({ route, counted } = await countRoute({ userId: "user_zola", role: "admin" }));
-  response = await route.POST(send({ code: "2026112601", event: "read", choice: "C" }));
+  response = await route.POST(send(reading("C")));
   assert.deepEqual([response.status, plain(await response.json())], [200, { counted: false }]);
   assert.equal(counted.length, 0);
+  ({ route, counted } = await countRoute({ userId: "user_zola", roleFails: true }));
+  assert.equal((await route.POST(send(reading("C")))).status, 503, "fails closed; the page tries again later");
+  assert.equal(counted.length, 0);
+
+  // a retry of a count already made is answered as counted; over the hourly allowance is refused
+  ({ route } = await countRoute({ result: "already" }));
+  response = await route.POST(send(reading()));
+  assert.deepEqual([response.status, plain(await response.json())], [200, { counted: true }]);
+  ({ route } = await countRoute({ result: "limited" }));
+  assert.equal((await route.POST(send(reading()))).status, 429);
 
   // a 第一眼 quiz counts by the thing she saw first
   ({ route, counted } = await countRoute({ quiz: sightQuiz(hoursAgo(1)) }));
-  assert.equal((await route.POST(send({ code: "F2026120201", event: "read", choice: "鑰匙" }))).status, 200);
-  assert.equal((await route.POST(send({ code: "F2026120201", event: "read", choice: "A" }))).status, 400);
-  assert.deepEqual(counted, [{ code: "F2026120201", event: "read", choice: "鑰匙" }]);
+  assert.equal((await route.POST(send({ code: "F2026120201", event: "read", choice: "鑰匙", id: ID }))).status, 200);
+  assert.equal((await route.POST(send({ code: "F2026120201", event: "read", choice: "A", id: ID2 }))).status, 400);
+  assert.deepEqual(counted.map((c) => c.choice), ["鑰匙"]);
 
   ({ route } = await countRoute({ fail: true }));
-  assert.equal((await route.POST(send({ code: "2026112601", event: "read", choice: "A" }))).status, 503);
+  assert.equal((await route.POST(send(reading()))).status, 503);
 });
 
-test("統計 on the page: once per phone per quiz, only when she opens a reading or taps 私訊; never her identity", async () => {
+test("統計 in the database: one statement checks the id and the sender's hourly allowance; only a salted hash, kept briefly", async () => {
+  const store = await read("lib/quiz-store.ts");
+  assert.match(store, /CREATE TABLE IF NOT EXISTS quiz_counts \(\n\s*code text NOT NULL REFERENCES quizzes \(code\) ON DELETE CASCADE,/);
+  assert.match(store, /CREATE TABLE IF NOT EXISTS quiz_count_receipts \(\n\s*id uuid PRIMARY KEY,\n\s*code text NOT NULL REFERENCES quizzes \(code\) ON DELETE CASCADE,/);
+  assert.match(store, /export const QUIZ_COUNTS_PER_HOUR = 40;/);
+  const statement = store.split("export async function countQuizEvent")[1].split("export async function quizStats")[0];
+  assert.match(statement, /encode\(sha256\(convert_to\(\$\{sender\} \|\| salt, 'UTF8'\)\), 'hex'\)/, "the address is never stored as it is");
+  assert.match(statement, /SELECT \$\{id\}::uuid, \$\{code\} FROM slot WHERE slot\.n <= \$\{QUIZ_COUNTS_PER_HOUR\}\n\s*ON CONFLICT \(id\) DO NOTHING/);
+  assert.match(statement, /SELECT \$\{code\}, \$\{event\}, \$\{choice\}, 1 FROM receipt\n\s*ON CONFLICT \(code, event, choice\) DO UPDATE SET n = quiz_counts\.n \+ 1, updated_at = now\(\)/);
+  const forget = store.split("async function forgetOldCountKeys")[1].split("\n}\n")[0];
+  assert.match(forget, /DELETE FROM quiz_count_limits WHERE hour < now\(\) - interval '2 hours'/);
+  assert.match(forget, /DELETE FROM quiz_count_salts WHERE day < current_date - 1/);
+  assert.match(forget, /DELETE FROM quiz_count_receipts WHERE created_at < now\(\) - interval '30 days'/);
+  assert.equal((store.match(/await forgetOldCountKeys\(sql\);/g) ?? []).length, 2, "on start and whenever Zola looks");
+});
+
+/** A fresh page (the module's memory starts empty) with a phone's storage and a site that answers as told. */
+async function countPage(stored, answers, { blocked = false } = {}) {
   const counter = await loadTypescript("app/quizzes/[code]/quiz-count.ts");
-  const stored = new Map();
   const sent = [];
-  const deps = { storage: { getItem: (key) => stored.get(key) ?? null, setItem: (key, value) => stored.set(key, value) }, send: async (body) => sent.push(JSON.parse(body)) };
+  let ids = 0;
+  const deps = {
+    storage: blocked ? { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("blocked"); } }
+      : { getItem: (key) => stored.get(key) ?? null, setItem: (key, value) => stored.set(key, value) },
+    send: async (body) => { sent.push(JSON.parse(body)); const status = answers.shift() ?? 200; if (status === "offline") throw new Error("offline"); return { ok: status < 300, status }; },
+    newId: () => [ID, ID2][ids++] ?? "00000000-0000-4000-8000-000000000000",
+  };
+  return { counter, deps, sent };
+}
+const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+test("統計 on the page: once per phone per quiz, marked done only when the site answers; a lost count is sent again, once", async () => {
+  const stored = new Map();
+  let { counter, deps, sent } = await countPage(stored, [200, 200]);
   counter.countOnce("2026112601", "read", "A", deps);
-  counter.countOnce("2026112601", "read", "B", deps);
-  counter.countOnce("2026112601", "line", "A", deps);
-  assert.deepEqual(sent, [{ code: "2026112601", event: "read", choice: "A" }, { code: "2026112601", event: "line", choice: "A" }], "a second reading of the same quiz is not counted");
-  const again = await loadTypescript("app/quizzes/[code]/quiz-count.ts"); // a new visit, same phone
-  again.countOnce("2026112601", "read", "C", deps);
-  assert.equal(sent.length, 2, "the phone remembers");
-  const blocked = await loadTypescript("app/quizzes/[code]/quiz-count.ts");
-  blocked.countOnce("2026112602", "read", "A", { storage: { getItem() { throw new Error("blocked"); }, setItem() {} }, send: async (body) => sent.push(JSON.parse(body)) });
-  blocked.countOnce("2026112602", "read", "A", { storage: undefined, send: async (body) => sent.push(JSON.parse(body)) });
-  assert.equal(sent.length, 3, "blocked storage still counts this visit once");
-  blocked.countOnce("2026112603", "read", "A", { storage: undefined, send: async () => { throw new Error("offline"); } });
-  blocked.countOnce("2026112603", "line", "A", { storage: undefined, send: () => { throw new Error("no fetch here"); } });
-  assert.equal(sent.length, 3, "a failed send is quiet and never breaks the page");
+  counter.countOnce("2026112601", "read", "A", deps); // a double tap while the first is on its way
+  await settle();
+  counter.countOnce("2026112601", "read", "B", deps); // she reads another answer
+  counter.countOnce("2026112601", "line", "B", deps);
+  await settle();
+  assert.deepEqual(sent, [{ code: "2026112601", event: "read", choice: "A", id: ID }, { code: "2026112601", event: "line", choice: "B", id: ID2 }]);
+  ({ counter, deps, sent } = await countPage(stored, []));
+  counter.countOnce("2026112601", "read", "C", deps);
+  counter.retryWaiting("2026112601", deps);
+  await settle();
+  assert.equal(sent.length, 0, "the phone remembers what was counted");
+
+  // the site is busy, the phone is offline, the hour's allowance is used: the count waits, keeps its id and
+  // first pick, and goes again on the next visit; the site counts that id once
+  for (const failure of [503, "offline", 429]) {
+    const phone = new Map();
+    ({ counter, deps, sent } = await countPage(phone, [failure]));
+    counter.countOnce("2026112602", "read", "A", deps);
+    await settle();
+    assert.equal(JSON.parse(phone.get("zq-count:2026112602:read")).done, undefined, String(failure));
+    ({ counter, deps, sent } = await countPage(phone, [200]));
+    counter.retryWaiting("2026112602", deps);
+    await settle();
+    assert.deepEqual(sent, [{ code: "2026112602", event: "read", choice: "A", id: ID }], String(failure));
+    assert.equal(JSON.parse(phone.get("zq-count:2026112602:read")).done, true);
+    counter.countOnce("2026112602", "read", "B", deps);
+    await settle();
+    assert.equal(sent.length, 1);
+  }
+
+  // refused for good (an older quiz signed out, a bad pick): done, never sent again
+  const refused = new Map();
+  ({ counter, deps, sent } = await countPage(refused, [403]));
+  counter.countOnce("2026112603", "read", "A", deps);
+  await settle();
+  counter.retryWaiting("2026112603", deps);
+  await settle();
+  assert.equal(sent.length, 1);
+
+  // storage blocked (some private modes): this visit still counts once; a send that throws never breaks the page
+  ({ counter, deps, sent } = await countPage(new Map(), [200], { blocked: true }));
+  counter.countOnce("2026112604", "read", "A", deps);
+  await settle();
+  counter.countOnce("2026112604", "read", "A", deps);
+  await settle();
+  assert.equal(sent.length, 1);
+  counter.countOnce("2026112605", "line", "A", { ...deps, send: () => { throw new Error("no fetch here"); } });
 
   const abc = await read("app/quizzes/[code]/abc-quiz.tsx");
   assert.equal((abc.match(/countOnce\(/g) ?? []).length, 1);
   assert.match(abc, /setRevealed\(choice\);\n\s*countOnce\(quiz\.code, "read", choice\);/, "counted when she opens the reading, not for a shared ?choice= link");
+  assert.match(abc, /useEffect\(\(\) => retryWaiting\(quiz\.code\), \[quiz\.code\]\);/);
   const sight = await read("app/quizzes/[code]/first-sight-quiz.tsx");
   assert.equal((sight.match(/countOnce\(/g) ?? []).length, 1);
   assert.match(sight, /setPicked\(index\);\n\s*countOnce\(quiz\.code, "read", objects\[index\]\.name\);/);
+  assert.match(sight, /useEffect\(\(\) => retryWaiting\(quiz\.code\), \[quiz\.code\]\);/);
   const cta = await read("app/quizzes/[code]/quiz-line-cta.tsx");
   assert.match(cta, /const counted = \(\) => countOnce\(code, "line", choice\);/);
   assert.equal((cta.match(/onClick=\{counted\}/g) ?? []).length, 2, "both ways to LINE are counted");
   const helper = await read("app/quizzes/[code]/quiz-count.ts");
   assert.match(helper, /keepalive: true/);
-  assert.equal(/cookie|userId|email/i.test(helper.replace(/^\/\/.*$/gm, "")), false, "nothing about the visitor is sent");
+  assert.equal(/cookie|userId|email/i.test(helper.replace(/^\s*\/\/.*$/gm, "")), false, "nothing about the visitor is sent");
 
   const access = await loadTypescript("lib/membership-access.ts");
   assert.equal(access.isMembershipServiceRoute("/api/quizzes/count"), true, "visitors reach it; it checks everything itself");
-  const store = await read("lib/quiz-store.ts");
-  assert.match(store, /CREATE TABLE IF NOT EXISTS quiz_counts \(\n\s*code text NOT NULL REFERENCES quizzes \(code\) ON DELETE CASCADE,/);
-  assert.match(store, /ON CONFLICT \(code, event, choice\) DO UPDATE SET n = quiz_counts\.n \+ 1, updated_at = now\(\)/);
 });
 
 test("統計 in Zola's list: the admin list carries every quiz's numbers; each public quiz shows them", async () => {
@@ -360,5 +441,5 @@ test("統計 in Zola's list: the admin list carries every quiz's numbers; each p
   assert.match(page, /setStats\(data\.stats \?\? null\);/);
   assert.match(page, /\{live && stats \? <QuizNumbers quiz=\{quiz\} tally=\{stats\.quizzes\[quiz\.code\]\} \/> : null\}/);
   assert.match(page, /看完 <b>\{tally\.read\}<\/b> 人<\/span>・\{picks\}・<span className="qa-nowrap">按私訊 <b>\{tally\.line\}<\/b> 人/);
-  assert.match(page, /同一支手機看同一篇只算一次；妳自己登入時看的不算。/);
+  assert.match(page, /同一支手機看同一篇只算一次，換手機或清掉瀏覽紀錄會再算一次，所以是大約的人數；妳自己登入時看的不算。/);
 });

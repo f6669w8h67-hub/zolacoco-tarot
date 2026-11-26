@@ -302,7 +302,7 @@ export default function QuizAdminPage() {
       <h2 id="qa-list-title">已上傳的測驗</h2>
       {stats ? <div className="qa-stats-total" role="note">
         <p>看完解析 共 <b>{Object.values(stats.quizzes).reduce((sum, tally) => sum + tally.read, 0)}</b> 人次・按私訊 共 <b>{Object.values(stats.quizzes).reduce((sum, tally) => sum + tally.line, 0)}</b> 人次</p>
-        <small>{stats.since ? `從 ${formatDay(stats.since)} 開始記。` : "從這次更新上線後開始記。"}同一支手機看同一篇只算一次；妳自己登入時看的不算。</small>
+        <small>{stats.since ? `最早的紀錄從 ${formatDay(stats.since)} 開始。` : "從這次更新上線後開始記。"}同一支手機看同一篇只算一次，換手機或清掉瀏覽紀錄會再算一次，所以是大約的人數；妳自己登入時看的不算。</small>
       </div> : null}
       {loadError ? <p className="qa-notice error">{loadError}</p> : !quizzes ? <p className="qa-meta">讀取中…</p> : quizzes.length === 0 ? <p className="qa-meta">還沒有測驗。</p> : <ul>
         {quizzes.map((quiz) => {

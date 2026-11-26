@@ -377,10 +377,12 @@ export function parseQuizInput(body: unknown): { ok: true; quiz: Quiz } | { ok: 
 /* ---------- 心理測驗統計 (Zola 2026-11-26: 有多少人做完測驗，後台也要顯示) ---------- */
 
 // Only how many, never who: 看完解析 (she opened the reading of what she picked) and 按私訊 (she tapped
-// 「私訊 Zola」), each by what she picked. The page sends each once per phone per quiz.
+// 「私訊 Zola」), each by what she picked. The page sends each once per phone per quiz, with a random id for
+// that one count, so a retry after a lost answer is not counted twice (ChatGPT review on #63).
 export const QUIZ_COUNT_EVENTS = ["read", "line"] as const;
 export type QuizCountEvent = (typeof QUIZ_COUNT_EVENTS)[number];
-export type QuizCount = { code: string; event: QuizCountEvent; choice: string };
+export type QuizCount = { code: string; event: QuizCountEvent; choice: string; id: string };
+const COUNT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 /** What can be picked in this quiz: A／B／C, or the names of the four things in a 第一眼 painting. */
 export function quizChoiceKeys(quiz: Quiz): string[] {
@@ -390,11 +392,12 @@ export function quizChoiceKeys(quiz: Quiz): string[] {
 /** A count the page sends; anything else is turned away before the database is touched. */
 export function parseQuizCount(body: unknown): QuizCount | null {
   if (!body || typeof body !== "object") return null;
-  const { code, event, choice } = body as Record<string, unknown>;
+  const { code, event, choice, id } = body as Record<string, unknown>;
   if (typeof code !== "string" || !isQuizCode(code)) return null;
   if (!QUIZ_COUNT_EVENTS.includes(event as QuizCountEvent)) return null;
   if (typeof choice !== "string" || !choice || choice.length > 40) return null;
-  return { code, event: event as QuizCountEvent, choice };
+  if (typeof id !== "string" || !COUNT_ID.test(id)) return null;
+  return { code, event: event as QuizCountEvent, choice, id };
 }
 
 export type QuizTally = { read: number; line: number; reads: Record<string, number>; lines: Record<string, number> };

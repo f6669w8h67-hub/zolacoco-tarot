@@ -44,6 +44,26 @@ export async function ensureQuizSchema() {
         PRIMARY KEY (code, event, choice)
       )
     `;
+    // each count's random id, so a page that retries after a lost answer is counted once
+    await sql`
+      CREATE TABLE IF NOT EXISTS quiz_count_receipts (
+        id uuid PRIMARY KEY,
+        code text NOT NULL REFERENCES quizzes (code) ON DELETE CASCADE,
+        created_at timestamptz NOT NULL DEFAULT now()
+      )
+    `;
+    // anyone can send a count, so each sender (the address hashed with a salt kept for one day, the hash kept
+    // for two hours) gets QUIZ_COUNTS_PER_HOUR an hour: a script cannot run the numbers up
+    await sql`CREATE TABLE IF NOT EXISTS quiz_count_salts (day date PRIMARY KEY, salt text NOT NULL DEFAULT gen_random_uuid()::text)`;
+    await sql`
+      CREATE TABLE IF NOT EXISTS quiz_count_limits (
+        who text NOT NULL,
+        hour timestamptz NOT NULL,
+        n integer NOT NULL DEFAULT 0,
+        PRIMARY KEY (who, hour)
+      )
+    `;
+    await forgetOldCountKeys(sql);
   })().catch((error) => {
     schemaPromise = null;
     throw error;
@@ -129,21 +149,58 @@ export function quizImages(quiz: Quiz) {
   return urls.filter((url): url is string => typeof url === "string" && url.includes(".blob.vercel-storage.com/"));
 }
 
-/** 心理測驗統計: one more 看完解析 or 按私訊 for a quiz, by what was picked. Callers check the quiz first. */
-export async function countQuizEvent({ code, event, choice }: QuizCount) {
-  if (previewQuizzes()) return;
-  await ensureQuizSchema();
-  const sql = getSql();
-  await sql`
-    INSERT INTO quiz_counts (code, event, choice, n) VALUES (${code}, ${event}, ${choice}, 1)
-    ON CONFLICT (code, event, choice) DO UPDATE SET n = quiz_counts.n + 1, updated_at = now()`;
+/** Counts one sender may add in an hour: a visitor reading and messaging about every quiz of a week stays far below. */
+export const QUIZ_COUNTS_PER_HOUR = 40;
+
+/** The hourly allowance is only needed for the current hour; a day's salt only for that day. */
+async function forgetOldCountKeys(sql: ReturnType<typeof getSql>) {
+  await sql`DELETE FROM quiz_count_limits WHERE hour < now() - interval '2 hours'`;
+  await sql`DELETE FROM quiz_count_salts WHERE day < current_date - 1`;
+  await sql`DELETE FROM quiz_count_receipts WHERE created_at < now() - interval '30 days'`;
 }
 
-/** Zola's numbers: every quiz's totals, and since when they are kept. */
+export type QuizCountResult = "counted" | "already" | "limited";
+
+/** 心理測驗統計: one more 看完解析 or 按私訊 for a quiz, by what was picked — once per count id, and only within
+ *  the sender's hourly allowance. One statement, so two requests at once cannot both slip through. Callers
+ *  check the quiz first. `sender` is the request's address; only its salted hash is kept, for two hours. */
+export async function countQuizEvent({ code, event, choice, id }: QuizCount, sender: string): Promise<QuizCountResult> {
+  if (previewQuizzes()) return "counted";
+  await ensureQuizSchema();
+  const sql = getSql();
+  const rows = await sql`
+    WITH salt AS (
+      INSERT INTO quiz_count_salts (day) VALUES (current_date)
+      ON CONFLICT (day) DO UPDATE SET day = EXCLUDED.day
+      RETURNING salt
+    ), slot AS (
+      INSERT INTO quiz_count_limits (who, hour, n)
+      SELECT encode(sha256(convert_to(${sender} || salt, 'UTF8')), 'hex'), date_trunc('hour', now()), 1 FROM salt
+      ON CONFLICT (who, hour) DO UPDATE SET n = quiz_count_limits.n + 1
+      RETURNING n
+    ), receipt AS (
+      INSERT INTO quiz_count_receipts (id, code)
+      SELECT ${id}::uuid, ${code} FROM slot WHERE slot.n <= ${QUIZ_COUNTS_PER_HOUR}
+      ON CONFLICT (id) DO NOTHING
+      RETURNING id
+    ), counted AS (
+      INSERT INTO quiz_counts (code, event, choice, n)
+      SELECT ${code}, ${event}, ${choice}, 1 FROM receipt
+      ON CONFLICT (code, event, choice) DO UPDATE SET n = quiz_counts.n + 1, updated_at = now()
+      RETURNING 1
+    )
+    SELECT (SELECT n FROM slot) AS used, (SELECT count(*) FROM counted)::int AS counted` as { used: number; counted: number }[];
+  const row = rows[0];
+  if (row && Number(row.counted) > 0) return "counted";
+  return row && Number(row.used) > QUIZ_COUNTS_PER_HOUR ? "limited" : "already";
+}
+
+/** Zola's numbers: every quiz's totals, and the day of the earliest count still kept. */
 export async function quizStats(): Promise<QuizStats> {
   if (previewQuizzes()) return { since: null, quizzes: {} };
   await ensureQuizSchema();
   const sql = getSql();
+  await forgetOldCountKeys(sql);
   const rows = await sql`SELECT code, event, choice, n, created_at FROM quiz_counts` as { code: string; event: string; choice: string; n: number; created_at: string }[];
   return tallyQuizCounts(rows);
 }

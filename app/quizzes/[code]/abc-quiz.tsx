@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { type AbcQuiz, CHOICES, type Choice, QUIZ_COLORS, quizLineLink, quizMessage, siteWording } from "@/lib/quiz";
-import { countOnce } from "./quiz-count";
+import { countOnce, retryWaiting } from "./quiz-count";
 import QuizLineCta from "./quiz-line-cta";
 
 const CARD_NAMES = ["封面", "共鳴", "共鳴", "選一張牌", "留言"];
@@ -21,6 +21,9 @@ export default function AbcQuizView({ quiz }: { quiz: AbcQuiz }) {
   const [choice, setChoice] = useState<Choice | null>(null);
   const [revealed, setRevealed] = useState<Choice | null>(null);
   const tone = QUIZ_COLORS[quiz.tone];
+
+  // 心理測驗統計: a count that did not get through last time is sent again (same id, counted once)
+  useEffect(() => retryWaiting(quiz.code), [quiz.code]);
 
   // coming back to a shared result (?choice=B) opens it again
   useEffect(() => {
