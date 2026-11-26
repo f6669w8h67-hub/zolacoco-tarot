@@ -14,16 +14,11 @@ export const dynamic = "force-dynamic";
 const noStore = { "Cache-Control": "no-store" };
 const refuse = (status: number) => Response.json({ counted: false }, { status, headers: noStore });
 
-/** Who is looking: Zola herself, someone signed in, or a visitor. If someone is signed in but the database
- *  cannot say who, this throws: it might be Zola, so nothing is counted (the page tries again later). */
+/** Who is looking: Zola herself, someone signed in, or a visitor. If sign-in or the database cannot say who it
+ *  is, this throws: it might be Zola, so nothing is counted (503, and the page tries again later). */
 async function viewer(): Promise<"zola" | "signed-in" | "visitor"> {
   if (!isClerkConfigured(process.env)) return "visitor";
-  let userId: string | null = null;
-  try {
-    userId = (await auth()).userId;
-  } catch {
-    return "visitor";
-  }
+  const { userId } = await auth();
   if (!userId) return "visitor";
   const rows = await getSql()`SELECT role FROM members WHERE clerk_user_id = ${userId} LIMIT 1` as { role: string }[];
   return rows[0]?.role === "admin" ? "zola" : "signed-in";

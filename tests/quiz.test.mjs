@@ -248,10 +248,10 @@ test("統計: only a known quiz, a known kind of count, one of its picks and a r
   assert.deepEqual(plain(quiz.tallyQuizCounts([])), { since: null, quizzes: {} });
 });
 
-async function countRoute({ quiz: found = abcQuiz(hoursAgo(2)), userId = null, role = "member", roleFails = false, clerk = true, result = "counted", fail = false } = {}) {
+async function countRoute({ quiz: found = abcQuiz(hoursAgo(2)), userId = null, authFails = false, role = "member", roleFails = false, clerk = true, result = "counted", fail = false } = {}) {
   const counted = [];
   const route = await loadTypescript("app/api/quizzes/count/route.ts", { mocks: {
-    "@clerk/nextjs/server": { auth: async () => ({ userId }) },
+    "@clerk/nextjs/server": { auth: async () => { if (authFails) throw new Error("clerk hiccup"); return { userId }; } },
     "@/lib/quiz-store": {
       getPublishedQuiz: async (code) => (found && found.code === code ? found : null),
       countQuizEvent: async (count, sender) => { if (fail) throw new Error("db down"); counted.push({ ...plain(count), sender }); return result; },
@@ -306,6 +306,12 @@ test("統計 /api/quizzes/count: a visitor's reading or LINE tap adds one; nothi
   ({ route, counted } = await countRoute({ userId: "user_zola", roleFails: true }));
   assert.equal((await route.POST(send(reading("C")))).status, 503, "fails closed; the page tries again later");
   assert.equal(counted.length, 0);
+  ({ route, counted } = await countRoute({ authFails: true }));
+  assert.equal((await route.POST(send(reading("C")))).status, 503, "sign-in cannot say who it is: it might be Zola (review #63)");
+  assert.equal(counted.length, 0);
+  ({ route, counted } = await countRoute({ userId: null }));
+  assert.equal((await route.POST(send(reading("C")))).status, 200, "a visitor who is not signed in is still counted");
+  assert.equal(counted.length, 1);
 
   // a retry of a count already made is answered as counted; over the hourly allowance is refused
   ({ route } = await countRoute({ result: "already" }));
