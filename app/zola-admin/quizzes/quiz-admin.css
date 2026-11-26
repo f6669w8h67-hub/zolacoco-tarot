@@ -57,6 +57,15 @@
 .qa-list li img { width: 52px; height: 65px; object-fit: cover; border-radius: 8px; }
 .qa-list li b { display: block; font-weight: 600; font-size: 15px; }
 .qa-list li small { font-size: 12px; color: #756875; }
+/* 心理測驗統計: the totals under the list title, and one line per public quiz */
+.qa-stats-total { margin: 0 0 12px; padding: 12px 16px; border-radius: 16px; background: linear-gradient(180deg, #fffdfb, #fbf3f6); border: 1px solid #e7d6b8; }
+.qa-stats-total p { margin: 0; font-size: 15px; line-height: 1.6; color: #483f47; }
+.qa-stats-total b { font-size: 20px; font-weight: 600; color: #b34f70; font-variant-numeric: tabular-nums; }
+.qa-stats-total small { display: block; margin-top: 2px; font-size: 12px; line-height: 1.6; color: #756875; }
+.qa-list li .qa-stats { display: block; margin-top: 4px; font-size: 13px; line-height: 1.6; color: #5d4f5c; font-variant-numeric: tabular-nums; }
+.qa-list li .qa-nowrap { white-space: nowrap; }
+.qa-list li .qa-stats b { display: inline; font-size: 14px; color: #b34f70; }
+.qa-list li .qa-stats.empty { color: #9a8c98; }
 .qa-status { padding: 3px 10px; border-radius: 999px; font-size: 12px; background: #f3edf0; color: #756875; white-space: nowrap; }
 .qa-status.scheduled { background: #e8f0fa; color: #3d5a85; }
 .qa-status.live { background: #eef6f0; color: #35634c; }

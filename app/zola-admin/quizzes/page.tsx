@@ -3,12 +3,14 @@
 // 心理測驗 (Zola only): drop in a quiz and it goes up on the site at its IG time. A 第一眼測驗 HTML file carries
 // everything (painting, the four things, readings, hook). A 三選一 quiz needs its five downloaded cards
 // (_p1～_p5) and the A～D text, which the generator HTML also carries. Pictures are turned into WebP here,
-// in her browser, before they are sent; data from /api/quizzes/admin (requireAdmin).
+// in her browser, before they are sent; data from /api/quizzes/admin (requireAdmin). Each public quiz shows how
+// many opened its reading and tapped 「私訊 Zola」 (心理測驗統計, Zola 2026-11-26).
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   CHOICES, FIRST_SIGHT_THEMES, QUIZ_COLORS, RAINBOW, type Choice, type FirstSightTheme, type Quiz, type QuizColor,
-  ZOLA_LINE_URL, abcCodeInfo, firstSightCode, firstSightFromState, isPublished, isZolaLine, parseAbcCaption, readGeneratorHtml, toneColor,
+  type QuizStats, type QuizTally,
+  ZOLA_LINE_URL, abcCodeInfo, firstSightCode, firstSightFromState, isPublished, isZolaLine, parseAbcCaption, quizChoiceKeys, readGeneratorHtml, toneColor,
 } from "@/lib/quiz";
 import "./quiz-admin.css";
 
@@ -37,6 +39,17 @@ function fromTaipeiInput(value: string) {
 }
 function formatWhen(iso: string) {
   return new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso));
+}
+function formatDay(iso: string) {
+  return new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", month: "numeric", day: "numeric" }).format(new Date(iso));
+}
+
+/** 心理測驗統計 for one quiz: 看完 12 人・A 5／B 4／C 3・按私訊 2 人 (a 第一眼 quiz lists its four things). */
+function QuizNumbers({ quiz, tally }: { quiz: Quiz; tally: QuizTally | undefined }) {
+  if (!tally || tally.read + tally.line === 0) return <span className="qa-stats empty">還沒有人看完解析</span>;
+  // each group stays on one line (a name like 鑰匙 never splits); the groups wrap on a narrow phone
+  const picks = quizChoiceKeys(quiz).map((key, i) => <span key={key}>{i ? "／" : ""}<span className="qa-nowrap">{key} {tally.reads[key] ?? 0}</span></span>);
+  return <span className="qa-stats"><span className="qa-nowrap">看完 <b>{tally.read}</b> 人</span>・{picks}・<span className="qa-nowrap">按私訊 <b>{tally.line}</b> 人</span></span>;
 }
 
 /** A picture (File or data: URL) as WebP (JPEG where the browser cannot write WebP), at most `width` wide. */
@@ -80,6 +93,7 @@ function nextColor(quizzes: Quiz[], code: string): QuizColor {
 
 export default function QuizAdminPage() {
   const [quizzes, setQuizzes] = useState<Quiz[] | null>(null);
+  const [stats, setStats] = useState<QuizStats | null>(null);
   const [loadError, setLoadError] = useState("");
   const [draft, setDraft] = useState<Draft | null>(null);
   const [notice, setNotice] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
@@ -91,6 +105,7 @@ export default function QuizAdminPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error === "FORBIDDEN" ? "只有 Zola 可以使用這一頁。" : "測驗清單讀不到，請重新整理。");
       setQuizzes(data.quizzes);
+      setStats(data.stats ?? null);
       setLoadError("");
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : "測驗清單讀不到，請重新整理。");
@@ -285,6 +300,10 @@ export default function QuizAdminPage() {
 
     <section className="qa-list" aria-labelledby="qa-list-title">
       <h2 id="qa-list-title">已上傳的測驗</h2>
+      {stats ? <div className="qa-stats-total" role="note">
+        <p>看完解析 共 <b>{Object.values(stats.quizzes).reduce((sum, tally) => sum + tally.read, 0)}</b> 人次・按私訊 共 <b>{Object.values(stats.quizzes).reduce((sum, tally) => sum + tally.line, 0)}</b> 人次</p>
+        <small>{stats.since ? `最早的紀錄從 ${formatDay(stats.since)} 開始。` : "從這次更新上線後開始記。"}同一支手機看同一篇只算一次，換手機或清掉瀏覽紀錄會再算一次，所以是大約的人數；妳自己登入時看的不算。</small>
+      </div> : null}
       {loadError ? <p className="qa-notice error">{loadError}</p> : !quizzes ? <p className="qa-meta">讀取中…</p> : quizzes.length === 0 ? <p className="qa-meta">還沒有測驗。</p> : <ul>
         {quizzes.map((quiz) => {
           const live = isPublished(quiz);
@@ -292,7 +311,8 @@ export default function QuizAdminPage() {
           return <li key={quiz.code} style={{ "--c": toneColor(quiz.kind, quiz.tone) } as React.CSSProperties}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={cover} alt="" loading="lazy" />
-            <div><b>{quiz.title}</b><small>{quiz.code}・{quiz.kind === "abc" ? "三選一" : "第一眼"}・{formatWhen(quiz.publishAt)}</small></div>
+            <div><b>{quiz.title}</b><small>{quiz.code}・{quiz.kind === "abc" ? "三選一" : "第一眼"}・{formatWhen(quiz.publishAt)}</small>
+              {live && stats ? <QuizNumbers quiz={quiz} tally={stats.quizzes[quiz.code]} /> : null}</div>
             <span className={`qa-status ${live ? "live" : quiz.status}`}>{STATUS_TEXT[live ? "live" : quiz.status]}</span>
             <div className="qa-row-actions">
               {live ? <Link href={`/quizzes/${quiz.code}`}>查看</Link> : null}
