@@ -373,3 +373,46 @@ export function parseQuizInput(body: unknown): { ok: true; quiz: Quiz } | { ok: 
   }
   return { ok: false, error: "不認得這種測驗。" };
 }
+
+/* ---------- 心理測驗統計 (Zola 2026-11-26: 有多少人做完測驗，後台也要顯示) ---------- */
+
+// Only how many, never who: 看完解析 (she opened the reading of what she picked) and 按私訊 (she tapped
+// 「私訊 Zola」), each by what she picked. The page sends each once per phone per quiz.
+export const QUIZ_COUNT_EVENTS = ["read", "line"] as const;
+export type QuizCountEvent = (typeof QUIZ_COUNT_EVENTS)[number];
+export type QuizCount = { code: string; event: QuizCountEvent; choice: string };
+
+/** What can be picked in this quiz: A／B／C, or the names of the four things in a 第一眼 painting. */
+export function quizChoiceKeys(quiz: Quiz): string[] {
+  return quiz.kind === "abc" ? [...CHOICES] : quiz.data.objects.map((object) => object.name);
+}
+
+/** A count the page sends; anything else is turned away before the database is touched. */
+export function parseQuizCount(body: unknown): QuizCount | null {
+  if (!body || typeof body !== "object") return null;
+  const { code, event, choice } = body as Record<string, unknown>;
+  if (typeof code !== "string" || !isQuizCode(code)) return null;
+  if (!QUIZ_COUNT_EVENTS.includes(event as QuizCountEvent)) return null;
+  if (typeof choice !== "string" || !choice || choice.length > 40) return null;
+  return { code, event: event as QuizCountEvent, choice };
+}
+
+export type QuizTally = { read: number; line: number; reads: Record<string, number>; lines: Record<string, number> };
+export type QuizStats = { since: string | null; quizzes: Record<string, QuizTally> };
+
+/** The database's rows (one per quiz, kind of count and pick) as each quiz's totals. */
+export function tallyQuizCounts(rows: { code: string; event: string; choice: string; n: number | string; created_at?: string | Date }[]): QuizStats {
+  const quizzes: Record<string, QuizTally> = {};
+  let since: number | null = null;
+  for (const row of rows) {
+    const n = Number(row.n);
+    if (!Number.isFinite(n) || n <= 0 || (row.event !== "read" && row.event !== "line")) continue;
+    const tally = (quizzes[row.code] ??= { read: 0, line: 0, reads: {}, lines: {} });
+    tally[row.event] += n;
+    const byChoice = row.event === "read" ? tally.reads : tally.lines;
+    byChoice[row.choice] = (byChoice[row.choice] ?? 0) + n;
+    const at = row.created_at ? new Date(row.created_at).getTime() : NaN;
+    if (Number.isFinite(at) && (since === null || at < since)) since = at;
+  }
+  return { since: since === null ? null : new Date(since).toISOString(), quizzes };
+}

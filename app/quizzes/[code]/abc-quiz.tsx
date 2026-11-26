@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { type AbcQuiz, CHOICES, type Choice, QUIZ_COLORS, quizLineLink, quizMessage, siteWording } from "@/lib/quiz";
+import { countOnce } from "./quiz-count";
 import QuizLineCta from "./quiz-line-cta";
 
 const CARD_NAMES = ["封面", "共鳴", "共鳴", "選一張牌", "留言"];
@@ -52,6 +53,7 @@ export default function AbcQuizView({ quiz }: { quiz: AbcQuiz }) {
   function reveal() {
     if (!choice) return;
     setRevealed(choice);
+    countOnce(quiz.code, "read", choice);
     const url = new URL(location.href);
     url.searchParams.set("choice", choice);
     history.replaceState(null, "", url);
@@ -110,7 +112,7 @@ export default function AbcQuizView({ quiz }: { quiz: AbcQuiz }) {
           <div className="qz-others-body">{paragraphs(quiz.data.analysis[letter]).map((p, i) => <p key={i}>{p}</p>)}</div>
         </details>)}
       </div>
-      <QuizLineCta hook={quiz.data.hook} link={quizLineLink(quiz.data.lineUrl, message)} message={message} code={quiz.code} />
+      <QuizLineCta hook={quiz.data.hook} link={quizLineLink(quiz.data.lineUrl, message)} message={message} code={quiz.code} choice={revealed} />
     </section> : null}
 
     <p className="qz-back"><Link href="/quizzes">看更多心理測驗</Link></p>

@@ -2,7 +2,7 @@
 // public read below checks that on the server, so a quiz never shows early (Zola: 跟 IG 發文同一時間).
 import { readFileSync } from "node:fs";
 import { getSql } from "./membership";
-import { type Quiz, type QuizSummary, isPublished, quizSummary } from "./quiz";
+import { type Quiz, type QuizCount, type QuizStats, type QuizSummary, isPublished, quizSummary, tallyQuizCounts } from "./quiz";
 
 /** Local preview only (never in production): quizzes from a JSON file, so the pages can be looked at
  *  without the database. */
@@ -31,6 +31,19 @@ export async function ensureQuizSchema() {
       )
     `;
     await sql`CREATE INDEX IF NOT EXISTS quizzes_public_idx ON quizzes (publish_at DESC, code DESC) WHERE status = 'scheduled'`;
+    // 心理測驗統計 (Zola 2026-11-26): how many, by quiz, kind of count and pick; never who. A quiz's counts go
+    // with it when it is deleted.
+    await sql`
+      CREATE TABLE IF NOT EXISTS quiz_counts (
+        code text NOT NULL REFERENCES quizzes (code) ON DELETE CASCADE,
+        event text NOT NULL CHECK (event IN ('read', 'line')),
+        choice text NOT NULL CHECK (char_length(choice) BETWEEN 1 AND 40),
+        n integer NOT NULL DEFAULT 0 CHECK (n >= 0),
+        created_at timestamptz NOT NULL DEFAULT now(),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (code, event, choice)
+      )
+    `;
   })().catch((error) => {
     schemaPromise = null;
     throw error;
@@ -114,4 +127,23 @@ export function quizImages(quiz: Quiz) {
     ? [...quiz.data.cards, ...quiz.data.choices]
     : [quiz.data.painting, quiz.data.blur, quiz.data.paper];
   return urls.filter((url): url is string => typeof url === "string" && url.includes(".blob.vercel-storage.com/"));
+}
+
+/** 心理測驗統計: one more 看完解析 or 按私訊 for a quiz, by what was picked. Callers check the quiz first. */
+export async function countQuizEvent({ code, event, choice }: QuizCount) {
+  if (previewQuizzes()) return;
+  await ensureQuizSchema();
+  const sql = getSql();
+  await sql`
+    INSERT INTO quiz_counts (code, event, choice, n) VALUES (${code}, ${event}, ${choice}, 1)
+    ON CONFLICT (code, event, choice) DO UPDATE SET n = quiz_counts.n + 1, updated_at = now()`;
+}
+
+/** Zola's numbers: every quiz's totals, and since when they are kept. */
+export async function quizStats(): Promise<QuizStats> {
+  if (previewQuizzes()) return { since: null, quizzes: {} };
+  await ensureQuizSchema();
+  const sql = getSql();
+  const rows = await sql`SELECT code, event, choice, n, created_at FROM quiz_counts` as { code: string; event: string; choice: string; n: number; created_at: string }[];
+  return tallyQuizCounts(rows);
 }

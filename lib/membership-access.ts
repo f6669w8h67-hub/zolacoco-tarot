@@ -15,7 +15,8 @@ export function isMembershipServiceRoute(pathname: string) {
   // The daily reminder run is called by Vercel Cron and checks CRON_SECRET itself.
   // /api/trial (免費體驗) needs a signed-in account and decides itself who may use it.
   // /api/quizzes is the public 心理測驗 wall; its admin routes check Zola themselves (requireAdmin).
-  return ["/api/membership/me", "/api/membership/admin", "/api/cron/membership-reminders", "/api/trial", "/api/quizzes", "/api/quizzes/admin", "/api/quizzes/admin/image"].some(
+  // /api/quizzes/count (心理測驗統計) takes a visitor's count and checks the quiz and who she is itself.
+  return ["/api/membership/me", "/api/membership/admin", "/api/cron/membership-reminders", "/api/trial", "/api/quizzes", "/api/quizzes/count", "/api/quizzes/admin", "/api/quizzes/admin/image"].some(
     (path) => pathname === path || pathname === `${path}/`,
   );
 }

@@ -6,6 +6,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { FIRST_SIGHT_THEMES, type FirstSightObject, type FirstSightQuiz, lens, quizLineLink, quizMessage, siteWording } from "@/lib/quiz";
+import { countOnce } from "./quiz-count";
 import QuizLineCta from "./quiz-line-cta";
 
 /** "🌙 這代表\n本文\n\n📌 12 月的提醒\n本文" → titled parts; a part without a short first line stays plain. */
@@ -46,6 +47,7 @@ export default function FirstSightView({ quiz }: { quiz: FirstSightQuiz }) {
   function choose(index: number) {
     setStage("choose");
     setPicked(index);
+    countOnce(quiz.code, "read", objects[index].name);
     const url = new URL(location.href);
     url.searchParams.set("saw", objects[index].name);
     history.replaceState(null, "", url);
@@ -106,7 +108,7 @@ export default function FirstSightView({ quiz }: { quiz: FirstSightQuiz }) {
           <div className="qz-others-body">{sections(object.text).map((part, j) => <div className="fs-part" key={j}>{part.heading ? <h4>{part.heading}</h4> : null}<p>{part.body}</p></div>)}</div>
         </details>)}
       </div>
-      <QuizLineCta hook={quiz.data.hook} link={quizLineLink(quiz.data.lineUrl, message)} message={message} code={quiz.code} />
+      <QuizLineCta hook={quiz.data.hook} link={quizLineLink(quiz.data.lineUrl, message)} message={message} code={quiz.code} choice={chosen.name} />
     </section> : null}
 
     <p className="qz-back"><Link href="/quizzes">看更多心理測驗</Link></p>

@@ -1,7 +1,8 @@
-// 心理測驗 (Zola only): every quiz with drafts (GET), save one (POST), take one down for good (DELETE ?code=).
+// 心理測驗 (Zola only): every quiz with drafts and its numbers (GET), save one (POST), take one down for good
+// (DELETE ?code=).
 import { del } from "@vercel/blob";
 import { isQuizCode, parseQuizInput } from "@/lib/quiz";
-import { deleteQuiz, listAllQuizzes, quizImages, saveQuiz } from "@/lib/quiz-store";
+import { deleteQuiz, listAllQuizzes, quizImages, quizStats, saveQuiz } from "@/lib/quiz-store";
 import { membershipErrorResponse, requireAdmin } from "@/lib/membership";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +12,8 @@ const noStore = { "Cache-Control": "no-store" };
 export async function GET() {
   try {
     await requireAdmin();
-    return Response.json({ quizzes: await listAllQuizzes() }, { headers: noStore });
+    const [quizzes, stats] = await Promise.all([listAllQuizzes(), quizStats()]);
+    return Response.json({ quizzes, stats }, { headers: noStore });
   } catch (error) {
     return membershipErrorResponse(error);
   }
