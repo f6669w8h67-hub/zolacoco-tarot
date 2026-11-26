@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { runMemberAction, type MemberEmailOutcome } from "@/lib/member-client";
 import "../styles/pearl-page.css";
 import "./zola-admin-pearl.css";
+import QuizStatsCard from "./quiz-stats-card";
 
 type Member = {
   id: string;
@@ -147,6 +148,7 @@ export default function AdminClient() {
       <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}><small>全部會員</small><strong>{members.filter((item) => item.role === "member").length}</strong></button>
       {(["pending", "active", "suspended", "expired"] as const).map((status) => <button key={status} className={filter === status ? "active" : ""} onClick={() => setFilter(status)}><small>{statusLabels[status]}</small><strong>{counts[status] ?? 0}</strong></button>)}
     </section>
+    <QuizStatsCard />
     <section className="admin-tools" aria-label="搜尋與排序">
       <label>搜尋會員<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="姓名、Email、LINE ID 或備註" /></label>
       <label>排序<select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}><option value="status">依狀態（等待開通在前）</option><option value="expiry">依到期日（最近的在前）</option><option value="created">依申請時間（最新的在前）</option></select></label>

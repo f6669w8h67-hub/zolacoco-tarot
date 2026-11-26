@@ -434,14 +434,30 @@ test("統計 on the page: once per phone per quiz, marked done only when the sit
 
 test("統計 in Zola's list: the admin list carries every quiz's numbers; each public quiz shows them", async () => {
   const stats = { since: "2026-11-26T02:00:00.000Z", quizzes: { "2026112601": { read: 3, line: 1, reads: { A: 2, C: 1 }, lines: { A: 1 } } } };
+  let admin = true;
+  const latest = [{ code: "2026112601", kind: "abc", title: "t", tone: "purple", publishAt: hoursAgo(2), cover: "https://x.public.blob.vercel-storage.com/c.webp" }];
   const route = await loadTypescript("app/api/quizzes/admin/route.ts", { mocks: {
     "@vercel/blob": { del: async () => {} },
-    "@/lib/quiz-store": { listAllQuizzes: async () => [abcQuiz(hoursAgo(2))], quizStats: async () => stats, deleteQuiz: async () => null, quizImages: () => [], saveQuiz: async () => null },
-    "@/lib/membership": { requireAdmin: async () => ({ role: "admin" }), membershipErrorResponse: () => Response.json({ error: "FORBIDDEN" }, { status: 403 }) },
+    "@/lib/quiz-store": { listAllQuizzes: async () => [abcQuiz(hoursAgo(2))], quizStats: async () => stats, listPublishedQuizzes: async (before, limit) => ({ quizzes: latest.slice(0, limit), more: false }),
+      deleteQuiz: async () => null, quizImages: () => [], saveQuiz: async () => null },
+    "@/lib/membership": { requireAdmin: async () => { if (!admin) throw new Error("FORBIDDEN"); return { role: "admin" }; }, membershipErrorResponse: () => Response.json({ error: "FORBIDDEN" }, { status: 403 }) },
   } });
-  const body = plain(await (await route.GET()).json());
+  const body = plain(await (await route.GET({ url: "https://site.test/api/quizzes/admin" })).json());
   assert.equal(body.quizzes.length, 1);
   assert.deepEqual(body.stats, stats);
+  // the 會員後台 front page (Zola 2026-11-26: 會員後台也是): only the numbers and the latest three, without every quiz's texts
+  const light = plain(await (await route.GET({ url: "https://site.test/api/quizzes/admin?view=stats" })).json());
+  assert.deepEqual(light, { stats, latest });
+  admin = false;
+  assert.equal((await route.GET({ url: "https://site.test/api/quizzes/admin?view=stats" })).status, 403, "Zola only");
+
+  const card = await read("app/zola-admin/quiz-stats-card.tsx");
+  assert.match(card, /fetch\("\/api\/quizzes\/admin\?view=stats", \{ cache: "no-store" \}\)/);
+  assert.match(card, /看完解析 <strong>\{read\}<\/strong> 人次・按私訊 <strong>\{line\}<\/strong> 人次/);
+  assert.match(card, /<Link href="\/zola-admin\/quizzes">每一篇的數字 →<\/Link>/);
+  assert.match(card, /心理測驗的數字暫時讀不到/, "if the numbers cannot be read, the member list is not affected");
+  const front = await read("app/zola-admin/admin-client.tsx");
+  assert.match(front, /<\/section>\n\s*<QuizStatsCard \/>\n\s*<section className="admin-tools"/, "right under the member counts");
 
   const page = await read("app/zola-admin/quizzes/page.tsx");
   assert.match(page, /setStats\(data\.stats \?\? null\);/);
