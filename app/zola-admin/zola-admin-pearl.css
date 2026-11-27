@@ -47,6 +47,13 @@
 .zola-admin-page.pearl-page .member-admin-identity small.member-admin-trial { display: block; margin-top: 4px; color: var(--za-title); font-weight: 600; }
 .zola-admin-page.pearl-page .member-admin-expiry small, .zola-admin-page.pearl-page .member-admin-expiry span { color: var(--za-muted); font-size: 13px; }
 .zola-admin-page.pearl-page .member-admin-expiry strong { color: var(--za-ink); font: 700 20px "Noto Serif TC", serif; }
+/* 會員使用次數: under the dates, how often she uses the site */
+.zola-admin-page.pearl-page .member-admin-usage { margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--za-line); display: grid; gap: 2px; }
+.zola-admin-page.pearl-page .member-admin-usage span { color: var(--za-ink); font-size: 13px; line-height: 1.6; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.zola-admin-page.pearl-page .member-admin-usage b { color: var(--za-title); font-size: 15px; }
+.zola-admin-page.pearl-page .member-admin-usage-tools { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.zola-admin-page.pearl-page .member-admin-usage-tools span { padding: 1px 9px; border-radius: 999px; background: var(--za-blue); color: var(--za-muted); font-size: 12px; white-space: nowrap; }
+.zola-admin-page.pearl-page .member-admin-usage-none { color: var(--za-muted) !important; }
 .zola-admin-page.pearl-page .member-admin-actions label { color: var(--za-muted); font-size: 14px; }
 .zola-admin-page.pearl-page .member-admin-actions select { min-height: 44px; border: 1px solid var(--za-chip); border-radius: 12px; background: #ffffff; color: var(--za-ink); font: 15px "Noto Serif TC", serif; }
 .zola-admin-page.pearl-page .member-admin-actions button { min-height: 46px; border: 1px solid var(--za-title); border-radius: 999px; background: var(--za-title); color: #ffffff; font: 700 15px/1.3 "Noto Serif TC", serif; }

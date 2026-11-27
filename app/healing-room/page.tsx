@@ -7,6 +7,7 @@ import { TarotCardBack, TarotCardFace } from "../tarot-card";
 import { createAdvancer } from "@/lib/delayed-advance";
 import "../styles/pearl-page.css";
 import "./healing-room.css";
+import { recordUse } from "../member-usage-client";
 
 type Room = "lobby" | "emotion" | "relationship" | "sleep" | "strength" | "records";
 type RecordItem = { id:string; date:string; type:string; emotion:string; card:string; sentence:string; action:string };
@@ -70,6 +71,8 @@ export default function HealingRoom(){
  // Answer → next question after 220ms, cancelled by any step/room change, restart or leaving (lib/delayed-advance.ts).
  const [advancer]=useState(()=>createAdvancer({apply:next=>setStep(next)}));
  useEffect(()=>{advancer.sync(room,step)},[room,step,advancer]);
+ // 會員使用次數: a visit to the room is a use
+ useEffect(()=>recordUse("healing"),[]);
  useEffect(()=>()=>advancer.cancel(),[advancer]); const [records,setRecords]=useState<RecordItem[]>([]);
  const [emotion,setEmotion]=useState(""); const [card,setCard]=useState<TarotCard|null>(null); const [sentence,setSentence]=useState("");
  const [breath,setBreath]=useState({phase:"準備好了嗎？",count:0,paused:false,finished:false});

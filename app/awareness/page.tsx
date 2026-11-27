@@ -20,6 +20,7 @@ import {
 import { useIdentityKey } from "../auth-identity";
 import { AWARENESS_BACK, breakLines, cardArt, drawCard, phrases, themeLabel, type AwarenessCard } from "./awareness-data";
 import { renderShareCard } from "./share-card";
+import { recordUse } from "../member-usage-client";
 
 // Zolacoco 覺察卡 (Zola, 2026-11-14): its own public page. Shuffle, then one card turns over.
 // Everyone can draw, read, answer in their head and save the share image; members with access
@@ -140,6 +141,7 @@ export default function AwarenessPage() {
       setPhase("revealed");
       setFlipped(true);
       setAnnounce(`妳抽到了「${card.name}」：${card.line}`);
+      recordUse("awareness");
       if (reducedMotion()) keepDeckInView();
       else later(keepDeckInView, GROW_MS);
     };

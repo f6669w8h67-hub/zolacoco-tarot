@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { runMemberAction, type MemberEmailOutcome } from "@/lib/member-client";
+import { memberUsage } from "@/lib/member-usage";
 import "../styles/pearl-page.css";
 import "./zola-admin-pearl.css";
 import QuizStatsCard from "./quiz-stats-card";
@@ -29,6 +30,12 @@ type Member = {
   last_email_kind?: "activated" | "extended" | "expiry_reminder" | null;
   last_email_status?: "sending" | "sent" | "failed" | null;
   last_email_at?: string | null;
+  /** 會員使用次數 (lib/member-usage.ts): uses in all, in the last 30 days and on how many days, the latest, by tool. */
+  usage_total?: number;
+  usage_30d?: number;
+  usage_days_30d?: number;
+  usage_last_at?: string | null;
+  usage_by_feature?: Record<string, number> | null;
 };
 
 const ADMIN_NOTE_LIMIT = 500;
@@ -41,7 +48,7 @@ function emailStatusLabel(status: keyof typeof emailStatuses, at: string | null 
   if (status === "sending" && at && Date.now() - new Date(at).getTime() > EMAIL_UNKNOWN_AFTER_MS) return "狀態不明，請用 LINE 確認";
   return emailStatuses[status];
 }
-type SortKey = "status" | "expiry" | "created";
+type SortKey = "status" | "expiry" | "created" | "recent" | "usage";
 
 /** Search over name, Email, LINE ID and Zola's note; case and spaces do not matter. */
 function matches(member: Member, query: string) {
@@ -53,6 +60,9 @@ function matches(member: Member, query: string) {
 function sortMembers(list: Member[], key: SortKey) {
   if (key === "status") return list;
   const time = (value: string | null | undefined, missing: number) => (value ? new Date(value).getTime() : missing);
+  // 會員使用次數: the most recent use first, or the most used in the last 30 days first (then in all)
+  if (key === "recent") return [...list].sort((a, b) => time(b.usage_last_at, 0) - time(a.usage_last_at, 0));
+  if (key === "usage") return [...list].sort((a, b) => (b.usage_30d ?? 0) - (a.usage_30d ?? 0) || (b.usage_total ?? 0) - (a.usage_total ?? 0));
   return [...list].sort((a, b) => key === "expiry"
     ? time(a.access_expires_at, Number.POSITIVE_INFINITY) - time(b.access_expires_at, Number.POSITIVE_INFINITY)
     : time(b.created_at, 0) - time(a.created_at, 0));
@@ -66,6 +76,24 @@ function emailLine(outcome: MemberEmailOutcome | undefined) {
 }
 
 const statusLabels = { pending: "等待開通", active: "使用中", suspended: "已暫停", expired: "已到期" };
+
+function formatUse(iso: string) {
+  return new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false }).format(new Date(iso));
+}
+
+/** 會員使用次數: the latest use, the last 30 days (uses and days), all uses, and the three most used tools. */
+function MemberUsageBlock({ member }: { member: Member }) {
+  const usage = memberUsage(member);
+  return <div className="member-admin-usage">
+    <small>使用紀錄</small>
+    {usage.total === 0 || !usage.lastAt ? <span className="member-admin-usage-none">還沒有使用紀錄</span> : <>
+      <span>最近 {formatUse(usage.lastAt)}</span>
+      <span>近 30 天 <b>{usage.last30}</b> 次（{usage.days30} 天）</span>
+      <span>總共 <b>{usage.total}</b> 次</span>
+      <span className="member-admin-usage-tools">{usage.byFeature.slice(0, 3).map((tool) => <span key={tool.id}>{tool.label} {tool.n}</span>)}</span>
+    </>}
+  </div>;
+}
 
 export default function AdminClient() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -151,7 +179,7 @@ export default function AdminClient() {
     <QuizStatsCard />
     <section className="admin-tools" aria-label="搜尋與排序">
       <label>搜尋會員<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="姓名、Email、LINE ID 或備註" /></label>
-      <label>排序<select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}><option value="status">依狀態（等待開通在前）</option><option value="expiry">依到期日（最近的在前）</option><option value="created">依申請時間（最新的在前）</option></select></label>
+      <label>排序<select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}><option value="status">依狀態（等待開通在前）</option><option value="expiry">依到期日（最近的在前）</option><option value="created">依申請時間（最新的在前）</option><option value="recent">依最近使用（最近的在前）</option><option value="usage">依使用次數（近 30 天多的在前）</option></select></label>
     </section>
     <p className="admin-notice" aria-live="polite">{notice}</p>
     <section className="member-admin-list">
@@ -166,7 +194,7 @@ export default function AdminClient() {
               </div>
             : <div className="member-admin-note"><p>{member.admin_note ? member.admin_note : <span>尚未加備註</span>}</p><button type="button" className="secondary" onClick={() => setNoteDrafts((drafts) => ({ ...drafts, [member.id]: member.admin_note ?? "" }))}>{member.admin_note ? "編輯備註" : "加備註"}</button></div>}
         </div>
-        <div className="member-admin-expiry"><small>目前期限</small><strong>{member.access_expires_at ? new Date(member.access_expires_at).toLocaleDateString("zh-TW") : "尚未開通"}</strong><span>{new Date(member.created_at).toLocaleDateString("zh-TW")} 申請</span>{member.last_email_kind && member.last_email_status ? <span className="member-admin-email">{emailKinds[member.last_email_kind]}{emailStatusLabel(member.last_email_status, member.last_email_at)}{member.last_email_at ? `（${new Date(member.last_email_at).toLocaleDateString("zh-TW")}）` : ""}</span> : null}</div>
+        <div className="member-admin-expiry"><small>目前期限</small><strong>{member.access_expires_at ? new Date(member.access_expires_at).toLocaleDateString("zh-TW") : "尚未開通"}</strong><span>{new Date(member.created_at).toLocaleDateString("zh-TW")} 申請</span>{member.last_email_kind && member.last_email_status ? <span className="member-admin-email">{emailKinds[member.last_email_kind]}{emailStatusLabel(member.last_email_status, member.last_email_at)}{member.last_email_at ? `（${new Date(member.last_email_at).toLocaleDateString("zh-TW")}）` : ""}</span> : null}<MemberUsageBlock member={member} /></div>
         <div className="member-admin-actions">
           <label>增加月份<select value={months[member.id] ?? 1} onChange={(event) => setMonths((value) => ({ ...value, [member.id]: Number(event.target.value) }))}>{Array.from({ length: 12 }, (_, index) => index + 1).map((value) => <option value={value} key={value}>{value} 個月</option>)}</select></label>
           <button disabled={Boolean(busy)} onClick={() => operate(member, "activate")}>{member.effective_status === "active" ? "增加月份" : "立即開通"}</button>

@@ -208,7 +208,8 @@ test("each feature spends one use when it completes, and cannot start once none 
 
   const pendulum = await read("app/pendulum/page.tsx");
   assert.match(pendulum, /if\(moving\|\|calibrating\|\|!trial\.canPlay\)return;/);
-  assert.match(pendulum, /navigator\.vibrate\?\.\(18\);if\(trial\.visitor\)trial\.spend\("pendulum"\);revealResult\(\)/);
+  // 會員使用次數 (tests/member-usage.test.mjs) is recorded at the same moment
+  assert.match(pendulum, /navigator\.vibrate\?\.\(18\);if\(trial\.visitor\)trial\.spend\("pendulum"\);recordUse\("pendulum"\);revealResult\(\)/);
   assert.match(pendulum, /:trial\.canPlay\?<button type="button" className="pv-start"[^]*?:<TrialLimitCard\/>\}/);
   // Saving is a member benefit on all three pages: visitors get the 申請 link and no record list.
   assert.match(pendulum, /\{trial\.visitor\?<a className="pv-save" href=\{membershipApplyUrl\}[^>]*>加入會員就能保存紀錄<\/a>:<button type="button" className="pv-save"/);
