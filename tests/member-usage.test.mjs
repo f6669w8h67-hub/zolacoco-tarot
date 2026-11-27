@@ -49,12 +49,13 @@ test("/api/usage: a signed-in member's use is counted on her account; Zola, visi
   assert.deepEqual([response.status, plain(await response.json())], [200, { counted: true }]);
   assert.equal(response.headers.get("Cache-Control"), "no-store");
   const upsert = queries[1];
-  assert.match(upsert.text, /INSERT INTO member_usage \(member_id, feature, day, n, last_at\)\s+VALUES \(\?, \?, \(now\(\) AT TIME ZONE 'Asia\/Taipei'\)::date, 1, now\(\)\)/, "counted on the Taipei day");
-  assert.match(upsert.text, /ON CONFLICT \(member_id, feature, day\) DO UPDATE SET n = member_usage\.n \+ 1, last_at = now\(\)\s+WHERE member_usage\.last_at < now\(\) - interval '10 minutes'/, "the same tool within 10 minutes is one use");
-  assert.deepEqual(upsert.values, ["m1", "pendulum"], "only the account and the tool");
+  // the window is checked against the tool's latest counted use on any day, then the Taipei day is counted
+  assert.match(upsert.text, /WITH gate AS \(\s+INSERT INTO member_usage_last \(member_id, feature, last_at\) VALUES \(\?, \?, now\(\)\)\s+ON CONFLICT \(member_id, feature\) DO UPDATE SET last_at = now\(\)\s+WHERE member_usage_last\.last_at < now\(\) - interval '10 minutes'\s+RETURNING 1\s+\)/, "the same tool within 10 minutes is one use, across midnight too");
+  assert.match(upsert.text, /INSERT INTO member_usage \(member_id, feature, day, n, last_at\)\s+SELECT \?, \?, \(now\(\) AT TIME ZONE 'Asia\/Taipei'\)::date, 1, now\(\) FROM gate\s+ON CONFLICT \(member_id, feature, day\) DO UPDATE SET n = member_usage\.n \+ 1, last_at = now\(\)/, "counted on the Taipei day");
+  assert.deepEqual(upsert.values, ["m1", "pendulum", "m1", "pendulum"], "only the account and the tool");
 
   ({ route } = await usageRoute({ counted: false }));
-  assert.deepEqual(plain(await (await route.POST(send({ feature: "tarot" }))).json()), { counted: false }, "a second draw within 10 minutes");
+  assert.deepEqual(plain(await (await route.POST(send({ feature: "tarot" }))).json()), { counted: false, reason: "recent" }, "a second draw within 10 minutes");
 
   for (const body of [{ feature: "admin" }, {}, "not json", "", JSON.stringify({ feature: "tarot", pad: "x".repeat(300) })]) {
     ({ route, queries } = await usageRoute());
@@ -66,10 +67,10 @@ test("/api/usage: a signed-in member's use is counted on her account; Zola, visi
   assert.deepEqual(plain(await (await route.POST(send({ feature: "quizzes" }))).json()), { counted: false, reason: "signed-out" });
   assert.equal(queries.length, 0);
   ({ route, queries } = await usageRoute({ member: { id: "z", role: "admin" } }));
-  assert.deepEqual(plain(await (await route.POST(send({ feature: "tarot" }))).json()), { counted: false }, "Zola's own use is not counted");
+  assert.deepEqual(plain(await (await route.POST(send({ feature: "tarot" }))).json()), { counted: false, reason: "not-member" }, "Zola's own use is not counted");
   assert.equal(queries.length, 1, "no write for Zola");
   ({ route, queries } = await usageRoute({ member: null }));
-  assert.deepEqual(plain(await (await route.POST(send({ feature: "tarot" }))).json()), { counted: false }, "an account not yet in the member list");
+  assert.deepEqual(plain(await (await route.POST(send({ feature: "tarot" }))).json()), { counted: false, reason: "not-member" }, "an account not yet in the member list");
   ({ route, queries } = await usageRoute({ authFails: true }));
   assert.equal((await route.POST(send({ feature: "tarot" }))).status, 503, "sign-in cannot say who: nothing counted");
   assert.equal(queries.length, 0);
@@ -83,6 +84,7 @@ test("/api/usage: a signed-in member's use is counted on her account; Zola, visi
   const schema = await read("lib/membership.ts");
   assert.match(schema, /CREATE TABLE IF NOT EXISTS member_usage \(\n\s*member_id uuid NOT NULL REFERENCES members\(id\) ON DELETE CASCADE,\n\s*feature text NOT NULL CHECK \(char_length\(feature\) BETWEEN 1 AND 24\),\n\s*day date NOT NULL,/);
   assert.match(schema, /PRIMARY KEY \(member_id, feature, day\)/);
+  assert.match(schema, /CREATE TABLE IF NOT EXISTS member_usage_last \(\n\s*member_id uuid NOT NULL REFERENCES members\(id\) ON DELETE CASCADE,[^]*?PRIMARY KEY \(member_id, feature\)/);
 });
 
 async function usagePage(answers, stored = new Map(), start = 1_000_000) {
@@ -98,48 +100,74 @@ async function usagePage(answers, stored = new Map(), start = 1_000_000) {
 }
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-test("on the pages: the same tool is sent at most once per 10 minutes; a failed send is tried on the next use", async () => {
+test("on the pages: the same tool is sent at most once per 10 minutes per account; a failed send is tried on the next use", async () => {
   let page = await usagePage([]);
-  page.client.recordUse("tarot", page.deps);
-  page.client.recordUse("tarot", page.deps); // the same moment
+  const use = (feature, who = "user_A") => page.client.recordUse(feature, page.deps, who);
+  use("tarot");
+  use("tarot"); // the same moment
   await settle();
-  page.client.recordUse("tarot", page.deps); // a second draw a little later
-  page.client.recordUse("pendulum", page.deps);
+  use("tarot"); // a second draw a little later
+  use("pendulum");
   await settle();
   page.later(11);
-  page.client.recordUse("tarot", page.deps);
+  use("tarot");
   await settle();
   assert.deepEqual(page.sent, [{ feature: "tarot" }, { feature: "pendulum" }, { feature: "tarot" }]);
 
   page = await usagePage([{ status: 503 }, "offline", { status: 200, body: { counted: true } }]);
-  page.client.recordUse("awareness", page.deps);
-  await settle();
-  page.client.recordUse("awareness", page.deps);
-  await settle();
-  page.client.recordUse("awareness", page.deps);
-  await settle();
-  page.client.recordUse("awareness", page.deps);
-  await settle();
+  for (let i = 0; i < 4; i++) { page.client.recordUse("awareness", page.deps, "user_A"); await settle(); }
   assert.equal(page.sent.length, 3, "busy and offline are not remembered as sent; once through, the window holds");
 
-  // signed out: the site says so once, and this page load stops asking
-  page = await usagePage([{ status: 200, body: { counted: false, reason: "signed-out" } }]);
-  page.client.recordUse("quizzes", page.deps);
+  // two accounts on one phone (review #65): A's use never holds back B's
+  const shared = new Map();
+  page = await usagePage([], shared);
+  page.client.recordUse("tarot", page.deps, "user_A");
   await settle();
-  page.client.recordUse("tarot", page.deps);
+  page.client.recordUse("tarot", page.deps, "user_B");
+  await settle();
+  page.client.recordUse("tarot", page.deps, "user_A");
+  await settle();
+  assert.equal(page.sent.length, 2, "A once, B once");
+  assert.equal([...shared.keys()].some((key) => key.includes("user_")), false, "the account's id is not kept on the phone");
+
+  // signed out: nothing is sent; signing in on the same page counts from then on (review #65)
+  page = await usagePage([]);
+  page.client.recordUse("quizzes", page.deps, "signed-out");
+  page.client.recordUse("quizzes", page.deps, "unknown");
+  await settle();
+  assert.equal(page.sent.length, 0);
+  page.client.recordUse("quizzes", page.deps, "user_C");
   await settle();
   assert.equal(page.sent.length, 1);
 
+  // sign-in still loading: nobody's memory applies, the site decides; nothing is remembered for anyone
+  const loading = new Map([["zu:any:tarot", String(1_000_000)]]);
+  page = await usagePage([], loading);
+  page.client.recordUse("tarot", page.deps, null);
+  await settle();
+  assert.equal(page.sent.length, 1);
+  assert.equal(loading.size, 1);
+
+  // the site said the account is not a member (yet), or Zola: not remembered, so a later use is sent again
+  page = await usagePage([{ status: 200, body: { counted: false, reason: "not-member" } }]);
+  page.client.recordUse("tarot", page.deps, "user_Z");
+  await settle();
+  page.client.recordUse("tarot", page.deps, "user_Z");
+  await settle();
+  assert.equal(page.sent.length, 2);
+
   // storage blocked, or a send that throws: never in the way of the page
   page = await usagePage([]);
-  page.client.recordUse("healing", { ...page.deps, storage: { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("blocked"); } } });
-  page.client.recordUse("journal", { ...page.deps, send: () => { throw new Error("no fetch here"); } });
+  page.client.recordUse("healing", { ...page.deps, storage: { getItem() { throw new Error("blocked"); }, setItem() { throw new Error("blocked"); } } }, "user_A");
+  page.client.recordUse("journal", { ...page.deps, send: () => { throw new Error("no fetch here"); } }, "user_A");
   await settle();
   assert.deepEqual(page.sent, [{ feature: "healing" }]);
 
   const helper = await read("app/member-usage-client.ts");
   assert.match(helper, /keepalive: true/);
-  assert.equal(/question|answer\b|card\b|email|userId/i.test(helper.replace(/^\s*\/\/.*$/gm, "").replace(/type Answer[^;]+;/, "").replace(/Promise<Answer>/g, "")), false, "only the tool is sent");
+  assert.match(helper, /send\(JSON\.stringify\(\{ feature \}\)\)/, "only the tool is sent, never the account");
+  const identity = await read("app/auth-identity.tsx");
+  assert.match(identity, /useEffect\(\(\) => setUsageIdentity\(isLoaded \? userId \?\? "signed-out" : null\), \[isLoaded, userId\]\);/, "follows sign-in, sign-out and account switches");
 });
 
 test("every tool counts at the moment it has done its thing", async () => {
@@ -168,6 +196,7 @@ test("the 會員後台 shows each member's use, and can sort by the latest use o
   assert.match(admin, /<MemberUsageBlock member=\{member\} \/><\/div>/);
   assert.match(admin, /<span>近 30 天 <b>\{usage\.last30\}<\/b> 次（\{usage\.days30\} 天）<\/span>\n\s*<span>總共 <b>\{usage\.total\}<\/b> 次<\/span>/);
   assert.match(admin, /還沒有使用紀錄/);
+  assert.match(admin, /使用紀錄：同一個功能隔 10 分鐘以上才算下一次，是大約的使用頻率；從這次更新上線後開始記，妳自己用的不算。/);
   assert.match(admin, /<option value="recent">依最近使用（最近的在前）<\/option><option value="usage">依使用次數（近 30 天多的在前）<\/option>/);
   assert.match(admin, /if \(key === "recent"\) return \[\.\.\.list\]\.sort\(\(a, b\) => time\(b\.usage_last_at, 0\) - time\(a\.usage_last_at, 0\)\);/);
 });

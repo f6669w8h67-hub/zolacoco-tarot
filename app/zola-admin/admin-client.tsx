@@ -181,6 +181,7 @@ export default function AdminClient() {
       <label>搜尋會員<input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="姓名、Email、LINE ID 或備註" /></label>
       <label>排序<select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}><option value="status">依狀態（等待開通在前）</option><option value="expiry">依到期日（最近的在前）</option><option value="created">依申請時間（最新的在前）</option><option value="recent">依最近使用（最近的在前）</option><option value="usage">依使用次數（近 30 天多的在前）</option></select></label>
     </section>
+    <p className="admin-usage-note">使用紀錄：同一個功能隔 10 分鐘以上才算下一次，是大約的使用頻率；從這次更新上線後開始記，妳自己用的不算。</p>
     <p className="admin-notice" aria-live="polite">{notice}</p>
     <section className="member-admin-list">
       {visible.map((member) => <article key={member.id}>

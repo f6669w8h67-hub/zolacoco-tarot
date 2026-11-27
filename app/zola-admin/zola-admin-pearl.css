@@ -31,6 +31,7 @@
 .zola-admin-page.pearl-page .admin-quiz-nums { display: grid; justify-items: end; color: var(--za-muted); font-size: 13px; line-height: 1.5; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .zola-admin-page.pearl-page .admin-quiz-nums b { color: var(--za-title); font-size: 15px; }
 .zola-admin-page.pearl-page .admin-quiz-note { margin: 8px 0 0; color: var(--za-muted); font-size: 12.5px; line-height: 1.7; }
+.zola-admin-page.pearl-page .admin-usage-note { max-width: 1040px; margin: 8px auto 0; color: var(--za-muted); font-size: 13px; line-height: 1.7; }
 .zola-admin-page.pearl-page .admin-notice { max-width: 1040px; color: var(--za-title); font-weight: 600; }
 .zola-admin-page.pearl-page .member-admin-list { max-width: 1040px; gap: 10px; }
 .zola-admin-page.pearl-page .member-admin-list article { padding: 18px 16px; border: 1px solid var(--za-line); border-radius: 20px; background: #ffffff; box-shadow: 0 8px 22px rgba(38, 52, 73, .05); }

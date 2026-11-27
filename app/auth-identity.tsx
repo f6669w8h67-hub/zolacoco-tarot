@@ -1,7 +1,8 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
+import { setUsageIdentity } from "./member-usage-client";
 
 // Who is signed in, for public pages that show private things to members (覺察卡).
 // Inside ClerkProvider it follows sign-in, sign-out and account switches; without Clerk
@@ -12,6 +13,8 @@ const IdentityContext = createContext<Identity>({ known: false, loaded: true, us
 
 export function ClerkIdentityProvider({ children }: { children: ReactNode }) {
   const { isLoaded, userId } = useAuth();
+  // 會員使用次數: the usage counter keeps its memory per account and sends nothing for visitors
+  useEffect(() => setUsageIdentity(isLoaded ? userId ?? "signed-out" : null), [isLoaded, userId]);
   return <IdentityContext.Provider value={{ known: true, loaded: isLoaded, userId: userId ?? null }}>{children}</IdentityContext.Provider>;
 }
 

@@ -135,6 +135,15 @@ export async function ensureMembershipSchema() {
         PRIMARY KEY (member_id, feature, day)
       )
     `;
+    // the latest counted use of each tool, whatever the day: the 10-minute window holds across midnight too
+    await sql`
+      CREATE TABLE IF NOT EXISTS member_usage_last (
+        member_id uuid NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+        feature text NOT NULL CHECK (char_length(feature) BETWEEN 1 AND 24),
+        last_at timestamptz NOT NULL,
+        PRIMARY KEY (member_id, feature)
+      )
+    `;
   })().catch((error) => {
     membershipSchemaPromise = null;
     throw error;
