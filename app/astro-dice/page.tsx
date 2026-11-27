@@ -5,6 +5,7 @@ import Link from "next/link";
 import "../styles/pearl-page.css";
 import "./astro-dice-v1.css";
 import { TrialLimitCard, TrialMeter, membershipApplyUrl, useTrial } from "../visitor-trial";
+import { recordUse } from "../member-usage-client";
 
 type AstroItem = { key:string; symbol:string; name:string; en:string; meaning:string; prompt:string };
 type Roll = { planet:AstroItem; sign:AstroItem; house:AstroItem };
@@ -188,7 +189,7 @@ export default function AstroDicePage(){
     const asked=reading?{question:reading.question,category:reading.category}:{question:question.trim(),category};
     clearTimers();setReading(null);setSavedId(null);setSaveError(false);setNote("");
     const snapshot={roll:{planet:randomItem(planets),sign:randomItem(signs),house:randomItem(houses)} as Roll,...asked};
-    const show=()=>{setReading(snapshot);setRolling(false);busyRef.current=false;setBusy(false);navigator.vibrate?.(18);if(trial.visitor)trial.spend("astro-dice");later(()=>{const heading=resultRef.current?.querySelector("h2") as HTMLElement|null;if(heading)scrollToTop(heading)},80)};
+    const show=()=>{setReading(snapshot);setRolling(false);busyRef.current=false;setBusy(false);navigator.vibrate?.(18);if(trial.visitor)trial.spend("astro-dice");recordUse("astro-dice");later(()=>{const heading=resultRef.current?.querySelector("h2") as HTMLElement|null;if(heading)scrollToTop(heading)},80)};
     const start=()=>{setRolling(true);later(show,reducedMotion()?200:ROLL_MS)};
     // Bring the whole stage on screen first, then roll (星骰互動 v1).
     const wait=fullyVisible(stageRef.current)?0:scrollToTop(stageRef.current);

@@ -16,6 +16,7 @@ import { ASCENDANT_READINGS, ELEMENT_LINES, MARS_LINES, MERCURY_LINES, MOON_READ
 import { WHEEL, type wheelLayout } from "@/lib/natal-wheel";
 import "../styles/pearl-page.css";
 import "./astrology-exploration.css";
+import { recordUse } from "../member-usage-client";
 
 const YT_ORIGIN = "https://www.youtube-nocookie.com";
 /** Birth data kept on this device only when she ticks 「記住」; a new key, the old records stay as they are. */
@@ -266,6 +267,7 @@ export default function AstrologyExplorationPage() {
     const birth: Birth = { date, time: timeUnknown ? null : time, placeId, ...(custom ? { custom } : {}), ...(repeated && fold !== null && !timeUnknown ? { fold } : {}) };
     const done = await compute(birth);
     if (!done) return;
+    recordUse("astrology");
     try {
       if (remember) { localStorage.setItem(BIRTH_STORE, JSON.stringify(birth)); setSaved(birth); }
     } catch { /* this device cannot keep it; the chart still shows */ }

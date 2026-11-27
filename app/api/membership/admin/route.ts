@@ -15,7 +15,8 @@ export async function GET() {
       SET status = 'expired'
       WHERE role = 'member' AND status = 'active' AND access_expires_at <= now()
     `;
-    // Zola's note and the latest email to the member come along for the admin list only.
+    // Zola's note, the latest email to the member and how often she uses the site (會員使用次數, the last
+    // 30 days counted in Taipei days, today included) come along for the admin list only.
     const members = await sql`
       SELECT m.*,
         CASE
@@ -24,13 +25,25 @@ export async function GET() {
           ELSE m.status
         END AS effective_status,
         n.note AS admin_note,
-        e.kind AS last_email_kind, e.status AS last_email_status, COALESCE(e.finished_at, e.attempted_at) AS last_email_at
+        e.kind AS last_email_kind, e.status AS last_email_status, COALESCE(e.finished_at, e.attempted_at) AS last_email_at,
+        u.usage_total, u.usage_30d, u.usage_days_30d, u.usage_last_at, uf.usage_by_feature
       FROM members m
       LEFT JOIN member_admin_notes n ON n.member_id = m.id
       LEFT JOIN LATERAL (
         SELECT kind, status, finished_at, attempted_at FROM member_email_log
         WHERE member_id = m.id ORDER BY attempted_at DESC LIMIT 1
       ) e ON true
+      LEFT JOIN LATERAL (
+        SELECT COALESCE(sum(n), 0)::int AS usage_total,
+          COALESCE(sum(n) FILTER (WHERE day > (now() AT TIME ZONE 'Asia/Taipei')::date - 30), 0)::int AS usage_30d,
+          (count(DISTINCT day) FILTER (WHERE day > (now() AT TIME ZONE 'Asia/Taipei')::date - 30))::int AS usage_days_30d,
+          max(last_at) AS usage_last_at
+        FROM member_usage WHERE member_id = m.id
+      ) u ON true
+      LEFT JOIN LATERAL (
+        SELECT json_object_agg(feature, total) AS usage_by_feature
+        FROM (SELECT feature, sum(n)::int AS total FROM member_usage WHERE member_id = m.id GROUP BY feature) f
+      ) uf ON true
       ORDER BY CASE m.status WHEN 'pending' THEN 0 WHEN 'active' THEN 1 WHEN 'suspended' THEN 2 ELSE 3 END,
         m.created_at DESC
     `;

@@ -16,7 +16,8 @@ export function isMembershipServiceRoute(pathname: string) {
   // /api/trial (免費體驗) needs a signed-in account and decides itself who may use it.
   // /api/quizzes is the public 心理測驗 wall; its admin routes check Zola themselves (requireAdmin).
   // /api/quizzes/count (心理測驗統計) takes a visitor's count and checks the quiz and who she is itself.
-  return ["/api/membership/me", "/api/membership/admin", "/api/cron/membership-reminders", "/api/trial", "/api/quizzes", "/api/quizzes/count", "/api/quizzes/admin", "/api/quizzes/admin/image"].some(
+  // /api/usage (會員使用次數) counts a signed-in account's use of a tool and checks who it is itself.
+  return ["/api/membership/me", "/api/membership/admin", "/api/cron/membership-reminders", "/api/trial", "/api/quizzes", "/api/quizzes/count", "/api/quizzes/admin", "/api/quizzes/admin/image", "/api/usage"].some(
     (path) => pathname === path || pathname === `${path}/`,
   );
 }

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { FIRST_SIGHT_THEMES, type FirstSightObject, type FirstSightQuiz, lens, quizLineLink, quizMessage, siteWording } from "@/lib/quiz";
 import { countOnce, retryWaiting } from "./quiz-count";
+import { recordUse } from "../../member-usage-client";
 import QuizLineCta from "./quiz-line-cta";
 
 /** "🌙 這代表\n本文\n\n📌 12 月的提醒\n本文" → titled parts; a part without a short first line stays plain. */
@@ -51,6 +52,7 @@ export default function FirstSightView({ quiz }: { quiz: FirstSightQuiz }) {
     setStage("choose");
     setPicked(index);
     countOnce(quiz.code, "read", objects[index].name);
+    recordUse("quizzes");
     const url = new URL(location.href);
     url.searchParams.set("saw", objects[index].name);
     history.replaceState(null, "", url);

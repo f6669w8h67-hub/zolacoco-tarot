@@ -20,6 +20,7 @@ import { JOURNAL_DAYS, JOURNAL_PROMPT_VERSION, journalCardIds, journalPromptFor 
 import { journalResponse } from "@/lib/journal-responses";
 import { JOURNAL_REVIEW_KEY, REVIEW_TEXT_LIMIT, defaultHighlights, isSevenDaysWritten, reviewMessage, type ReviewNotes } from "@/lib/journal-review";
 import "./journal-sync.css";
+import { recordUse } from "../member-usage-client";
 
 export const JOURNAL_STORAGE_KEY = "zolacoco-journal-notes-v1";
 
@@ -159,6 +160,7 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
       setSavedLocal(next);
       setLocalSave("saved");
       setResponseFor(day);
+      recordUse("journal");
     } catch { setLocalSave("error"); }
   }
 
@@ -211,6 +213,7 @@ function JournalBody({ place, waiting }: { place: Place; waiting: boolean }) {
       setConflicts((current) => { const next = { ...current }; delete next[draftKey]; return next; });
       setNotice({ tone: "ok", text: "已儲存並同步給 Zola。" });
       setResponseFor(day);
+      recordUse("journal");
     } catch {
       setNotice({ tone: "error", text: "網路不穩，筆記還沒有確認存好。內容還在框裡，請稍後再按一次儲存。" });
     } finally {

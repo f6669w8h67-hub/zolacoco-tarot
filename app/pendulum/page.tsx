@@ -6,6 +6,7 @@ import "../styles/pearl-page.css";
 import "./pendulum-v1.css";
 import { choicesFromQuestion, questionQuality } from "./question-quality";
 import { TrialLimitCard, TrialMeter, membershipApplyUrl, useTrial } from "../visitor-trial";
+import { recordUse } from "../member-usage-client";
 
 type Result = "yes" | "no" | "unclear";
 type ModeKey = "general" | "higher" | "subconscious";
@@ -379,7 +380,7 @@ export default function PendulumPage(){
     if(needsQuestion&&!quality.canAsk){questionRef.current?.focus();return}
     const next=createOutcome();if(!next)return;
     clearTimers();setOutcome(null);setMotionTarget(next.resultKey);setMoving(true);setCalibrated(false);setSavedId(null);setSaveError(false);updateManualAngle(0);
-    const finish=()=>{setOutcome(next);setMotionTarget(null);setMoving(false);navigator.vibrate?.(18);if(trial.visitor)trial.spend("pendulum");revealResult()};
+    const finish=()=>{setOutcome(next);setMotionTarget(null);setMoving(false);navigator.vibrate?.(18);if(trial.visitor)trial.spend("pendulum");recordUse("pendulum");revealResult()};
     const swing=()=>{
       if(reducedMotion()){stopActiveMotion();updateManualAngle(next.resultKey==="yes"?-24:next.resultKey==="no"?24:0);later(finish,150);return}
       runNaturalMotion(next.resultKey,duration,finish);

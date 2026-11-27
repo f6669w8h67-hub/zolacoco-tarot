@@ -124,6 +124,26 @@ export async function ensureMembershipSchema() {
         PRIMARY KEY (member_id, kind, period_key)
       )
     `;
+    // 會員使用次數 (lib/member-usage.ts): uses of each tool per member per day (Taipei), and the latest use.
+    await sql`
+      CREATE TABLE IF NOT EXISTS member_usage (
+        member_id uuid NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+        feature text NOT NULL CHECK (char_length(feature) BETWEEN 1 AND 24),
+        day date NOT NULL,
+        n integer NOT NULL DEFAULT 0 CHECK (n >= 0),
+        last_at timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (member_id, feature, day)
+      )
+    `;
+    // the latest counted use of each tool, whatever the day: the 10-minute window holds across midnight too
+    await sql`
+      CREATE TABLE IF NOT EXISTS member_usage_last (
+        member_id uuid NOT NULL REFERENCES members(id) ON DELETE CASCADE,
+        feature text NOT NULL CHECK (char_length(feature) BETWEEN 1 AND 24),
+        last_at timestamptz NOT NULL,
+        PRIMARY KEY (member_id, feature)
+      )
+    `;
   })().catch((error) => {
     membershipSchemaPromise = null;
     throw error;
